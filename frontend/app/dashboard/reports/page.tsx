@@ -275,7 +275,7 @@ function TaxSummaryCard() {
       description="Investments and premiums detected from your transactions, mapped to sections 80C, 80D, and 80E."
     >
       {loading ? (
-        <div className="h-20 animate-pulse rounded-lg bg-muted" />
+        <div className="skeleton h-20 rounded-lg" />
       ) : !summary ? (
         <p className="text-sm text-muted-foreground">
           We could not load the tax summary right now.

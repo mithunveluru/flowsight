@@ -486,7 +486,7 @@ function LoadingSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-40 rounded-lg border border-slate-200 bg-white animate-pulse" />
+        <div key={i} className="h-40 rounded-lg skeleton" />
       ))}
     </div>
   );

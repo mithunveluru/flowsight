@@ -63,6 +63,23 @@
     --caution-soft: 35 90% 95%;
     --warning: 0 60% 50%;
     --warning-soft: 0 85% 96%;
+
+    /* ------------------------------------------------------------
+       Section accents — low-saturation, executive-grade.
+       Used by the sidebar active indicator and per-page hero
+       accents. Pick *one* identity per surface area; never paint
+       the whole UI in section colors.
+       ------------------------------------------------------------ */
+    --accent-overview:     220 45% 48%;  /* muted blue       */
+    --accent-insights:     240 38% 56%;  /* soft indigo      */
+    --accent-reports:      28  18% 38%;  /* warm graphite    */
+    --accent-simulate:     180 38% 38%;  /* subtle teal      */
+    --accent-receipts:     215 22% 44%;  /* slate            */
+    --accent-transactions: 215 22% 44%;  /* slate            */
+    --accent-budgets:      168 30% 40%;  /* sage-teal        */
+    --accent-goals:        168 30% 40%;
+    --accent-recurring:    240 38% 56%;
+    --accent-leaks:        28  18% 38%;
   }
 
   /* ============================================================
@@ -116,6 +133,18 @@
     --caution-soft: 35 25% 18%;
     --warning: 0 65% 60%;
     --warning-soft: 0 25% 18%;
+
+    /* Section accents — brightened for dark surfaces */
+    --accent-overview:     220 55% 65%;
+    --accent-insights:     240 50% 70%;
+    --accent-reports:      28  30% 60%;
+    --accent-simulate:     180 45% 55%;
+    --accent-receipts:     215 35% 65%;
+    --accent-transactions: 215 35% 65%;
+    --accent-budgets:      168 40% 55%;
+    --accent-goals:        168 40% 55%;
+    --accent-recurring:    240 50% 70%;
+    --accent-leaks:        28  30% 60%;
   }
 }
 
@@ -332,8 +361,12 @@
   .nav-item-active {
     background-color: hsl(var(--muted));
     color: hsl(var(--sidebar-fg-active));
-    /* Refined active state: subtle inset indigo left-edge */
-    box-shadow: inset 2px 0 0 0 hsl(var(--brand));
+    /* Active indicator inherits the section's accent if set; otherwise brand. */
+    box-shadow: inset 2px 0 0 0 hsl(var(--section-accent, var(--brand)));
+  }
+  .nav-item-default:hover {
+    /* Tiny accent flicker on hover: indicator hints in muted form */
+    box-shadow: inset 2px 0 0 0 hsl(var(--section-accent, var(--brand)) / 0.18);
   }
 
   /* ============================================================
@@ -389,6 +422,121 @@
     border-color: hsl(var(--border));
     background-color: hsl(var(--muted));
   }
+
+  /* ============================================================
+     CARD TACTILE — opt-in variant for clickable cards.
+     Adds a tiny y-translate on hover so interactive surfaces feel
+     physical. Static information cards keep `.card-refined`.
+     ============================================================ */
+  .card-tactile {
+    @apply rounded-xl bg-card;
+    box-shadow:
+      0 1px 1px 0 rgba(15, 23, 42, 0.025),
+      0 2px 6px -2px rgba(15, 23, 42, 0.04),
+      0 0 0 1px rgba(15, 23, 42, 0.045);
+    transition:
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform   220ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .card-tactile:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 1px 0 rgba(15, 23, 42, 0.035),
+      0 10px 24px -8px rgba(15, 23, 42, 0.10),
+      0 0 0 1px rgba(15, 23, 42, 0.075);
+  }
+  .dark .card-tactile {
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.22),
+      0 2px 6px -2px rgba(0, 0, 0, 0.32),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  .dark .card-tactile:hover {
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.28),
+      0 10px 24px -8px rgba(0, 0, 0, 0.50),
+      0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  /* ============================================================
+     ACCENT EDGE — pages opt in to expose section identity via a
+     single hairline accent rule on the top of a hero card.
+     Color follows --section-accent; if unset, falls back to brand.
+     Used sparingly: 1 per page, never on every card.
+     ============================================================ */
+  .accent-edge {
+    position: relative;
+    isolation: isolate;
+  }
+  .accent-edge::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 18px;
+    right: 18px;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--section-accent, var(--brand)) / 0.85) 22%,
+      hsl(var(--section-accent, var(--brand)) / 0.85) 78%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  /* ============================================================
+     SKELETON — premium shimmer loader.
+     Apply `.skeleton` to a sized div (h-*, w-*, rounded-*). The
+     pseudo-element animates a translateX sweep — purely transform
+     based, GPU-friendly, no backgroundPosition repaints.
+     Adopts existing bg-* utility for the resting tone.
+     ============================================================ */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: hsl(var(--muted));
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 100%
+    );
+    animation: skeleton-shimmer 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: transform;
+  }
+  .dark .skeleton {
+    background-color: hsl(var(--muted));
+  }
+  .dark .skeleton::after {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.06) 50%,
+      transparent 100%
+    );
+  }
+  @keyframes skeleton-shimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  /* ============================================================
+     HOVER LIFT — small, reusable utility for inline cards/links
+     that aren't full `.card-tactile` containers.
+     ============================================================ */
+  .hover-lift-sm {
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .hover-lift-sm:hover { transform: translateY(-1px); }
 
   /* ============================================================
      SUBTLE GRADIENT for hero areas — adds visual richness

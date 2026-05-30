@@ -226,9 +226,9 @@ function LeakCard({ leak }: { leak: LeakInsight }) {
 function LoadingSkeleton() {
   return (
     <div className="space-y-3">
-      <div className="h-24 rounded-xl border border-slate-200 bg-white animate-pulse" />
+      <div className="h-24 rounded-xl skeleton" />
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-20 rounded-lg border border-slate-200 bg-white animate-pulse" />
+        <div key={i} className="h-20 rounded-lg skeleton" />
       ))}
     </div>
   );

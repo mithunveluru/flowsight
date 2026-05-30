@@ -42,14 +42,20 @@ export default function DashboardLayout({
 function DashboardSkeleton() {
   return (
     <div className="flex h-screen bg-background">
-      <div className="w-sidebar shrink-0 bg-slate-900" />
+      <div
+        className="w-sidebar shrink-0 border-r"
+        style={{
+          backgroundColor: "hsl(var(--sidebar-bg))",
+          borderColor: "hsl(var(--sidebar-border))",
+        }}
+      />
       <div className="flex flex-1 flex-col">
         <div className="h-header border-b border-border bg-background" />
-        <div className="flex-1 bg-slate-50 p-6">
-          <div className="h-8 w-48 rounded-md bg-slate-200 animate-pulse mb-4" />
+        <div className="flex-1 p-8 lg:p-12">
+          <div className="skeleton mb-6 h-8 w-48 rounded-md" />
           <div className="grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-lg border border-slate-200 bg-white animate-pulse" />
+              <div key={i} className="skeleton h-28 rounded-xl" />
             ))}
           </div>
         </div>

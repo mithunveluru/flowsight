@@ -410,15 +410,15 @@ function SectionHeader({
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="h-32 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
+      <div className="skeleton h-32 rounded-xl" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-28 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
+          <div key={i} className="skeleton h-28 rounded-xl" />
         ))}
       </div>
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
+          <div key={i} className="skeleton h-24 rounded-xl" />
         ))}
       </div>
     </div>

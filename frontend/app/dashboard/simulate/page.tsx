@@ -747,11 +747,11 @@ function LoadingState({ loading }: { loading: boolean }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-xl border bg-card"
            style={{ borderColor: "hsl(var(--border))" }}>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-muted/30 animate-pulse" />
+          <div key={i} className="skeleton h-24" />
         ))}
       </div>
-      <div className="h-48 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
-      <div className="h-72 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
+      <div className="skeleton h-48 rounded-xl" />
+      <div className="skeleton h-72 rounded-xl" />
       {!loading && (
         <p className="text-center text-xs text-muted-foreground">
           Adjust the scenario on the left to see how this decision plays out.

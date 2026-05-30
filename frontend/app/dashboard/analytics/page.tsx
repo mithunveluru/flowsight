@@ -308,8 +308,8 @@ function SummaryCards({
         <div key={idx} className="px-6 py-5">
           {loading || !overview ? (
             <>
-              <div className="h-3.5 w-20 rounded bg-muted animate-pulse" />
-              <div className="mt-2.5 h-8 w-28 rounded-md bg-muted animate-pulse" />
+              <div className="skeleton h-3.5 w-20 rounded" />
+              <div className="skeleton mt-2.5 h-8 w-28 rounded-md" />
             </>
           ) : (
             <>
@@ -585,7 +585,7 @@ function Section({
 function ChartSkeleton({ height }: { height: number }) {
   return (
     <div
-      className="w-full animate-pulse rounded-md bg-muted"
+      className="skeleton w-full rounded-md"
       style={{ height }}
     />
   );

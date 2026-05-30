@@ -23,7 +23,6 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/motion/primitives";
-import { cn } from "@/lib/utils";
 
 const formatINRDigits = (v: number) =>
   v.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -137,7 +136,7 @@ function HeroMetric({
   hasData: boolean;
 }) {
   if (!overview) {
-    return <div className="h-44 w-full animate-pulse rounded-xl bg-muted" />;
+    return <div className="skeleton h-44 w-full rounded-xl" />;
   }
 
   if (!hasData) {
@@ -245,11 +244,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5 transition-colors",
-        "hover:bg-muted/40"
-      )}
-      style={{ borderColor: "hsl(var(--border))" }}
+      className="card-tactile group flex items-center gap-3 px-4 py-3.5"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
         <Icon className="h-4 w-4" strokeWidth={1.75} />
@@ -259,7 +254,7 @@ function QuickAction({
         <div className="text-xs text-muted-foreground">{description}</div>
       </div>
       <ArrowRight
-        className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+        className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-foreground"
         strokeWidth={1.75}
       />
     </Link>
@@ -281,12 +276,6 @@ function ModuleCard({
   description: string;
   href?: string;
 }) {
-  const className = cn(
-    "block rounded-xl border bg-card p-5 transition-colors",
-    href ? "hover:bg-muted/40 cursor-pointer" : ""
-  );
-  const style = { borderColor: "hsl(var(--border))" };
-
   const content = (
     <>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground/70">
@@ -299,13 +288,13 @@ function ModuleCard({
 
   if (href) {
     return (
-      <Link href={href} className={className} style={style}>
+      <Link href={href} className="card-tactile block p-5">
         {content}
       </Link>
     );
   }
   return (
-    <div className={className} style={style}>
+    <div className="card-refined block p-5">
       {content}
     </div>
   );

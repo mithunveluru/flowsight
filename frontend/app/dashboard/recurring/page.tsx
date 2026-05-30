@@ -387,7 +387,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-16 rounded-lg border border-slate-200 bg-white animate-pulse" />
+        <div key={i} className="skeleton h-16 rounded-lg" />
       ))}
     </div>
   );

@@ -20,15 +20,23 @@ import {
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 
+/**
+ * Each nav section carries an `accent` token name. The sidebar passes it
+ * down as a CSS variable (`--section-accent`) so the active and hover
+ * indicators within that area pick up the section's identity color.
+ * Defined in globals.css under :root.
+ */
 const navSections = [
   {
     section: "Overview",
+    accent: "var(--accent-overview)",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     section: "Finances",
+    accent: "var(--accent-transactions)",
     items: [
       { label: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
       { label: "Receipts",     href: "/dashboard/receipts",     icon: Receipt    },
@@ -36,6 +44,7 @@ const navSections = [
   },
   {
     section: "Planning",
+    accent: "var(--accent-budgets)",
     items: [
       { label: "Budgets", href: "/dashboard/budgets", icon: Target },
       { label: "Goals",   href: "/dashboard/goals",   icon: Flag   },
@@ -43,6 +52,7 @@ const navSections = [
   },
   {
     section: "Insights",
+    accent: "var(--accent-insights)",
     items: [
       { label: "Analytics",       href: "/dashboard/analytics", icon: BarChart3    },
       { label: "Recurring",       href: "/dashboard/recurring", icon: Repeat       },
@@ -53,6 +63,7 @@ const navSections = [
   },
   {
     section: "Export",
+    accent: "var(--accent-reports)",
     items: [
       { label: "Reports", href: "/dashboard/reports", icon: FileText },
     ],
@@ -92,7 +103,11 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
         {navSections.map((group) => (
-          <div key={group.section} className="mb-6 last:mb-0">
+          <div
+            key={group.section}
+            className="mb-6 last:mb-0"
+            style={{ ["--section-accent" as string]: group.accent }}
+          >
             <div className="nav-section-label">{group.section}</div>
             <ul className="space-y-px">
               {group.items.map((item) => {
