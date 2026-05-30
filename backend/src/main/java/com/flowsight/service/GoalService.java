@@ -43,7 +43,6 @@ public class GoalService {
 
     private final FinancialGoalRepository goalRepository;
     private final UserRepository          userRepository;
-    private final EntitlementService      entitlementService;
     private final AuditLogService         auditLogService;
 
     // -------------------------------------------------------------------------
@@ -53,8 +52,6 @@ public class GoalService {
     @Transactional
     public GoalResponse create(GoalRequest request, UUID userId) {
         User user = userRepository.findById(userId).orElseThrow();
-
-        entitlementService.checkGoalCreation(user.getSubscriptionTier(), userId);
 
         FinancialGoal goal = FinancialGoal.builder()
             .user(user)

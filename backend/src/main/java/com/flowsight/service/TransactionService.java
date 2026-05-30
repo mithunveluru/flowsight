@@ -30,7 +30,6 @@ public class TransactionService {
     private final TransactionIngestionPipeline ingestionPipeline;
     private final CsvParserService csvParserService;
     private final UserService userService;
-    private final EntitlementService entitlementService;
     private final AuditLogService    auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
 
