@@ -6,13 +6,14 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authApi } from "@/features/auth/api";
 import { useAuthStore } from "@/store/auth";
 import { ApiError } from "@/lib/api";
+import { FadeIn } from "@/components/motion/primitives";
 
 const schema = z.object({
   fullName: z
@@ -54,7 +55,6 @@ export default function RegisterPage() {
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiError && err.violations?.length) {
-        // Map backend validation errors to form fields
         err.violations.forEach((v) => {
           const [field, ...rest] = v.split(": ");
           setError(field as keyof FormValues, { message: rest.join(": ") });
@@ -73,33 +73,25 @@ export default function RegisterPage() {
   const passwordStrength = getPasswordStrength(password);
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Logo */}
-      <div className="mb-8 flex flex-col items-center text-center">
-        <Logo />
-        <span className="mt-3 text-sm font-semibold text-slate-900">FlowSight</span>
-      </div>
-
-      {/* Card */}
-      <div className="rounded-lg border border-slate-200 bg-white p-8">
-        <div className="mb-6">
-          <h1 className="text-lg font-semibold text-slate-900">Create your account</h1>
-          <p className="mt-1 text-sm text-slate-500">
+    <FadeIn delay={0.05}>
+      <div className="space-y-8">
+        <header>
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+            Create your account.
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
             Free to start. No credit card required.
           </p>
-        </div>
+        </header>
 
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-          {/* Root error */}
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-sm text-red-700">
               {errors.root.message}
             </div>
           )}
 
-          {/* Full name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName">Full name</Label>
+          <Field id="fullName" label="Full name" error={errors.fullName?.message}>
             <Input
               id="fullName"
               type="text"
@@ -108,14 +100,9 @@ export default function RegisterPage() {
               aria-invalid={!!errors.fullName}
               {...register("fullName")}
             />
-            {errors.fullName && (
-              <p className="text-xs text-red-600">{errors.fullName.message}</p>
-            )}
-          </div>
+          </Field>
 
-          {/* Email */}
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Work email</Label>
+          <Field id="email" label="Email" error={errors.email?.message}>
             <Input
               id="email"
               type="email"
@@ -124,45 +111,36 @@ export default function RegisterPage() {
               aria-invalid={!!errors.email}
               {...register("email")}
             />
-            {errors.email && (
-              <p className="text-xs text-red-600">{errors.email.message}</p>
-            )}
-          </div>
+          </Field>
 
-          {/* Password */}
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+          <Field id="password" label="Password" error={errors.password?.message}>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="••••••••"
+                placeholder="At least 8 characters"
                 aria-invalid={!!errors.password}
-                className="pr-9"
+                className="pr-10"
                 {...register("password")}
               />
               <button
                 type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {/* Password strength indicator */}
+
             {password.length > 0 && (
-              <div className="space-y-1">
+              <div className="mt-2 space-y-1">
                 <div className="flex gap-1">
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
-                      className={`h-1 flex-1 rounded-full transition-colors ${
+                      className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
                         passwordStrength.score >= level
                           ? passwordStrength.color
                           : "bg-slate-200"
@@ -170,36 +148,63 @@ export default function RegisterPage() {
                     />
                   ))}
                 </div>
-                <p className="text-xs text-slate-500">
-                  {passwordStrength.label}
-                </p>
+                <p className="text-[11px] text-slate-500">{passwordStrength.label}</p>
               </div>
             )}
-            {errors.password && (
-              <p className="text-xs text-red-600">{errors.password.message}</p>
-            )}
-          </div>
+          </Field>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="animate-spin" />}
-            {isSubmitting ? "Creating account..." : "Create account"}
+          <Button type="submit" className="group w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Creating account
+              </>
+            ) : (
+              <>
+                Create account
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </>
+            )}
           </Button>
         </form>
 
-        <p className="mt-5 text-center text-sm text-slate-500">
-          Already have an account?{" "}
-          <Link
-            href="/auth/login"
-            className="font-medium text-slate-900 hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="font-medium text-slate-900 underline-offset-4 transition-colors hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            By creating an account you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </div>
       </div>
+    </FadeIn>
+  );
+}
 
-      <p className="mt-5 text-center text-xs text-slate-400">
-        By creating an account you agree to our Terms of Service and Privacy Policy.
-      </p>
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-[13px] font-medium text-slate-700">
+        {label}
+      </Label>
+      {children}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
@@ -220,20 +225,4 @@ function getPasswordStrength(password: string): {
   if (score === 2) return { score: 2, label: "Fair", color: "bg-amber-400" };
   if (score === 3) return { score: 3, label: "Good", color: "bg-blue-400" };
   return { score: 4, label: "Strong", color: "bg-emerald-500" };
-}
-
-function Logo() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <rect width="20" height="20" rx="4" fill="#0f172a" />
-      <path
-        d="M5 13.5L8.5 9.5L11.5 12L15 7"
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="15" cy="7" r="1.25" fill="white" />
-    </svg>
-  );
 }
