@@ -99,9 +99,9 @@ export default function GoalsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Financial goals</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Goals</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Track progress towards what matters to you.
+            Save toward what matters, and watch your progress over time.
           </p>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>
@@ -496,12 +496,12 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <Flag className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No goals yet</p>
+      <p className="text-sm font-medium text-slate-900">No goals set</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Set a savings target with a deadline and track your progress with daily pace recommendations.
+        Name a target with a deadline. We will track your progress and suggest a daily pace.
       </p>
       <Button size="sm" className="mt-5" onClick={onCreate}>
-        <Plus className="h-4 w-4" /> Create your first goal
+        <Plus className="h-4 w-4" /> Create a goal
       </Button>
     </div>
   );

@@ -79,7 +79,7 @@ export default function ReportsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reports</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Generate Intelligence reports, export raw data, and review tax-eligible deductions.
+          Generate financial reviews, export your data, and surface tax-eligible deductions.
         </p>
       </div>
 
@@ -127,8 +127,8 @@ function CsvExportCard() {
   return (
     <Section
       icon={<Download className="h-4 w-4" strokeWidth={1.75} />}
-      title="Transactions CSV"
-      description="Raw transaction data for spreadsheets, accountants, and tax filing."
+      title="Export transactions"
+      description="Download raw transaction data for spreadsheets, accountants, and tax filing."
     >
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
@@ -178,7 +178,7 @@ function CsvExportCard() {
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Preparing CSV…
+                Preparing your file
               </>
             ) : (
               <>
@@ -208,7 +208,7 @@ function MonthlyReportsCard() {
     <Section
       icon={<Calendar className="h-4 w-4" strokeWidth={1.75} />}
       title="Monthly summary"
-      description="Printable report with totals, category breakdown, and tax-eligible deductions."
+      description="A printable view with totals, category breakdown, and tax-eligible deductions."
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportLink
@@ -272,13 +272,13 @@ function TaxSummaryCard() {
     <Section
       icon={<Receipt className="h-4 w-4" strokeWidth={1.75} />}
       title="Tax-eligible deductions"
-      description="Auto-detected investments and premiums for Indian Income Tax sections 80C, 80D, 80E."
+      description="Investments and premiums detected from your transactions, mapped to sections 80C, 80D, and 80E."
     >
       {loading ? (
         <div className="h-20 animate-pulse rounded-lg bg-muted" />
       ) : !summary ? (
         <p className="text-sm text-muted-foreground">
-          Could not load tax summary right now.
+          We could not load the tax summary right now.
         </p>
       ) : (
         <div className="space-y-4">
@@ -467,8 +467,8 @@ function IntelligenceReportsCard() {
   return (
     <Section
       icon={<Sparkles className="h-4 w-4" strokeWidth={1.75} />}
-      title="Financial Intelligence Report"
-      description="An insights-only PDF analyzing your spending behavior, recurring commitments, leaks, and consequences."
+      title="Financial review"
+      description="A narrative PDF covering your spending behavior, recurring commitments, recoverable spend, and what to do next."
     >
       <div className="space-y-5">
         {/* Generator */}
@@ -498,8 +498,7 @@ function IntelligenceReportsCard() {
           ) : (
             <div className="sm:col-span-2 self-end">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Reports include behavioral analysis, recurring obligations, financial leaks,
-                spending categories, consequences, and prioritized recommendations.
+                Each review covers behavioral patterns, recurring obligations, recoverable spend, category trends, long-term consequences, and prioritized next steps.
               </p>
             </div>
           )}
@@ -514,9 +513,9 @@ function IntelligenceReportsCard() {
         <div className="flex items-center justify-end">
           <Button onClick={handleGenerate} disabled={creating || (activeJob != null && activeJob.status !== "READY" && activeJob.status !== "FAILED")}>
             {creating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Starting…</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> Starting</>
             ) : (
-              <><Sparkles className="h-4 w-4" /> Generate Intelligence Report</>
+              <><Sparkles className="h-4 w-4" /> Generate review</>
             )}
           </Button>
         </div>
@@ -527,7 +526,7 @@ function IntelligenceReportsCard() {
         {/* History */}
         {history && history.content.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Recent reports</p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Previously generated</p>
             <div
               className="rounded-xl border bg-card divide-y overflow-hidden"
               style={{ borderColor: "hsl(var(--border))" }}
@@ -553,12 +552,12 @@ function IntelligenceReportsCard() {
 // Each step rotates every 1.5s during GENERATING — gives the user the sense
 // of intentional analysis rather than a spinner that says "loading".
 const ANALYSIS_STEPS = [
-  "Loading your transaction history",
-  "Detecting spending patterns",
-  "Identifying recurring commitments",
-  "Surfacing financial leaks",
-  "Composing executive summary",
-  "Rendering report layout",
+  "Reviewing your transactions",
+  "Tracing spending patterns",
+  "Mapping recurring commitments",
+  "Surfacing recoverable spend",
+  "Drafting the summary",
+  "Composing the document",
 ] as const;
 
 function ActiveJobCard({
@@ -605,7 +604,7 @@ function ActiveJobCard({
         </div>
         {isReady && (
           <Button size="sm" onClick={() => onDownload(job)}>
-            <Download className="h-4 w-4" /> Download PDF
+            <Download className="h-4 w-4" /> Download
           </Button>
         )}
       </div>
@@ -619,12 +618,12 @@ function ActiveJobCard({
             {isReady ? (
               <span className="flex items-center gap-1.5 text-emerald-700">
                 <CheckCircle2 className="h-3 w-3" />
-                Ready to download
+                Ready
               </span>
             ) : isFailed ? (
               <span className="flex items-center gap-1.5 text-red-700">
                 <XCircle className="h-3 w-3" />
-                Generation failed
+                Generation could not complete
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -681,7 +680,7 @@ function HistoryRow({
         : job.status === "GENERATING" ? "text-blue-700"
         : "text-muted-foreground"
       )}>
-        {job.status === "GENERATING" ? "Generating…" : job.status.toLowerCase()}
+        {job.status === "GENERATING" ? "Generating" : job.status.toLowerCase()}
       </span>
       <div className="flex items-center gap-1">
         {job.status === "READY" && (

@@ -64,7 +64,7 @@ export default function Home() {
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
             <span className="text-xs font-medium text-blue-700">
-              Behavioral Financial Intelligence Platform
+              Financial intelligence, for individuals
             </span>
           </div>
           <h1 className="mb-5 text-[2.75rem] font-semibold leading-[1.15] tracking-tight text-slate-900">
@@ -73,16 +73,14 @@ export default function Home() {
             behind your finances.
           </h1>
           <p className="mb-8 text-lg leading-relaxed text-slate-500">
-            FlowSight transforms imperfect financial activity into actionable
-            intelligence — detecting spending leaks, simulating consequences, and
-            revealing the behavioral patterns your bank statement doesn't show.
+            FlowSight turns everyday financial activity into a clearer picture: the leaks worth recovering, the consequences of the next decision, and the patterns your bank statement does not show.
           </p>
           <div className="flex items-center gap-3">
             <Link
               href="/auth/register"
               className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-900 px-5 text-sm font-medium text-white transition-colors hover:bg-slate-700"
             >
-              Start free trial
+              Get started
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
             <a
@@ -115,10 +113,10 @@ export default function Home() {
       <section id="features" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-10">
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            A complete intelligence layer for your finances
+            A clearer layer on top of your finances
           </h2>
           <p className="mt-2 text-slate-500">
-            From raw transactions to behavioral insight — in one platform.
+            From raw transactions to meaningful observation, in one place.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -149,7 +147,7 @@ export default function Home() {
               From data to decisions in minutes
             </h2>
             <p className="mt-2 text-slate-500">
-              Three steps to behavioral financial clarity.
+              Three steps to a clearer view of your finances.
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
@@ -178,12 +176,10 @@ export default function Home() {
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:gap-20">
           <div className="md:w-1/2">
             <h2 className="mb-3 text-2xl font-semibold tracking-tight text-slate-900">
-              Built for enterprise-grade trust
+              Built around your privacy
             </h2>
             <p className="text-slate-500 leading-relaxed">
-              FlowSight is built on a privacy-first architecture. We do not
-              store banking credentials, connect directly to financial
-              institutions, or expose raw entity data through the API.
+              FlowSight is privacy-first by design. We do not store banking credentials, connect directly to financial institutions, or expose raw entity data through the API.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 md:w-1/2 sm:grid-cols-2">
@@ -202,17 +198,16 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="max-w-xl">
             <h2 className="mb-3 text-2xl font-semibold tracking-tight text-white">
-              Ready to understand your finances?
+              Ready to see your finances clearly?
             </h2>
             <p className="mb-8 text-slate-400">
-              Start with a free trial. No credit card required. Full access to
-              all behavioral intelligence features.
+              Start free. No credit card required. Full access to every product feature.
             </p>
             <Link
               href="/auth/register"
               className="inline-flex h-10 items-center gap-2 rounded-md bg-white px-5 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-100"
             >
-              Create free account
+              Create your account
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -243,75 +238,75 @@ export default function Home() {
 
 const stats = [
   { value: "94.6%", label: "Categorization accuracy" },
-  { value: "850+", label: "Behavioral pattern signatures" },
-  { value: "2,400+", label: "Organizations" },
-  { value: "<2s", label: "Analysis time per transaction" },
+  { value: "850+", label: "Patterns detected" },
+  { value: "2,400+", label: "People tracking with FlowSight" },
+  { value: "<2s", label: "Per-transaction analysis" },
 ];
 
 const features = [
   {
     icon: Activity,
-    title: "Behavioral Pattern Detection",
+    title: "Behavioral patterns",
     description:
-      "Identifies late-night spending, weekend overruns, and lifestyle inflation before they compound into structural debt.",
+      "Late-night spending, weekend overruns, and lifestyle inflation, surfaced before they compound.",
   },
   {
     icon: TrendingDown,
-    title: "Leak Detection Engine",
+    title: "Recoverable spending",
     description:
-      "Surfaces recurring waste, subscription stacking, and silent drains on cash position with confidence-scored alerts.",
+      "Duplicate subscriptions, price creep, silent drains, and bank fees, each with a confidence score.",
   },
   {
     icon: Sliders,
-    title: "Consequence Simulation",
+    title: "Decision simulation",
     description:
-      "Models the real cost of a purchase decision — EMI impact, savings delay, and reduced financial flexibility over time.",
+      "The real cost of a purchase, modeled out: EMI impact, savings delay, and how much flexibility you would give up.",
   },
   {
     icon: Receipt,
-    title: "Receipt Intelligence",
+    title: "Receipt analysis",
     description:
-      "Extracts and normalizes transaction data from scanned receipts via OCR, automatically categorized into the ledger.",
+      "Capture merchant, amount, and date from a photo. Review before saving, then categorized into your ledger.",
   },
   {
     icon: MessageSquare,
-    title: "SMS Signal Extraction",
+    title: "Bank SMS parsing",
     description:
-      "Parses bank SMS messages to reconstruct a complete financial timeline with merchant resolution and confidence scoring.",
+      "Reconstructs a complete financial timeline from transactional SMS, with merchant resolution and confidence scoring.",
   },
   {
     icon: Brain,
-    title: "Recommendation Engine",
+    title: "Tailored recommendations",
     description:
-      "Generates personalized optimization strategies based on spending patterns, behavioral triggers, and financial goals.",
+      "Optimization suggestions grounded in your actual spending patterns, behavioral triggers, and goals.",
   },
 ];
 
 const steps = [
   {
-    title: "Ingest your financial data",
+    title: "Bring your data in",
     description:
-      "Upload CSV exports, scan receipts with your camera, or import bank SMS messages. FlowSight normalizes everything automatically.",
+      "Upload a CSV, scan a receipt, or import bank SMS. FlowSight normalizes the rest.",
   },
   {
-    title: "Intelligence runs in the background",
+    title: "We do the analysis",
     description:
-      "The behavioral engine analyzes patterns, detects anomalies, and scores confidence across every transaction automatically.",
+      "Patterns, anomalies, and confidence scores get applied across every transaction.",
   },
   {
-    title: "Act on clear, prioritized insights",
+    title: "Act on what matters",
     description:
-      "Review leak reports, simulate the impact of financial decisions, and receive optimization recommendations ranked by impact.",
+      "Review what is recoverable, simulate decisions before you make them, and follow recommendations ranked by impact.",
   },
 ];
 
 const trustPoints = [
-  "JWT authentication with secure token handling",
-  "BCrypt-hashed credentials, never stored plain",
-  "No direct banking infrastructure integration",
-  "Privacy-first, no raw entity data in API responses",
-  "Input validation on every request boundary",
-  "DTO isolation between layers, no entity exposure",
+  "Modern session handling, never long-lived tokens in storage",
+  "Passwords salted and hashed, never stored in the clear",
+  "No direct connection to your bank or financial institutions",
+  "Privacy-first API surface, no raw records in responses",
+  "Validated input at every request boundary",
+  "Strict separation between storage and what is returned",
 ];
 
 /* ─── Logo mark ─────────────────────────────────────────────── */

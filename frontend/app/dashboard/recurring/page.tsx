@@ -114,12 +114,12 @@ export default function RecurringPage() {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Recurring payments</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Detected from your transaction history — confirm or dismiss patterns to improve accuracy.
+            Patterns detected from your history. Confirm or dismiss each to sharpen accuracy.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={scan} disabled={scanning || loading}>
           <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
-          {scanning ? "Scanning…" : "Re-scan"}
+          {scanning ? "Scanning" : "Scan again"}
         </Button>
       </div>
 
@@ -397,14 +397,14 @@ function EmptyState({ onScan, scanning }: { onScan: () => void; scanning: boolea
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <Repeat className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No recurring patterns found</p>
+      <p className="text-sm font-medium text-slate-900">No recurring payments detected</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Add at least 2 transactions from the same merchant to detect recurring payments.
+        Two or more transactions from the same merchant are usually enough to surface a pattern.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Button size="sm" onClick={onScan} disabled={scanning}>
           <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
-          {scanning ? "Scanning…" : "Scan now"}
+          {scanning ? "Scanning" : "Scan now"}
         </Button>
         <Button size="sm" variant="outline" asChild>
           <Link href="/dashboard/transactions">Add transactions</Link>

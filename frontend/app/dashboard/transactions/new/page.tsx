@@ -245,7 +245,7 @@ export default function NewTransactionPage() {
           <div className="flex items-center gap-3 pt-1">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? "Saving..." : "Save transaction"}
+              {isSubmitting ? "Saving" : "Save transaction"}
             </Button>
             <Button type="button" variant="outline" asChild>
               <Link href="/dashboard/transactions">Cancel</Link>

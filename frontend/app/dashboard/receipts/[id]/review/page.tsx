@@ -183,7 +183,7 @@ function ReviewForm({
           <div>
             <h1 className="text-xl font-semibold text-slate-900">Review receipt</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Verify the extracted data below before saving.
+              Confirm the details below before saving the transaction.
             </p>
           </div>
           <ConfidenceBadge confidence={confidence} />
@@ -196,7 +196,7 @@ function ReviewForm({
         <span className="text-sm text-slate-700 truncate">{receipt.fileName}</span>
         {receipt.ocrProvider && (
           <span className="ml-auto shrink-0 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-500">
-            {receipt.ocrProvider === "RECEIPT_OCR_SERVICE" ? "LLM" : "Tesseract"}
+            {receipt.ocrProvider === "RECEIPT_OCR_SERVICE" ? "Vision model" : "Text scan"}
           </span>
         )}
       </div>
@@ -206,8 +206,7 @@ function ReviewForm({
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
           <p className="text-sm text-amber-800">
-            The extracted amount has low confidence and may be incorrect (e.g. VAT
-            instead of the final total). Please verify before saving.
+            We are less certain about the amount we extracted. It may have caught a sub-total or tax line instead of the final total. Please confirm before saving.
           </p>
         </div>
       )}
@@ -217,9 +216,9 @@ function ReviewForm({
         <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <PenLine className="h-5 w-5 shrink-0 text-slate-500 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-slate-700">OCR could not extract all fields</p>
+            <p className="text-sm font-medium text-slate-700">A few details need your review</p>
             <p className="mt-0.5 text-xs text-slate-500">
-              Fill in the missing values below or{" "}
+              Add the missing values below, or{" "}
               <Link href="/dashboard/transactions/new" className="text-blue-600 hover:underline">
                 enter the transaction manually
               </Link>
@@ -363,12 +362,12 @@ function ReviewForm({
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
+                Saving
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                Confirm & save transaction
+                Confirm and save
               </>
             )}
           </Button>
@@ -399,9 +398,9 @@ function OcrFailureFallback({ receipt }: { receipt: Receipt }) {
       <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
         <XCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-red-900">OCR processing failed</p>
+          <p className="text-sm font-medium text-red-900">Receipt analysis could not complete</p>
           <p className="mt-0.5 text-xs text-red-700">
-            {receipt.errorMessage ?? "Could not extract data from the receipt image."}
+            {receipt.errorMessage ?? "We could not extract details from this image."}
           </p>
         </div>
       </div>
@@ -440,9 +439,9 @@ function AlreadyConfirmed({ receipt }: { receipt: Receipt }) {
       <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-emerald-900">Receipt already confirmed</p>
+          <p className="text-sm font-medium text-emerald-900">This receipt is confirmed</p>
           <p className="mt-0.5 text-xs text-emerald-700">
-            Transaction for <strong>{tx.merchant ?? "unknown merchant"}</strong> was saved.
+            The transaction for <strong>{tx.merchant ?? "unknown merchant"}</strong> has been saved.
           </p>
         </div>
       </div>
@@ -475,12 +474,18 @@ function ConfidenceBadge({ confidence }: { confidence: number | null }) {
     LOW:    "border-red-200    bg-red-50    text-red-700",
   };
 
+  const label = {
+    HIGH:   "Confident",
+    MEDIUM: "Review recommended",
+    LOW:    "Needs review",
+  };
+
   return (
     <span className={cn(
       "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
       styles[tier]
     )}>
-      {tier} confidence
+      {label[tier]}
     </span>
   );
 }

@@ -174,9 +174,9 @@ export default function AnalyticsPage() {
       <FadeIn>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Financial overview</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Spending patterns and behavioral insights.
+              How your money moves, where it goes, and the patterns behind it.
             </p>
           </div>
           <DateRangeSelector value={preset} onChange={(p) => setPreset(p)} />
@@ -212,7 +212,7 @@ export default function AnalyticsPage() {
 
           {/* Monthly trend — full width, scroll-reveal */}
           <RevealOnScroll delay={0.06}>
-            <Section title="Monthly cashflow" subtitle="Spend vs. income over time">
+            <Section title="Monthly cashflow" subtitle="Spend against income, over time">
               <SpendTrendChart trend={trend} loading={loading} />
             </Section>
           </RevealOnScroll>
@@ -220,12 +220,12 @@ export default function AnalyticsPage() {
           {/* Category breakdown + Top merchants — scroll-reveal */}
           <div className="grid gap-6 lg:grid-cols-2">
             <RevealOnScroll delay={0.08}>
-              <Section title="Spend by category" subtitle={`${preset === "1M" ? "This month" : "Selected period"}`}>
+              <Section title="Where your money went" subtitle={`${preset === "1M" ? "This month" : "Selected period"}`}>
                 <CategoryDonutChart overview={overview} loading={loading} />
               </Section>
             </RevealOnScroll>
             <RevealOnScroll delay={0.12}>
-              <Section title="Top merchants" subtitle="By total spend">
+              <Section title="Where you spent most" subtitle="By total outflow">
                 <TopMerchantsChart overview={overview} loading={loading} />
               </Section>
             </RevealOnScroll>
@@ -335,7 +335,7 @@ function SummaryCards({
 function AlertsPanel({ alerts }: { alerts: AnalyticsOverview["alerts"] }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">Behavioral alerts</p>
+      <p className="text-sm font-medium text-foreground">Worth noticing</p>
       <div
         className="rounded-xl border bg-card divide-y overflow-hidden"
         style={{ borderColor: "hsl(var(--border))" }}
@@ -603,7 +603,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-12 text-center">
       <XCircle className="mx-auto h-10 w-10 text-red-300 mb-3" />
-      <p className="text-sm font-medium text-red-900">Could not load analytics</p>
+      <p className="text-sm font-medium text-red-900">We could not load your overview</p>
       <p className="mt-1 text-xs text-red-700 max-w-md mx-auto">{message}</p>
       <button
         onClick={onRetry}
@@ -642,7 +642,7 @@ function DataElsewhereHint({ bounds }: { bounds: ActivityBounds }) {
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-foreground">
-            Nothing in the current view, but your data is here
+            Your data is here, just outside the current range
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
             You have <span className="font-medium text-foreground tabular-nums">
@@ -694,9 +694,9 @@ function EmptyState() {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <BarChart3 className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No transaction data yet</p>
+      <p className="text-sm font-medium text-slate-900">Nothing to chart yet</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Import a CSV, upload a receipt, or add transactions manually to see your spending analytics.
+        Add a transaction, import a CSV, or scan a receipt to see your overview take shape.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Link

@@ -75,7 +75,7 @@ export default function DashboardPage() {
             {greeting()}, {firstName}.
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
-            Here&apos;s your financial pulse for {monthLabel()}.
+            Your financial snapshot for {monthLabel()}.
           </p>
         </section>
       </FadeIn>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       <section>
         <FadeIn delay={0.16}>
           <div className="section-header">
-            <p className="section-title">Quick actions</p>
+            <p className="section-title">Shortcuts</p>
           </div>
         </FadeIn>
         <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,8 +108,8 @@ export default function DashboardPage() {
         <FadeIn delay={0.24}>
           <div className="section-header">
             <div>
-              <p className="section-title">Intelligence modules</p>
-              <p className="section-subtitle">Tools available across your dashboard</p>
+              <p className="section-title">Explore</p>
+              <p className="section-subtitle">Tools available across the platform</p>
             </div>
           </div>
         </FadeIn>
@@ -143,9 +143,9 @@ function HeroMetric({
   if (!hasData) {
     return (
       <div className="card-refined p-10 text-center">
-        <p className="text-headline">No activity yet this month</p>
+        <p className="text-headline">No activity recorded yet this month</p>
         <p className="mt-2 text-supporting">
-          Add transactions or scan a receipt to start tracking your spending.
+          Your snapshot will appear here as transactions and receipts are added.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link
@@ -176,7 +176,7 @@ function HeroMetric({
 
       <div className="relative flex items-start justify-between gap-6">
         <div>
-          <p className="stat-label">Net cashflow this month</p>
+          <p className="stat-label">Net cashflow</p>
           <p className="mt-3 stat-value text-4xl lg:text-5xl">
             {positive ? "" : "−"}
             <AnimatedNumber
@@ -275,42 +275,29 @@ function ModuleCard({
   title,
   description,
   href,
-  live,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
   href?: string;
-  live: boolean;
 }) {
   const className = cn(
     "block rounded-xl border bg-card p-5 transition-colors",
-    live && href ? "hover:bg-muted/40 cursor-pointer" : "opacity-70"
+    href ? "hover:bg-muted/40 cursor-pointer" : ""
   );
   const style = { borderColor: "hsl(var(--border))" };
 
   const content = (
     <>
-      <div className="flex items-center justify-between">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground/70">
-          <Icon className="h-4 w-4" strokeWidth={1.75} />
-        </div>
-        {live ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-emerald-700">
-            <span className="h-1 w-1 rounded-full bg-emerald-500" /> Live
-          </span>
-        ) : (
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
-            Coming soon
-          </span>
-        )}
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground/70">
+        <Icon className="h-4 w-4" strokeWidth={1.75} />
       </div>
       <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
     </>
   );
 
-  if (href && live) {
+  if (href) {
     return (
       <Link href={href} className={className} style={style}>
         {content}
@@ -329,41 +316,41 @@ function ModuleCard({
 // -------------------------------------------------------------------------
 
 const quickActions = [
-  { label: "Transactions",  description: "Browse and add",      href: "/dashboard/transactions",    icon: BarChart3 },
-  { label: "Scan receipt",  description: "OCR extraction",       href: "/dashboard/receipts/upload", icon: Receipt   },
-  { label: "Set a budget",  description: "Track monthly limits", href: "/dashboard/budgets",         icon: Target    },
-  { label: "Create a goal", description: "Save toward what matters", href: "/dashboard/goals",      icon: Flag      },
+  { label: "Transactions",  description: "Review and record",         href: "/dashboard/transactions",    icon: BarChart3 },
+  { label: "Scan receipt",  description: "Analyze a new receipt",      href: "/dashboard/receipts/upload", icon: Receipt   },
+  { label: "Set a budget",  description: "Define a monthly limit",     href: "/dashboard/budgets",         icon: Target    },
+  { label: "Create a goal", description: "Save toward what matters",   href: "/dashboard/goals",           icon: Flag      },
 ];
 
 const modules = [
   {
-    icon: BarChart3, live: true, href: "/dashboard/analytics",
-    title: "Analytics",
-    description: "Monthly trends, category breakdown, top merchants, behavioral alerts.",
+    icon: BarChart3, href: "/dashboard/analytics",
+    title: "Financial overview",
+    description: "Monthly trends, category breakdown, top merchants, and behavioral observations.",
   },
   {
-    icon: Repeat, live: true, href: "/dashboard/recurring",
-    title: "Recurring detection",
-    description: "Identify subscriptions and recurring bills with cancellation candidates.",
+    icon: Repeat, href: "/dashboard/recurring",
+    title: "Recurring payments",
+    description: "Subscriptions and recurring bills, with cancellation candidates surfaced.",
   },
   {
-    icon: TrendingDown, live: true, href: "/dashboard/leaks",
-    title: "Leak detection",
-    description: "Surface duplicate subscriptions, price creep, silent drains, and bank fees.",
+    icon: TrendingDown, href: "/dashboard/leaks",
+    title: "Recoverable spending",
+    description: "Duplicate subscriptions, price creep, silent drains, and bank fees in one view.",
   },
   {
-    icon: Target, live: true, href: "/dashboard/budgets",
-    title: "Budgets & goals",
-    description: "Set monthly limits, save toward goals, get real-time progress alerts.",
+    icon: Target, href: "/dashboard/budgets",
+    title: "Budgets and goals",
+    description: "Set monthly limits, save toward what matters, and track progress over time.",
   },
   {
-    icon: Receipt, live: true, href: "/dashboard/receipts",
-    title: "Receipt intelligence",
-    description: "LLM-powered extraction with review-first workflow.",
+    icon: Receipt, href: "/dashboard/receipts",
+    title: "Receipt review",
+    description: "Receipt analysis with editable extraction and review-first confirmation.",
   },
   {
-    icon: Brain, live: true, href: "/dashboard/insights",
-    title: "Behavioral insights",
-    description: "Patterns, recommendations, and the long-term opportunity cost of recurring choices.",
+    icon: Brain, href: "/dashboard/insights",
+    title: "Observations",
+    description: "Behavioral patterns, recommendations, and the long-term cost of recurring choices.",
   },
 ];

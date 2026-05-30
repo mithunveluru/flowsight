@@ -45,7 +45,7 @@ export interface MonthlyReport {
 }
 
 // -------------------------------------------------------------------------
-// Phase 12: AI-Powered Financial Intelligence Reports
+// Phase 12: Financial intelligence reports
 // -------------------------------------------------------------------------
 
 export type ReportPreset =

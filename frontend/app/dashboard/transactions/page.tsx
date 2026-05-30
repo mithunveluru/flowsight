@@ -347,9 +347,9 @@ function EmptyState() {
     <tr>
       <td colSpan={6} className="px-4 py-16 text-center">
         <Download className="mx-auto h-8 w-8 text-slate-200 mb-3" />
-        <p className="text-sm font-medium text-slate-900">No transactions yet</p>
+        <p className="text-sm font-medium text-slate-900">Nothing recorded yet</p>
         <p className="mt-1 text-xs text-slate-400">
-          Import a CSV file or add your first transaction manually.
+          Import a CSV or add your first transaction by hand.
         </p>
         <div className="mt-4 flex justify-center gap-2">
           <Button size="sm" asChild>

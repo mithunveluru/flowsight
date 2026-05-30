@@ -60,7 +60,7 @@ export default function ReceiptsPage() {
         <Button size="sm" asChild>
           <Link href="/dashboard/receipts/upload">
             <Plus className="h-4 w-4" />
-            Scan receipt
+            Scan a receipt
           </Link>
         </Button>
       </div>
@@ -99,10 +99,10 @@ export default function ReceiptsPage() {
                     <FileImage className="mx-auto h-8 w-8 text-slate-200 mb-3" />
                     <p className="text-sm font-medium text-slate-900">No receipts yet</p>
                     <p className="mt-1 text-xs text-slate-400">
-                      Scan your first receipt to extract transaction data.
+                      Scan one to capture the merchant, amount, and date in seconds.
                     </p>
                     <Button size="sm" className="mt-4" asChild>
-                      <Link href="/dashboard/receipts/upload">Scan receipt</Link>
+                      <Link href="/dashboard/receipts/upload">Scan a receipt</Link>
                     </Button>
                   </td>
                 </tr>

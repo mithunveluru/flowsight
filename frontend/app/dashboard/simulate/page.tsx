@@ -157,10 +157,9 @@ export default function SimulatePage() {
       <FadeIn>
         <header className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Decision Simulator</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Decision simulator</h1>
             <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
-              Model a financial decision against your actual baseline. See the cash-flow impact,
-              flexibility shift, and long-term consequences before you commit.
+              Test a financial decision against your real baseline. See the cashflow impact, flexibility shift, and long-term consequences before you commit.
             </p>
           </div>
           <Sliders className="h-5 w-5 text-muted-foreground mt-1.5" strokeWidth={1.5} />
@@ -359,8 +358,7 @@ function ScenarioBuilder({
       </div>
 
       <p className="mt-5 text-[11px] text-muted-foreground leading-relaxed">
-        Results update automatically as you change values. The simulation uses your last 3 months
-        of transactions and active recurring patterns.
+        The projection updates as you adjust values. It uses your last 3 months of transactions and active recurring patterns as the baseline.
       </p>
     </div>
   );
@@ -445,7 +443,7 @@ function ImpactSummary({ result }: { result: SimulationResult }) {
 
   const cards = [
     {
-      label: "Monthly cash-flow impact",
+      label: "Monthly cashflow impact",
       value: result.scenario.type === "ONE_TIME_PURCHASE"
         ? formatINR(0)
         : formatINRSigned(result.monthlyImpact),
@@ -519,7 +517,7 @@ function FlexibilityCard({
         <div>
           <p className="text-sm font-semibold text-foreground">Financial flexibility</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            How much room you have to absorb surprises and pursue new opportunities.
+            Room to absorb surprises and pursue what comes next.
           </p>
         </div>
       </div>
@@ -735,7 +733,7 @@ function LowDataNotice() {
       <div>
         <p className="text-sm font-medium text-amber-900">Limited baseline data</p>
         <p className="mt-0.5 text-xs text-amber-700">
-          We need at least a few months of transaction history for a reliable simulation.{" "}
+          A few months of history make the projection more reliable.{" "}
           <Link href="/dashboard/transactions" className="underline">Add transactions →</Link>
         </p>
       </div>
@@ -756,7 +754,7 @@ function LoadingState({ loading }: { loading: boolean }) {
       <div className="h-72 rounded-xl border bg-card animate-pulse" style={{ borderColor: "hsl(var(--border))" }} />
       {!loading && (
         <p className="text-center text-xs text-muted-foreground">
-          Adjust the scenario on the left to see how this decision would play out.
+          Adjust the scenario on the left to see how this decision plays out.
         </p>
       )}
     </div>

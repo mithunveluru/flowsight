@@ -104,10 +104,9 @@ export default function ReceiptUploadPage() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">Scan receipt</h1>
+            <h1 className="text-xl font-semibold text-slate-900">Scan a receipt</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Upload a photo of your receipt. FlowSight will extract the merchant,
-              amount, and date automatically using OCR.
+              Upload a photo and we will extract the merchant, amount, and date for your review.
             </p>
           </div>
           {quota && <QuotaPill quota={quota} />}
@@ -117,10 +116,9 @@ export default function ReceiptUploadPage() {
       {/* Quota-exceeded notice — soft block, backend enforces too */}
       {quota && !quota.canProcess && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <p className="font-medium">Receipt processing limit reached</p>
+          <p className="font-medium">Receipt analysis limit reached</p>
           <p className="mt-0.5 text-xs text-red-700">
-            You&apos;ve used all {quota.limit} of your receipt processing slots. Existing
-            receipts and analytics remain fully accessible.
+            You have used all {quota.limit} of your receipt analyses. Your existing receipts and analytics remain fully available.
           </p>
         </div>
       )}
@@ -165,7 +163,7 @@ export default function ReceiptUploadPage() {
                 ) : (
                   <>
                     <ScanLine className="h-4 w-4" />
-                    Process receipt
+                    Analyze receipt
                   </>
                 )}
               </Button>
@@ -222,9 +220,9 @@ function DropZone({
       >
         <Upload className={cn("h-8 w-8 mb-3", isDragging ? "text-blue-500" : "text-slate-300")} />
         <p className="text-sm font-medium text-slate-700">
-          Drag &amp; drop receipt image
+          Drop a receipt image here
         </p>
-        <p className="mt-1 text-xs text-slate-400">or click to browse your files</p>
+        <p className="mt-1 text-xs text-slate-400">or click to browse</p>
         <input
           type="file"
           accept={accepted}
@@ -271,7 +269,7 @@ function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
         "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:opacity-90 transition-opacity whitespace-nowrap tabular-nums",
         tone
       )}
-      title="Receipt processing quota"
+      title="Receipt analysis quota"
     >
       {quota.used} / {quota.limit}
     </Link>

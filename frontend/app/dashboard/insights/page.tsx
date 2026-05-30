@@ -139,12 +139,12 @@ function Header({ summary }: { summary?: string }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-        Insights
+        Observations
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {summary
           ? `Your spending profile: ${summary}.`
-          : "Behavioral patterns, smart recommendations, and the long-term cost of your choices."}
+          : "Patterns in your spending, gentle recommendations, and the long-term cost of recurring choices."}
       </p>
     </div>
   );
@@ -432,9 +432,9 @@ function EmptyState() {
       style={{ borderColor: "hsl(var(--border))" }}
     >
       <Brain className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" strokeWidth={1.5} />
-      <p className="text-sm font-medium text-foreground">Not enough data yet</p>
+      <p className="text-sm font-medium text-foreground">Not enough to observe yet</p>
       <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-        We need at least a few months of transactions to surface meaningful patterns and recommendations.
+        Patterns become reliable after a few months of activity. Add transactions to start building the picture.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Link
@@ -448,7 +448,7 @@ function EmptyState() {
           className="rounded-md border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
           style={{ borderColor: "hsl(var(--border))" }}
         >
-          View analytics
+          Open overview
         </Link>
       </div>
     </div>

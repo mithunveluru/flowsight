@@ -77,14 +77,14 @@ export default function LeaksPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Leak detection</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Recoverable spending</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Recoverable spending found in your transaction history
+            Duplicates, price creep, silent drains, and bank fees found in your history.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={rescan} disabled={scanning || loading}>
           <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
-          {scanning ? "Scanning…" : "Re-scan"}
+          {scanning ? "Scanning" : "Scan again"}
         </Button>
       </div>
 
@@ -238,10 +238,9 @@ function EmptyState() {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <AlertOctagon className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No leaks detected</p>
+      <p className="text-sm font-medium text-slate-900">Nothing to recover</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Your spending looks clean — no duplicate subscriptions, price hikes, or fee
-        patterns found in the last 3 months.
+        No duplicate subscriptions, price hikes, or fee patterns showed up in your last three months.
       </p>
       <div className="mt-5">
         <Button size="sm" variant="outline" asChild>

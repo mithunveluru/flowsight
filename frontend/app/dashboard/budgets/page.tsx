@@ -112,7 +112,7 @@ export default function BudgetsPage() {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Budgets</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Set monthly spending limits and track in real time.
+            Set monthly limits per category, and watch progress throughout the month.
           </p>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }}>
@@ -450,16 +450,16 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <Target className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No budgets yet</p>
+      <p className="text-sm font-medium text-slate-900">No budgets set</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Set a monthly limit per category or one overall budget to start tracking your spending.
+        Define a monthly limit per category, or one overall cap, to keep your spending in view.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Button size="sm" onClick={onCreate}>
-          <Plus className="h-4 w-4" /> Create your first budget
+          <Plus className="h-4 w-4" /> Create a budget
         </Button>
         <Button size="sm" variant="outline" asChild>
-          <Link href="/dashboard/analytics">View analytics first</Link>
+          <Link href="/dashboard/analytics">Review your overview first</Link>
         </Button>
       </div>
     </div>

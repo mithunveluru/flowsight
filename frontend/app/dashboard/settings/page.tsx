@@ -88,7 +88,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Account profile, receipt processing usage, and activity history.
+          Your profile, receipt analysis usage, and recent account activity.
         </p>
       </div>
 
@@ -118,7 +118,7 @@ function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () =
     <Card
       icon={<UserIcon className="h-4 w-4" strokeWidth={1.75} />}
       title="Profile"
-      description="Your account details"
+      description="Your account details."
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Full name" value={account.fullName} icon={<UserIcon className="h-3.5 w-3.5" />} />
@@ -149,8 +149,8 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
   return (
     <Card
       icon={<Receipt className="h-4 w-4" strokeWidth={1.75} />}
-      title="Receipt processing"
-      description="Every platform feature is available to you. Only OCR receipt processing is metered."
+      title="Receipt analysis"
+      description="Every product feature is available to you. Only receipt analysis is metered."
     >
       {q.unlimited ? (
         <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-4 py-4">
@@ -160,7 +160,7 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
           <div>
             <p className="text-sm font-semibold text-foreground">Unlimited</p>
             <p className="text-xs text-muted-foreground">
-              No cap on receipt processing — granted by an administrator.
+              No cap on receipt analyses, granted by an administrator.
             </p>
           </div>
         </div>
@@ -189,7 +189,7 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
           </div>
           {over && (
             <p className="text-xs text-red-700">
-              You&apos;ve reached your receipt processing limit. Existing receipts and analytics remain fully accessible — only new OCR uploads are blocked.
+              You have reached your receipt analysis limit. Existing receipts and analytics remain fully available, only new uploads are paused.
             </p>
           )}
         </div>
@@ -213,8 +213,8 @@ function AuditLogCard({
   return (
     <Card
       icon={<Activity className="h-4 w-4" strokeWidth={1.75} />}
-      title="Activity log"
-      description={`${log.totalElements} action${log.totalElements === 1 ? "" : "s"} recorded on your account`}
+      title="Recent activity"
+      description={`${log.totalElements} action${log.totalElements === 1 ? "" : "s"} on your account`}
     >
       {log.content.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>

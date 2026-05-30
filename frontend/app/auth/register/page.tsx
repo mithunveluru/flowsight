@@ -85,7 +85,7 @@ export default function RegisterPage() {
         <div className="mb-6">
           <h1 className="text-lg font-semibold text-slate-900">Create your account</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Start your free trial — no credit card required
+            Free to start. No credit card required.
           </p>
         </div>
 
