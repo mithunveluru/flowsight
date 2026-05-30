@@ -58,16 +58,16 @@ class ReceiptConfirmTest {
     @BeforeEach
     void setUp() {
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        // Phase 11 deps — stubbed; confirm flow doesn't touch entitlements/rate limits
-        EntitlementService entitlementStub = org.mockito.Mockito.mock(EntitlementService.class);
-        AuditLogService auditStub = org.mockito.Mockito.mock(AuditLogService.class);
+        // Quota check happens at upload entry, not in the confirm flow — stub it
+        ReceiptQuotaService quotaStub = org.mockito.Mockito.mock(ReceiptQuotaService.class);
+        AuditLogService    auditStub = org.mockito.Mockito.mock(AuditLogService.class);
         com.flowsight.security.RateLimiter rateLimiterStub = org.mockito.Mockito.mock(
             com.flowsight.security.RateLimiter.class);
 
         service = new ReceiptService(
             receiptRepository, transactionRepository, fileStorage,
             categorizationService, normalizationService, objectMapper,
-            entitlementStub, auditStub, rateLimiterStub,
+            quotaStub, auditStub, rateLimiterStub,
             receiptOcrClient, ocrMapper, ocrService, parser
         );
 

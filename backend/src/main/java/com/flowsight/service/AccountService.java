@@ -2,8 +2,6 @@ package com.flowsight.service;
 
 import com.flowsight.dto.account.AccountResponse;
 import com.flowsight.dto.account.AuditLogResponse;
-import com.flowsight.dto.account.SubscriptionInfo;
-import com.flowsight.dto.account.UsageInfo;
 import com.flowsight.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,30 +16,12 @@ import java.util.UUID;
 @Slf4j
 public class AccountService {
 
-    private final UserService         userService;
-    private final EntitlementService  entitlementService;
-    private final AuditLogService     auditLogService;
+    private final UserService          userService;
+    private final ReceiptQuotaService  quotaService;
+    private final AuditLogService      auditLogService;
 
     public AccountResponse getAccount(UUID userId) {
         User user = userService.findById(userId);
-
-        SubscriptionInfo subscription = SubscriptionInfo.builder()
-            .tier(user.getSubscriptionTier().name())
-            .tierDisplayName(user.getSubscriptionTier().getDisplayName())
-            .monthlyPriceInr(user.getSubscriptionTier().getMonthlyPriceInr())
-            .startedAt(user.getSubscriptionStartedAt())
-            .expiresAt(user.getSubscriptionExpiresAt())
-            .build();
-
-        var usageSnapshot = entitlementService.getUsage(user.getSubscriptionTier(), user.getId());
-        UsageInfo usage = UsageInfo.builder()
-            .budgets(usageSnapshot.getBudgets())
-            .budgetLimit(usageSnapshot.getBudgetLimit())
-            .goals(usageSnapshot.getGoals())
-            .goalLimit(usageSnapshot.getGoalLimit())
-            .receiptsThisMonth(usageSnapshot.getReceiptsThisMonth())
-            .receiptUploadLimit(usageSnapshot.getReceiptUploadLimit())
-            .build();
 
         return AccountResponse.builder()
             .id(user.getId())
@@ -49,8 +29,7 @@ public class AccountService {
             .fullName(user.getFullName())
             .role(user.getRole().name())
             .createdAt(user.getCreatedAt())
-            .subscription(subscription)
-            .usage(usage)
+            .receiptQuota(quotaService.getQuota(user))
             .build();
     }
 

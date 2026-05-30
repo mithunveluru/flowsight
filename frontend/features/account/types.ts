@@ -1,20 +1,9 @@
-export type SubscriptionTier = "FREE" | "PRO" | "ENTERPRISE";
-
-export interface SubscriptionInfo {
-  tier: SubscriptionTier;
-  tierDisplayName: string;
-  monthlyPriceInr: number;
-  startedAt: string;
-  expiresAt: string | null;
-}
-
-export interface UsageInfo {
-  budgets: number;
-  budgetLimit: number;
-  goals: number;
-  goalLimit: number;
-  receiptsThisMonth: number;
-  receiptUploadLimit: number;
+export interface ReceiptQuotaInfo {
+  used: number;
+  limit: number;
+  remaining: number | null;   // null when unlimited
+  unlimited: boolean;
+  canProcess: boolean;
 }
 
 export interface Account {
@@ -23,8 +12,7 @@ export interface Account {
   fullName: string;
   role: string;
   createdAt: string;
-  subscription: SubscriptionInfo;
-  usage: UsageInfo;
+  receiptQuota: ReceiptQuotaInfo;
 }
 
 export interface AuditLogEntry {

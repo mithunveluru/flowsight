@@ -57,9 +57,7 @@ class CsvIngestionRegressionTest {
         pipeline = new TransactionIngestionPipeline(normalization, categorization);
         csvParserService = new CsvParserService();
 
-        // Phase 11 deps — stub no-op behavior since these tests only verify the import contract
-        com.flowsight.service.EntitlementService entitlementStub = org.mockito.Mockito.mock(
-            com.flowsight.service.EntitlementService.class);
+        // CSV import no longer enforces tier limits — stub only audit + rate limiter
         com.flowsight.service.AuditLogService auditStub = org.mockito.Mockito.mock(
             com.flowsight.service.AuditLogService.class);
         com.flowsight.security.RateLimiter rateLimiterStub = org.mockito.Mockito.mock(
@@ -67,7 +65,7 @@ class CsvIngestionRegressionTest {
 
         transactionService = new TransactionService(
             transactionRepository, pipeline, csvParserService, userService,
-            entitlementStub, auditStub, rateLimiterStub
+            auditStub, rateLimiterStub
         );
 
         testUser = User.builder()

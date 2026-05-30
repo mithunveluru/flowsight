@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   FileImage,
+  Infinity as InfinityIcon,
   Loader2,
   ScanLine,
   Upload,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { receiptApi } from "@/features/receipts/api";
+import { accountApi } from "@/features/account/api";
+import type { ReceiptQuotaInfo } from "@/features/account/types";
 import { cn } from "@/lib/utils";
 
 type UploadState = "idle" | "selected" | "uploading" | "error";
@@ -27,6 +30,13 @@ export default function ReceiptUploadPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [quota, setQuota] = useState<ReceiptQuotaInfo | null>(null);
+
+  // Fetch the user's quota on mount so we can show a non-intrusive indicator
+  // and block uploads client-side once exhausted (backend also enforces).
+  useEffect(() => {
+    accountApi.get().then((a) => setQuota(a.receiptQuota)).catch(() => {});
+  }, []);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -92,12 +102,28 @@ export default function ReceiptUploadPage() {
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Scan receipt</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Upload a photo of your receipt. FlowSight will extract the merchant,
-          amount, and date automatically using OCR.
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Scan receipt</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Upload a photo of your receipt. FlowSight will extract the merchant,
+              amount, and date automatically using OCR.
+            </p>
+          </div>
+          {quota && <QuotaPill quota={quota} />}
+        </div>
       </div>
+
+      {/* Quota-exceeded notice — soft block, backend enforces too */}
+      {quota && !quota.canProcess && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-medium">Receipt processing limit reached</p>
+          <p className="mt-0.5 text-xs text-red-700">
+            You&apos;ve used all {quota.limit} of your receipt processing slots. Existing
+            receipts and analytics remain fully accessible.
+          </p>
+        </div>
+      )}
 
       {/* Upload zone */}
       {uploadState === "idle" || uploadState === "error" ? (
@@ -213,6 +239,42 @@ function DropZone({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Small non-intrusive pill showing the user's receipt quota.
+ * Shows "32 / 50" by default or an infinity badge for unlimited users.
+ * Links to settings for full detail.
+ */
+function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
+  if (quota.unlimited) {
+    return (
+      <Link
+        href="/dashboard/settings"
+        className="inline-flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100 transition-colors whitespace-nowrap"
+      >
+        <InfinityIcon className="h-3 w-3" strokeWidth={2} />
+        Unlimited
+      </Link>
+    );
+  }
+  const pct = (quota.used / Math.max(1, quota.limit)) * 100;
+  const tone =
+    pct >= 100 ? "border-red-200    bg-red-50    text-red-700"
+    : pct >= 80  ? "border-amber-200  bg-amber-50  text-amber-700"
+    :              "border-slate-200  bg-slate-50  text-slate-600";
+  return (
+    <Link
+      href="/dashboard/settings"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:opacity-90 transition-opacity whitespace-nowrap tabular-nums",
+        tone
+      )}
+      title="Receipt processing quota"
+    >
+      {quota.used} / {quota.limit}
+    </Link>
   );
 }
 

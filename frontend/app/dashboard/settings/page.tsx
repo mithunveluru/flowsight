@@ -4,16 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Activity,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
-  Crown,
-  Gauge,
+  Infinity as InfinityIcon,
   LogOut,
   Mail,
+  Receipt,
   Shield,
-  Sparkles,
   User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +19,6 @@ import type {
   Account,
   AuditLogEntry,
   AuditLogPage,
-  SubscriptionTier,
 } from "@/features/account/types";
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
@@ -30,15 +26,6 @@ import { cn } from "@/lib/utils";
 // -------------------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------------------
-
-function formatINR(v: number) {
-  return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-function fmtUsage(used: number, limit: number) {
-  if (limit >= Number.MAX_SAFE_INTEGER || limit === 2147483647) return `${used} of ∞`;
-  return `${used} of ${limit}`;
-}
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -52,12 +39,6 @@ function fmtTimestamp(iso: string) {
     hour: "2-digit", minute: "2-digit",
   });
 }
-
-const TIER_META: Record<SubscriptionTier, { icon: React.ElementType; bg: string; fg: string }> = {
-  FREE:       { icon: UserIcon, bg: "bg-muted",        fg: "text-foreground/80" },
-  PRO:        { icon: Sparkles, bg: "bg-blue-50",      fg: "text-blue-700" },
-  ENTERPRISE: { icon: Crown,    bg: "bg-violet-50",    fg: "text-violet-700" },
-};
 
 const ACTION_LABELS: Record<string, string> = {
   USER_REGISTERED:     "Account created",
@@ -107,7 +88,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Account profile, subscription, usage, and activity history.
+          Account profile, receipt processing usage, and activity history.
         </p>
       </div>
 
@@ -116,8 +97,7 @@ export default function SettingsPage() {
       ) : (
         <>
           <ProfileCard account={account} onSignOut={handleSignOut} />
-          <SubscriptionCard account={account} />
-          <UsageCard account={account} />
+          <ReceiptQuotaCard account={account} />
           <AuditLogCard
             log={auditLog}
             currentPage={auditPage}
@@ -157,99 +137,64 @@ function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () =
 }
 
 // -------------------------------------------------------------------------
-// Subscription
+// Receipt quota — the only artificial limit in the product
 // -------------------------------------------------------------------------
 
-function SubscriptionCard({ account }: { account: Account }) {
-  const tier = account.subscription.tier;
-  const meta = TIER_META[tier];
-  const Icon = meta.icon;
+function ReceiptQuotaCard({ account }: { account: Account }) {
+  const q = account.receiptQuota;
+  const pct = q.unlimited ? 0 : Math.min(100, (q.used / Math.max(1, q.limit)) * 100);
+  const near = !q.unlimited && pct >= 80;
+  const over = !q.unlimited && pct >= 100;
 
   return (
     <Card
-      icon={<CreditCard className="h-4 w-4" strokeWidth={1.75} />}
-      title="Subscription"
-      description="Your current plan"
+      icon={<Receipt className="h-4 w-4" strokeWidth={1.75} />}
+      title="Receipt processing"
+      description="Every platform feature is available to you. Only OCR receipt processing is metered."
     >
-      <div className="flex items-start justify-between gap-6">
-        <div className="flex items-start gap-4">
-          <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-lg", meta.bg)}>
-            <Icon className={cn("h-5 w-5", meta.fg)} strokeWidth={1.75} />
+      {q.unlimited ? (
+        <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-4 py-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50">
+            <InfinityIcon className="h-4 w-4 text-violet-700" strokeWidth={2} />
           </div>
           <div>
-            <p className="text-headline">{account.subscription.tierDisplayName} plan</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {account.subscription.monthlyPriceInr > 0
-                ? `${formatINR(account.subscription.monthlyPriceInr)}/month`
-                : "Free forever, with sensible limits"}
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Started {fmtDate(account.subscription.startedAt)}
+            <p className="text-sm font-semibold text-foreground">Unlimited</p>
+            <p className="text-xs text-muted-foreground">
+              No cap on receipt processing — granted by an administrator.
             </p>
           </div>
         </div>
-
-        {tier === "FREE" && (
-          <div className="hidden sm:block">
-            <Button size="sm" disabled title="Payment processing not yet enabled">
-              Upgrade
-            </Button>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <p className="text-sm text-foreground">
+              <span className="font-semibold tabular-nums">{q.used}</span>
+              <span className="text-muted-foreground"> of {q.limit} receipts</span>
+            </p>
+            <p className={cn(
+              "text-xs tabular-nums",
+              over ? "text-red-700" : near ? "text-amber-700" : "text-muted-foreground"
+            )}>
+              {q.remaining ?? 0} remaining
+            </p>
           </div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-// -------------------------------------------------------------------------
-// Usage
-// -------------------------------------------------------------------------
-
-function UsageCard({ account }: { account: Account }) {
-  const u = account.usage;
-  const rows = [
-    { label: "Budgets",            used: u.budgets,           limit: u.budgetLimit         },
-    { label: "Financial goals",    used: u.goals,             limit: u.goalLimit           },
-    { label: "Receipts this month",used: u.receiptsThisMonth, limit: u.receiptUploadLimit  },
-  ];
-
-  return (
-    <Card
-      icon={<Gauge className="h-4 w-4" strokeWidth={1.75} />}
-      title="Usage"
-      description="Your activity vs plan limits"
-    >
-      <div className="space-y-4">
-        {rows.map((r) => (
-          <UsageRow key={r.label} {...r} />
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function UsageRow({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const unlimited = limit === 2147483647 || limit >= Number.MAX_SAFE_INTEGER;
-  const pct = unlimited ? 0 : Math.min(100, (used / Math.max(1, limit)) * 100);
-  const near  = !unlimited && pct >= 80;
-  const over  = !unlimited && pct >= 100;
-
-  return (
-    <div>
-      <div className="flex items-baseline justify-between mb-1.5">
-        <p className="text-sm text-foreground">{label}</p>
-        <p className="text-sm tabular-nums text-muted-foreground">{fmtUsage(used, limit)}</p>
-      </div>
-      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn(
-            "h-full transition-all duration-500",
-            over ? "bg-red-500" : near ? "bg-amber-500" : "bg-emerald-500"
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-500",
+                over ? "bg-red-500" : near ? "bg-amber-500" : "bg-emerald-500"
+              )}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          {over && (
+            <p className="text-xs text-red-700">
+              You&apos;ve reached your receipt processing limit. Existing receipts and analytics remain fully accessible — only new OCR uploads are blocked.
+            </p>
           )}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -341,7 +286,7 @@ function AuditRow({ entry }: { entry: AuditLogEntry }) {
 }
 
 // -------------------------------------------------------------------------
-// Shared
+// Shared primitives
 // -------------------------------------------------------------------------
 
 function Card({
@@ -386,7 +331,7 @@ function Field({ label, value, icon }: { label: string; value: string; icon: Rea
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      {[1, 2, 3, 4].map((i) => (
+      {[1, 2, 3].map((i) => (
         <div key={i} className="h-32 rounded-xl border bg-card animate-pulse"
              style={{ borderColor: "hsl(var(--border))" }} />
       ))}

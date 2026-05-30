@@ -91,7 +91,6 @@ public class TransactionService {
 
         User user = userService.findById(userId);
         CsvParserService.ParseResult parsed = csvParserService.parse(file);
-        entitlementService.checkCsvImportSize(user.getSubscriptionTier(), parsed.getRows().size());
 
         List<Transaction> toSave = new ArrayList<>();
         List<String> errors = new ArrayList<>(parsed.getErrors());
