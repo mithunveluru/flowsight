@@ -21,6 +21,14 @@ import type {
   Recommendation,
   Severity,
 } from "@/features/insights/types";
+import {
+  AmbientGlow,
+  AnimatedNumber,
+  FadeIn,
+  RevealOnScroll,
+  StaggerContainer,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
 // -------------------------------------------------------------------------
@@ -82,34 +90,42 @@ export default function InsightsPage() {
   const hasConsequences     = data.topConsequences.length > 0;
 
   return (
-    <div className="space-y-12 animate-fade-in">
-      <Header summary={data.profile.summary} />
+    <div className="space-y-12">
+      <FadeIn><Header summary={data.profile.summary} /></FadeIn>
 
-      {/* Hero — total potential savings */}
+      {/* Hero — total potential savings, with ambient glow + animated counters */}
       {data.totalPotentialMonthlySaving > 0 && (
-        <SavingsHero
-          monthly={data.totalPotentialMonthlySaving}
-          annual={data.totalPotentialAnnualSaving}
-        />
+        <FadeIn delay={0.08}>
+          <SavingsHero
+            monthly={data.totalPotentialMonthlySaving}
+            annual={data.totalPotentialAnnualSaving}
+          />
+        </FadeIn>
       )}
 
-      {/* Behavioral patterns */}
+      {/* Behavioral patterns — scroll-reveal */}
       {hasPatterns && (
-        <PatternsSection patterns={data.profile.patterns} />
+        <RevealOnScroll delay={0.04}>
+          <PatternsSection patterns={data.profile.patterns} />
+        </RevealOnScroll>
       )}
 
       {/* Recommendations */}
       {hasRecommendations && (
-        <RecommendationsSection recommendations={data.recommendations} />
+        <RevealOnScroll delay={0.06}>
+          <RecommendationsSection recommendations={data.recommendations} />
+        </RevealOnScroll>
       )}
 
       {/* Decision consequences — FlowSight's signature view */}
       {hasConsequences && (
-        <ConsequencesSection consequences={data.topConsequences} />
+        <RevealOnScroll delay={0.08}>
+          <ConsequencesSection consequences={data.topConsequences} />
+        </RevealOnScroll>
       )}
 
       {!hasPatterns && !hasRecommendations && !hasConsequences && (
-        <EmptyState />
+        <FadeIn><EmptyState /></FadeIn>
       )}
     </div>
   );
@@ -141,10 +157,11 @@ function Header({ summary }: { summary?: string }) {
 function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
   return (
     <section
-      className="rounded-xl border bg-gradient-to-br from-emerald-50 via-white to-white p-8 lg:p-10"
+      className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-emerald-50 via-white to-white p-8 lg:p-10"
       style={{ borderColor: "hsl(var(--border))" }}
     >
-      <div className="flex items-start gap-4">
+      <AmbientGlow />
+      <div className="relative flex items-start gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white">
           <Sparkles className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
         </div>
@@ -153,10 +170,14 @@ function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
             Potential monthly savings
           </p>
           <p className="mt-1.5 stat-value text-4xl lg:text-5xl">
-            {formatINR(monthly)}
+            <AnimatedNumber value={monthly} format={(v) => `₹${v.toLocaleString("en-IN")}`} />
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            That&apos;s <span className="font-medium text-foreground tabular-nums">{formatINR(annual)}</span> a year if you act on every suggestion below.
+            That&apos;s{" "}
+            <span className="font-medium text-foreground tabular-nums">
+              <AnimatedNumber value={annual} format={(v) => `₹${v.toLocaleString("en-IN")}`} />
+            </span>{" "}
+            a year if you act on every suggestion below.
           </p>
         </div>
       </div>
@@ -176,11 +197,13 @@ function PatternsSection({ patterns }: { patterns: BehavioralPattern[] }) {
         title="Behavioral patterns"
         subtitle="How your money moves, week by week"
       />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {patterns.map((p) => (
-          <PatternCard key={p.code} pattern={p} />
+          <StaggerItem key={p.code}>
+            <PatternCard pattern={p} />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </section>
   );
 }
@@ -217,11 +240,13 @@ function RecommendationsSection({ recommendations }: { recommendations: Recommen
         title="Recommendations"
         subtitle="Actionable steps ranked by impact"
       />
-      <div className="space-y-3">
+      <StaggerContainer className="space-y-3" stagger={0.05}>
         {recommendations.map((r, i) => (
-          <RecommendationCard key={i} recommendation={r} />
+          <StaggerItem key={i}>
+            <RecommendationCard recommendation={r} />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </section>
   );
 }
@@ -290,11 +315,13 @@ function ConsequencesSection({ consequences }: { consequences: ConsequenceProjec
         title="The long view"
         subtitle="What your recurring choices actually cost over time"
       />
-      <div className="space-y-3">
+      <StaggerContainer className="space-y-3" stagger={0.05}>
         {consequences.map((c, i) => (
-          <ConsequenceCard key={i} projection={c} />
+          <StaggerItem key={i}>
+            <ConsequenceCard projection={c} />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
       <p className="mt-4 text-[11px] text-muted-foreground">
         Opportunity cost assumes 8% annual return compounded monthly — a conservative long-run equity index assumption.
       </p>

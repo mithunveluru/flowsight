@@ -36,32 +36,45 @@ import type {
   DateRangePreset,
   MonthlyTrendPoint,
 } from "@/features/analytics/types";
+import {
+  AnimatedNumber,
+  FadeIn,
+  RevealOnScroll,
+  StaggerContainer,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
 // -------------------------------------------------------------------------
 // Category color palette (hex for Recharts)
 // -------------------------------------------------------------------------
 
+// Category palette — desaturated, executive-grade.
+// Each color was darkened ~10% lightness and pulled 5-15% saturation to
+// reduce the "rainbow dashboard" effect while keeping categories distinct.
 const CATEGORY_COLORS: Record<string, string> = {
-  FOOD_DINING:    "#f97316",
-  GROCERIES:      "#22c55e",
-  SHOPPING:       "#a855f7",
-  TRANSPORTATION: "#3b82f6",
-  UTILITIES:      "#64748b",
-  ENTERTAINMENT:  "#ec4899",
-  HEALTHCARE:     "#ef4444",
-  FINANCE:        "#6366f1",
-  EDUCATION:      "#eab308",
-  TRAVEL:         "#14b8a6",
-  SUBSCRIPTIONS:  "#8b5cf6",
-  INCOME:         "#10b981",
-  TRANSFER:       "#06b6d4",
-  OTHER:          "#94a3b8",
-  UNCATEGORIZED:  "#cbd5e1",
+  FOOD_DINING:    "#d97a4f",   // muted coral
+  GROCERIES:      "#3f9a6b",   // sage green
+  SHOPPING:       "#8e5fbe",   // muted plum
+  TRANSPORTATION: "#5577c4",   // dusty blue
+  UTILITIES:      "#64748b",   // slate
+  ENTERTAINMENT:  "#c45e96",   // muted rose
+  HEALTHCARE:     "#c44b4b",   // muted red
+  FINANCE:        "#5e6ad2",   // brand indigo
+  EDUCATION:      "#b89020",   // muted gold
+  TRAVEL:         "#2f9e94",   // teal
+  SUBSCRIPTIONS:  "#7a5fc4",   // muted violet
+  INCOME:         "#0f9b8e",   // positive teal
+  TRANSFER:       "#3e9eb0",   // cyan-slate
+  OTHER:          "#94a3b8",   // neutral
+  UNCATEGORIZED:  "#cbd5e1",   // faint
 };
 
-const SPEND_COLOR  = "#f97316";
-const INCOME_COLOR = "#10b981";
+// Refined chart palette — muted, executive-grade.
+// Spend uses the refined brand indigo; income uses a muted teal.
+// Neither competes with the per-category palette below.
+const SPEND_COLOR  = "#5e6ad2";   // refined indigo (matches --brand)
+const INCOME_COLOR = "#0f9b8e";   // muted teal-green (positive accent)
 
 // -------------------------------------------------------------------------
 // Helpers
@@ -156,52 +169,66 @@ export default function AnalyticsPage() {
     bounds.monthsWithActivity.length > 0;
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="space-y-10">
       {/* Page header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Spending patterns and behavioral insights.
-          </p>
+      <FadeIn>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Spending patterns and behavioral insights.
+            </p>
+          </div>
+          <DateRangeSelector value={preset} onChange={(p) => setPreset(p)} />
         </div>
-        <DateRangeSelector value={preset} onChange={(p) => setPreset(p)} />
-      </div>
+      </FadeIn>
 
       {/* Custom range banner — shown when arriving from a deep link */}
       {hasCustomRange && customFrom && customTo && (
-        <CustomRangeBanner from={customFrom} to={customTo} />
+        <FadeIn delay={0.04}>
+          <CustomRangeBanner from={customFrom} to={customTo} />
+        </FadeIn>
       )}
 
       {error ? (
-        <ErrorState message={error} onRetry={() => load(preset)} />
+        <FadeIn><ErrorState message={error} onRetry={() => load(preset)} /></FadeIn>
       ) : dataElsewhere ? (
-        <DataElsewhereHint bounds={bounds!} />
+        <FadeIn><DataElsewhereHint bounds={bounds!} /></FadeIn>
       ) : isEmpty ? (
-        <EmptyState />
+        <FadeIn><EmptyState /></FadeIn>
       ) : (
         <>
-          {/* Summary cards */}
-          <SummaryCards overview={overview} loading={loading} />
+          {/* Summary cards — animated counter values */}
+          <FadeIn delay={0.08}>
+            <SummaryCards overview={overview} loading={loading} />
+          </FadeIn>
 
           {/* Behavioral alerts */}
           {overview && overview.alerts.length > 0 && (
-            <AlertsPanel alerts={overview.alerts} />
+            <RevealOnScroll delay={0.04}>
+              <AlertsPanel alerts={overview.alerts} />
+            </RevealOnScroll>
           )}
 
-          {/* Monthly trend — full width */}
-          <Section title="Monthly cashflow" subtitle="Spend vs. income over time">
-            <SpendTrendChart trend={trend} loading={loading} />
-          </Section>
+          {/* Monthly trend — full width, scroll-reveal */}
+          <RevealOnScroll delay={0.06}>
+            <Section title="Monthly cashflow" subtitle="Spend vs. income over time">
+              <SpendTrendChart trend={trend} loading={loading} />
+            </Section>
+          </RevealOnScroll>
 
-          {/* Category breakdown + Top merchants */}
+          {/* Category breakdown + Top merchants — scroll-reveal */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <Section title="Spend by category" subtitle={`${preset === "1M" ? "This month" : "Selected period"}`}>
-              <CategoryDonutChart overview={overview} loading={loading} />
-            </Section>
-            <Section title="Top merchants" subtitle="By total spend">
-              <TopMerchantsChart overview={overview} loading={loading} />
-            </Section>
+            <RevealOnScroll delay={0.08}>
+              <Section title="Spend by category" subtitle={`${preset === "1M" ? "This month" : "Selected period"}`}>
+                <CategoryDonutChart overview={overview} loading={loading} />
+              </Section>
+            </RevealOnScroll>
+            <RevealOnScroll delay={0.12}>
+              <Section title="Top merchants" subtitle="By total spend">
+                <TopMerchantsChart overview={overview} loading={loading} />
+              </Section>
+            </RevealOnScroll>
           </div>
         </>
       )}
@@ -261,25 +288,39 @@ function SummaryCards({
   overview: AnalyticsOverview | null;
   loading: boolean;
 }) {
-  const cards = [
-    { label: "Total spend",   value: overview ? formatINR(overview.totalSpend)   : null },
-    { label: "Total income",  value: overview ? formatINR(overview.totalIncome)  : null },
-    { label: "Net cashflow",  value: overview ? formatINR(overview.netCashflow)  : null },
-    { label: "Transactions",  value: overview ? String(overview.transactionCount) : null },
-  ];
+  // Each card carries its raw numeric value for the animated counter.
+  // The "Net cashflow" card preserves negative sign via the formatter.
+  const cards = overview
+    ? [
+        { label: "Total spend",  value: overview.totalSpend,        format: (v: number) => `₹${v.toLocaleString("en-IN")}` },
+        { label: "Total income", value: overview.totalIncome,       format: (v: number) => `₹${v.toLocaleString("en-IN")}` },
+        { label: "Net cashflow", value: overview.netCashflow,       format: (v: number) => `${v < 0 ? "−" : ""}₹${Math.abs(v).toLocaleString("en-IN")}` },
+        { label: "Transactions", value: overview.transactionCount,  format: (v: number) => String(v) },
+      ]
+    : [];
 
   return (
     <div
       className="grid divide-x divide-y sm:divide-y-0 sm:grid-cols-2 lg:grid-cols-4 overflow-hidden rounded-xl border bg-card"
       style={{ borderColor: "hsl(var(--border))" }}
     >
-      {cards.map((card) => (
-        <div key={card.label} className="px-6 py-5">
-          <p className="stat-label">{card.label}</p>
-          {loading || !card.value ? (
-            <div className="mt-2 h-8 w-28 rounded-md bg-muted animate-pulse" />
+      {(loading || !overview ? [0, 1, 2, 3] : cards).map((card, idx) => (
+        <div key={idx} className="px-6 py-5">
+          {loading || !overview ? (
+            <>
+              <div className="h-3.5 w-20 rounded bg-muted animate-pulse" />
+              <div className="mt-2.5 h-8 w-28 rounded-md bg-muted animate-pulse" />
+            </>
           ) : (
-            <p className="mt-1.5 stat-value">{card.value}</p>
+            <>
+              <p className="stat-label">{(card as {label: string}).label}</p>
+              <p className="mt-1.5 stat-value">
+                <AnimatedNumber
+                  value={(card as {value: number}).value}
+                  format={(card as {format: (v: number) => string}).format}
+                />
+              </p>
+            </>
           )}
         </div>
       ))}

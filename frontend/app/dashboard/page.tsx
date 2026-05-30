@@ -16,7 +16,17 @@ import {
 import { useAuthStore } from "@/store/auth";
 import { analyticsApi } from "@/features/analytics/api";
 import type { AnalyticsOverview } from "@/features/analytics/types";
+import {
+  AmbientGlow,
+  AnimatedNumber,
+  FadeIn,
+  StaggerContainer,
+  StaggerItem,
+} from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
+
+const formatINRDigits = (v: number) =>
+  v.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
 function formatINR(value: number): string {
   return `₹${Number(value).toLocaleString("en-IN", {
@@ -57,47 +67,59 @@ export default function DashboardPage() {
   const hasData = overview && overview.transactionCount > 0;
 
   return (
-    <div className="space-y-12 animate-fade-in">
-      {/* Hero — calm, generous space */}
-      <section>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {greeting()}, {firstName}.
-        </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          Here&apos;s your financial pulse for {monthLabel()}.
-        </p>
-      </section>
+    <div className="space-y-12">
+      {/* Hero — calm, generous space, ambient breathing */}
+      <FadeIn>
+        <section>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {greeting()}, {firstName}.
+          </h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            Here&apos;s your financial pulse for {monthLabel()}.
+          </p>
+        </section>
+      </FadeIn>
 
-      {/* Primary metric — single hero number */}
-      <section>
-        <HeroMetric overview={overview} hasData={!!hasData} />
-      </section>
+      {/* Primary metric — animates from 0 to the real number */}
+      <FadeIn delay={0.08}>
+        <section>
+          <HeroMetric overview={overview} hasData={!!hasData} />
+        </section>
+      </FadeIn>
 
-      {/* Quick actions — restrained */}
+      {/* Quick actions — staggered entrance */}
       <section>
-        <div className="section-header">
-          <p className="section-title">Quick actions</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
-            <QuickAction key={action.label} {...action} />
-          ))}
-        </div>
-      </section>
-
-      {/* Modules — single column at small, lighter cards */}
-      <section>
-        <div className="section-header">
-          <div>
-            <p className="section-title">Intelligence modules</p>
-            <p className="section-subtitle">Tools available across your dashboard</p>
+        <FadeIn delay={0.16}>
+          <div className="section-header">
+            <p className="section-title">Quick actions</p>
           </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((mod) => (
-            <ModuleCard key={mod.title} {...mod} />
+        </FadeIn>
+        <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {quickActions.map((action) => (
+            <StaggerItem key={action.label}>
+              <QuickAction {...action} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
+      </section>
+
+      {/* Modules — staggered entrance */}
+      <section>
+        <FadeIn delay={0.24}>
+          <div className="section-header">
+            <div>
+              <p className="section-title">Intelligence modules</p>
+              <p className="section-subtitle">Tools available across your dashboard</p>
+            </div>
+          </div>
+        </FadeIn>
+        <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" stagger={0.04}>
+          {modules.map((mod) => (
+            <StaggerItem key={mod.title}>
+              <ModuleCard {...mod} />
+            </StaggerItem>
+          ))}
+        </StaggerContainer>
       </section>
     </div>
   );
@@ -148,28 +170,26 @@ function HeroMetric({
   const positive = net >= 0;
 
   return (
-    <div className="card-refined p-8 lg:p-10">
-      <div className="flex items-start justify-between gap-6">
+    <div className="card-refined relative overflow-hidden p-8 lg:p-10">
+      {/* Ambient breathing glow — very subtle, restrained */}
+      <AmbientGlow />
+
+      <div className="relative flex items-start justify-between gap-6">
         <div>
           <p className="stat-label">Net cashflow this month</p>
           <p className="mt-3 stat-value text-4xl lg:text-5xl">
-            {positive ? "" : "−"}{formatINR(Math.abs(net))}
+            {positive ? "" : "−"}
+            <AnimatedNumber
+              value={Math.abs(net)}
+              format={(v) => `₹${formatINRDigits(v)}`}
+            />
           </p>
           <div className="mt-4 flex items-center gap-6">
-            <MetricInline
-              label="Spent"
-              value={formatINR(overview.totalSpend)}
-            />
+            <MetricInline label="Spent"        value={overview.totalSpend} />
             <div className="h-4 w-px bg-border" />
-            <MetricInline
-              label="Earned"
-              value={formatINR(overview.totalIncome)}
-            />
+            <MetricInline label="Earned"       value={overview.totalIncome} />
             <div className="h-4 w-px bg-border" />
-            <MetricInline
-              label="Transactions"
-              value={String(overview.transactionCount)}
-            />
+            <MetricInline label="Transactions" value={overview.transactionCount} isCount />
           </div>
         </div>
 
@@ -185,14 +205,23 @@ function HeroMetric({
   );
 }
 
-function MetricInline({ label, value }: { label: string; value: string }) {
+function MetricInline({
+  label, value, isCount = false,
+}: {
+  label: string;
+  value: number;
+  isCount?: boolean;
+}) {
   return (
     <div>
       <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
         {label}
       </p>
       <p className="mt-0.5 text-sm font-medium text-foreground tabular-nums">
-        {value}
+        <AnimatedNumber
+          value={value}
+          format={(v) => isCount ? String(v) : `₹${formatINRDigits(v)}`}
+        />
       </p>
     </div>
   );

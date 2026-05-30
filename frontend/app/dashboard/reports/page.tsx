@@ -33,6 +33,13 @@ import {
   CATEGORY_OPTIONS,
   type TransactionCategory,
 } from "@/features/transactions/types";
+import {
+  AnimatePresence,
+  AnimatedSwitch,
+  FadeIn,
+  motion,
+  PulseDot,
+} from "@/components/motion/primitives";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -542,40 +549,59 @@ function IntelligenceReportsCard() {
   );
 }
 
+// Multi-step labels shown while the system "is understanding" the data.
+// Each step rotates every 1.5s during GENERATING — gives the user the sense
+// of intentional analysis rather than a spinner that says "loading".
+const ANALYSIS_STEPS = [
+  "Loading your transaction history",
+  "Detecting spending patterns",
+  "Identifying recurring commitments",
+  "Surfacing financial leaks",
+  "Composing executive summary",
+  "Rendering report layout",
+] as const;
+
 function ActiveJobCard({
   job, onDownload,
 }: {
   job: ReportJob;
   onDownload: (j: ReportJob) => void;
 }) {
-  const progressLabel =
-    job.status === "PENDING"    ? "Queued"
-    : job.status === "GENERATING" ? "Analyzing your data"
-    : job.status === "READY"     ? "Ready to download"
-    : "Generation failed";
+  const isReady    = job.status === "READY";
+  const isFailed   = job.status === "FAILED";
+  const inProgress = job.status === "PENDING" || job.status === "GENERATING";
 
-  const progressPct =
-    job.status === "PENDING"    ? 20
-    : job.status === "GENERATING" ? 65
-    : job.status === "READY"     ? 100
-    : 100;
+  // Rotate through the analysis steps during GENERATING to create the
+  // perception of intelligent work happening behind the scenes.
+  const [stepIdx, setStepIdx] = useState(0);
+  useEffect(() => {
+    if (!inProgress) return;
+    const t = setInterval(() => setStepIdx((i) => (i + 1) % ANALYSIS_STEPS.length), 1500);
+    return () => clearInterval(t);
+  }, [inProgress]);
 
-  const isReady = job.status === "READY";
+  const targetPct = isReady ? 100 : isFailed ? 100 : job.status === "PENDING" ? 25 : 70;
+  const progressColor = isReady ? "bg-emerald-500" : isFailed ? "bg-red-500" : "bg-blue-500";
 
   return (
-    <div
+    <motion.div
+      layout
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "rounded-xl border p-5 transition-colors",
+        "rounded-xl border p-5",
         isReady ? "border-emerald-200 bg-emerald-50/30" : "bg-card"
       )}
       style={!isReady ? { borderColor: "hsl(var(--border))" } : undefined}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">{job.periodLabel}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {job.periodStart} → {job.periodEnd}
-          </p>
+        <div className="flex-1 min-w-0 flex items-start gap-2">
+          {inProgress && <PulseDot className="mt-1.5 shrink-0" />}
+          <div>
+            <p className="text-sm font-semibold text-foreground">{job.periodLabel}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {job.periodStart} → {job.periodEnd}
+            </p>
+          </div>
         </div>
         {isReady && (
           <Button size="sm" onClick={() => onDownload(job)}>
@@ -585,34 +611,43 @@ function ActiveJobCard({
       </div>
 
       <div className="mt-4 space-y-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className={cn(
-            "flex items-center gap-1.5",
-            isReady ? "text-emerald-700"
-            : job.status === "FAILED" ? "text-red-700"
-            : "text-muted-foreground"
-          )}>
-            {job.status === "GENERATING" && <Loader2 className="h-3 w-3 animate-spin" />}
-            {isReady && <CheckCircle2 className="h-3 w-3" />}
-            {job.status === "FAILED" && <XCircle className="h-3 w-3" />}
-            {progressLabel}
-          </span>
+        <div className="flex items-center justify-between text-xs h-4">
+          <AnimatedSwitch
+            viewKey={isReady ? "ready" : isFailed ? "failed" : `step-${stepIdx}`}
+            className="flex items-center gap-1.5"
+          >
+            {isReady ? (
+              <span className="flex items-center gap-1.5 text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Ready to download
+              </span>
+            ) : isFailed ? (
+              <span className="flex items-center gap-1.5 text-red-700">
+                <XCircle className="h-3 w-3" />
+                Generation failed
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {ANALYSIS_STEPS[stepIdx]}
+              </span>
+            )}
+          </AnimatedSwitch>
           {job.pdfSizeBytes != null && <span className="text-muted-foreground">{fmtBytes(job.pdfSizeBytes)}</span>}
         </div>
         <div className="h-1 rounded-full bg-muted overflow-hidden">
-          <div
-            className={cn(
-              "h-full transition-all duration-700",
-              isReady ? "bg-emerald-500" : job.status === "FAILED" ? "bg-red-500" : "bg-blue-500"
-            )}
-            style={{ width: `${progressPct}%` }}
+          <motion.div
+            className={cn("h-full", progressColor)}
+            initial={{ width: 0 }}
+            animate={{ width: `${targetPct}%` }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           />
         </div>
         {job.errorMessage && (
           <p className="mt-2 text-xs text-red-700">{job.errorMessage}</p>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

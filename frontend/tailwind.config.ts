@@ -61,7 +61,27 @@ const config: Config = {
         brand: {
           DEFAULT: "hsl(var(--brand))",
           soft: "hsl(var(--brand-soft))",
+          foreground: "hsl(var(--brand-foreground))",
         },
+        positive: {
+          DEFAULT: "hsl(var(--positive))",
+          soft: "hsl(var(--positive-soft))",
+        },
+        caution: {
+          DEFAULT: "hsl(var(--caution))",
+          soft: "hsl(var(--caution-soft))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          soft: "hsl(var(--warning-soft))",
+        },
+      },
+      boxShadow: {
+        /* Refined card shadows — three-layer specular + drop + hairline ring */
+        "card-rest":
+          "0 1px 1px 0 rgba(15, 23, 42, 0.025), 0 2px 6px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.045)",
+        "card-hover":
+          "0 1px 1px 0 rgba(15, 23, 42, 0.03), 0 4px 12px -3px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.06)",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -4,91 +4,118 @@
 
 @layer base {
   /* ============================================================
-     LIGHT THEME — refined Apple-quality palette
-     - background: neutral white with subtle warmth
-     - surface: barely-visible elevation
-     - accent: single restrained slate-blue, used sparingly
-     - borders: nearly invisible (slate-100/200 range)
+     LIGHT THEME — refined fintech palette
+     - background: barely-tinted off-white (lifts pure-white cards visually)
+     - accent: refined indigo (Linear/Stripe family — less neon than pure blue)
+     - semantics: muted teal for positive, warm amber for caution
+     - borders: very thin and slightly indigo-tinted for warmth
      ============================================================ */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 22% 12%;
+    /* Surfaces — subtle cool warmth on the body so cards lift naturally */
+    --background: 220 25% 99%;
+    --foreground: 222 28% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 22% 12%;
+    --card-foreground: 222 28% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 22% 12%;
+    --popover-foreground: 222 28% 11%;
 
-    --primary: 222 22% 14%;
+    /* Primary — deep slate-indigo for dark filled buttons */
+    --primary: 222 38% 13%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 97%;
-    --secondary-foreground: 222 22% 14%;
+    --secondary: 220 22% 96.5%;
+    --secondary-foreground: 222 28% 13%;
 
-    --muted: 220 14% 97%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 220 22% 96.5%;
+    --muted-foreground: 220 10% 44%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 22% 14%;
+    --accent: 220 22% 96%;
+    --accent-foreground: 222 28% 13%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 93%;
-    --input: 220 13% 91%;
-    --ring: 222 22% 14%;
+    /* Borders — slightly indigo, very thin */
+    --border: 220 18% 91.5%;
+    --input: 220 18% 89%;
+    --ring: 234 50% 50%;
 
-    --radius: 0.625rem;
+    /* Slightly more generous corner radius — 12px reads as "premium" */
+    --radius: 0.75rem;
 
-    /* Sidebar: light cream (Linear/Notion style) */
-    --sidebar-bg: 0 0% 99%;
-    --sidebar-fg: 220 9% 38%;
-    --sidebar-fg-active: 222 22% 12%;
-    --sidebar-border: 220 13% 93%;
+    /* Sidebar — barely-tinted blue-warm */
+    --sidebar-bg: 220 25% 98.5%;
+    --sidebar-fg: 220 11% 38%;
+    --sidebar-fg-active: 222 28% 11%;
+    --sidebar-border: 220 18% 92%;
 
-    /* Single restrained accent for interactive highlights */
-    --brand: 217 91% 60%;
-    --brand-soft: 217 100% 97%;
+    /* Brand — refined indigo (Linear-family, restrained, professional) */
+    --brand: 234 50% 53%;
+    --brand-soft: 234 60% 96.5%;
+    --brand-foreground: 0 0% 100%;
+
+    /* Semantic accents — muted, executive-grade */
+    --positive: 168 56% 36%;       /* muted teal-green */
+    --positive-soft: 168 50% 95%;
+    --caution: 35 78% 50%;          /* warm amber */
+    --caution-soft: 35 90% 95%;
+    --warning: 0 60% 50%;
+    --warning-soft: 0 85% 96%;
   }
 
-  /* Dark theme (refined but not the default) */
+  /* ============================================================
+     DARK THEME — graphite, not pure black
+     - background: deep slate (#10131a-ish), softer on eyes than #000
+     - cards: a hair lighter than background for natural layering
+     - borders: very subtle to avoid noise
+     ============================================================ */
   .dark {
-    --background: 222 24% 7%;
-    --foreground: 213 27% 91%;
+    --background: 222 28% 8%;
+    --foreground: 213 27% 92%;
 
-    --card: 222 22% 9%;
-    --card-foreground: 213 27% 91%;
+    --card: 222 25% 11%;
+    --card-foreground: 213 27% 92%;
 
-    --popover: 222 24% 7%;
-    --popover-foreground: 213 27% 91%;
+    --popover: 222 28% 9%;
+    --popover-foreground: 213 27% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 24% 7%;
+    --primary: 213 27% 95%;
+    --primary-foreground: 222 28% 10%;
 
-    --secondary: 222 18% 14%;
-    --secondary-foreground: 213 27% 91%;
+    --secondary: 222 22% 14%;
+    --secondary-foreground: 213 27% 92%;
 
-    --muted: 222 18% 14%;
-    --muted-foreground: 215 16% 60%;
+    --muted: 222 22% 13%;
+    --muted-foreground: 215 16% 62%;
 
-    --accent: 222 18% 16%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 222 22% 16%;
+    --accent-foreground: 210 40% 96%;
 
-    --destructive: 0 63% 41%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 55% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 18% 17%;
-    --input: 222 18% 17%;
-    --ring: 213 27% 75%;
+    --border: 222 18% 19%;
+    --input: 222 18% 19%;
+    --ring: 234 60% 62%;
 
-    --sidebar-bg: 222 24% 6%;
-    --sidebar-fg: 215 16% 55%;
-    --sidebar-fg-active: 213 27% 91%;
-    --sidebar-border: 222 18% 14%;
+    --sidebar-bg: 222 28% 7%;
+    --sidebar-fg: 215 16% 60%;
+    --sidebar-fg-active: 213 27% 95%;
+    --sidebar-border: 222 22% 14%;
 
-    --brand: 217 91% 65%;
-    --brand-soft: 217 35% 18%;
+    /* Brand — brightened for legibility on graphite */
+    --brand: 234 70% 68%;
+    --brand-soft: 234 32% 18%;
+    --brand-foreground: 222 28% 10%;
+
+    --positive: 168 55% 50%;
+    --positive-soft: 168 30% 16%;
+    --caution: 35 75% 60%;
+    --caution-soft: 35 25% 18%;
+    --warning: 0 65% 60%;
+    --warning-soft: 0 25% 18%;
   }
 }
 
@@ -99,7 +126,7 @@
   }
 
   html {
-    /* Geist sans alt forms — cleaner digits */
+    /* Geist sans alt forms — cleaner digits, professional small caps */
     font-feature-settings: "ss01", "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -111,10 +138,10 @@
     text-wrap: pretty;
   }
 
-  /* Apple-style focus ring — narrow blue, not aggressive */
+  /* Refined focus ring — narrow indigo, soft glow */
   :focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background;
-    --tw-ring-color: hsl(var(--brand) / 0.5);
+    --tw-ring-color: hsl(var(--brand) / 0.55);
   }
 
   ::selection {
@@ -127,9 +154,7 @@
     width: 6px;
     height: 6px;
   }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb {
     background-color: hsl(var(--border));
     border-radius: 9999px;
@@ -142,12 +167,11 @@
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
     text-wrap: balance;
+    letter-spacing: -0.015em;
   }
 
-  /* Tables — refined, more space */
-  table {
-    @apply w-full text-sm;
-  }
+  /* Tables — refined, more breathable */
+  table { @apply w-full text-sm; }
   thead tr {
     @apply border-b border-border;
     background-color: transparent;
@@ -158,82 +182,119 @@
   }
   tbody tr {
     @apply border-b border-border last:border-0;
+    transition: background-color 150ms ease;
   }
   tbody td {
     @apply px-4 py-3.5 text-sm text-foreground;
   }
   tbody tr:hover {
-    background-color: hsl(var(--muted) / 0.5);
+    background-color: hsl(var(--muted) / 0.55);
   }
 
-  code, kbd, pre {
-    @apply font-mono;
-  }
+  code, kbd, pre { @apply font-mono; }
 }
 
 @layer components {
   /* ============================================================
-     REFINED CARD — soft elevation, near-invisible border
+     CARDS — refined with a 3-layer specular + drop shadow that
+     reads as "crafted" rather than "boxed". The ring-shaped
+     inset shadow acts as a refined hairline border without the
+     harshness of a CSS border.
      ============================================================ */
   .card-refined {
-    @apply rounded-xl border bg-card;
-    border-color: hsl(var(--border));
+    @apply rounded-xl bg-card;
     box-shadow:
-      0 1px 2px 0 rgba(15, 23, 42, 0.02),
-      0 0 1px 0 rgba(15, 23, 42, 0.04);
+      0 1px 1px 0 rgba(15, 23, 42, 0.025),
+      0 2px 6px -2px rgba(15, 23, 42, 0.04),
+      0 0 0 1px rgba(15, 23, 42, 0.045);
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+  .card-refined:hover {
+    box-shadow:
+      0 1px 1px 0 rgba(15, 23, 42, 0.03),
+      0 4px 12px -3px rgba(15, 23, 42, 0.06),
+      0 0 0 1px rgba(15, 23, 42, 0.06);
   }
 
+  /* Elevation utilities — graduated levels */
   .elev-1 {
     box-shadow:
-      0 1px 2px 0 rgba(15, 23, 42, 0.02),
-      0 0 1px 0 rgba(15, 23, 42, 0.04);
+      0 1px 1px 0 rgba(15, 23, 42, 0.02),
+      0 0 0 1px rgba(15, 23, 42, 0.04);
   }
-
   .elev-2 {
     box-shadow:
-      0 4px 12px -4px rgba(15, 23, 42, 0.06),
-      0 1px 3px 0 rgba(15, 23, 42, 0.04);
+      0 2px 6px -2px rgba(15, 23, 42, 0.05),
+      0 0 0 1px rgba(15, 23, 42, 0.045);
   }
-
-  /* Strong elevation for drawers, modals */
   .elev-3 {
     box-shadow:
-      0 24px 48px -12px rgba(15, 23, 42, 0.18),
-      0 8px 16px -8px rgba(15, 23, 42, 0.08);
+      0 16px 36px -12px rgba(15, 23, 42, 0.16),
+      0 6px 14px -6px rgba(15, 23, 42, 0.08),
+      0 0 0 1px rgba(15, 23, 42, 0.05);
+  }
+
+  /* Dark mode shadow tuning — use rings tinted toward the surface, not black */
+  .dark .card-refined,
+  .dark .elev-1,
+  .dark .elev-2 {
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.20),
+      0 2px 6px -2px rgba(0, 0, 0, 0.30),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  .dark .card-refined:hover {
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.24),
+      0 4px 12px -3px rgba(0, 0, 0, 0.40),
+      0 0 0 1px rgba(255, 255, 255, 0.07);
   }
 
   /* ============================================================
-     TYPOGRAPHY SCALE
+     TYPOGRAPHY SCALE — clearer hierarchy across the product
      ============================================================ */
   .text-display {
-    @apply text-2xl font-semibold leading-tight tracking-tight text-foreground;
+    @apply text-3xl font-semibold leading-tight text-foreground;
+    letter-spacing: -0.025em;
   }
   .text-headline {
-    @apply text-lg font-semibold leading-snug tracking-tight text-foreground;
+    @apply text-xl font-semibold leading-snug text-foreground;
+    letter-spacing: -0.018em;
   }
   .text-title {
     @apply text-sm font-semibold text-foreground;
   }
   .text-body {
     @apply text-sm text-foreground;
+    line-height: 1.55;
   }
   .text-supporting {
     @apply text-sm text-muted-foreground;
+    line-height: 1.55;
   }
   .text-caption {
     @apply text-xs text-muted-foreground;
   }
 
+  /* Stat values — large, tabular, slightly tighter tracking */
   .stat-value {
-    @apply text-3xl font-semibold tabular-nums tracking-tight text-foreground;
+    @apply text-3xl font-semibold tabular-nums text-foreground;
+    letter-spacing: -0.022em;
     font-variant-numeric: tabular-nums;
   }
   .stat-value-sm {
-    @apply text-xl font-semibold tabular-nums tracking-tight text-foreground;
+    @apply text-xl font-semibold tabular-nums text-foreground;
+    letter-spacing: -0.018em;
   }
   .stat-label {
     @apply text-xs font-medium text-muted-foreground;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.025em;
+  }
+
+  /* Section overline — the small uppercase eyebrow above headlines */
+  .text-overline {
+    @apply text-[10px] font-semibold uppercase text-muted-foreground;
+    letter-spacing: 0.08em;
   }
 
   /* ============================================================
@@ -250,14 +311,16 @@
   }
 
   /* ============================================================
-     SIDEBAR NAV — light, refined
+     SIDEBAR NAV — refined active state with subtle indigo accent
      ============================================================ */
   .nav-section-label {
-    @apply mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70;
+    @apply mb-1.5 px-3 text-[10px] font-semibold uppercase text-muted-foreground/75;
+    letter-spacing: 0.085em;
   }
 
   .nav-item {
-    @apply flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150;
+    @apply flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium;
+    transition: background-color 150ms ease, color 150ms ease;
   }
   .nav-item-default {
     color: hsl(var(--sidebar-fg));
@@ -269,45 +332,52 @@
   .nav-item-active {
     background-color: hsl(var(--muted));
     color: hsl(var(--sidebar-fg-active));
+    /* Refined active state: subtle inset indigo left-edge */
+    box-shadow: inset 2px 0 0 0 hsl(var(--brand));
   }
 
   /* ============================================================
-     INPUT BASE — for native inputs without Radix wrappers
+     INPUTS — refined focus, subtle hover
      ============================================================ */
   .input-base {
     @apply h-10 w-full rounded-lg border bg-background px-3 text-sm
-           transition-colors duration-150
            placeholder:text-muted-foreground
            disabled:cursor-not-allowed disabled:opacity-50;
     border-color: hsl(var(--input));
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .input-base:hover:not(:disabled):not(:focus) {
+    border-color: hsl(var(--border));
   }
   .input-base:focus {
     @apply outline-none;
     border-color: hsl(var(--brand));
-    box-shadow: 0 0 0 3px hsl(var(--brand) / 0.12);
+    box-shadow: 0 0 0 3px hsl(var(--brand) / 0.14);
   }
 
   /* ============================================================
-     BADGES — restrained, used sparingly
+     BADGES — restrained, semantic
      ============================================================ */
   .badge {
-    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium transition-colors;
+    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
+    transition: background-color 150ms ease;
   }
-  .badge-neutral {
-    @apply bg-muted text-foreground/80;
-  }
-  .badge-blue {
-    @apply text-blue-700;
+  .badge-neutral  { @apply bg-muted text-foreground/80; }
+  .badge-blue     {
     background-color: hsl(var(--brand-soft));
+    color: hsl(var(--brand));
   }
-  .badge-emerald {
-    @apply bg-emerald-50 text-emerald-700;
+  .badge-positive {
+    background-color: hsl(var(--positive-soft));
+    color: hsl(var(--positive));
   }
-  .badge-amber {
-    @apply bg-amber-50 text-amber-700;
+  .badge-caution  {
+    background-color: hsl(var(--caution-soft));
+    color: hsl(var(--caution));
   }
-  .badge-red {
-    @apply bg-red-50 text-red-700;
+  .badge-warning  {
+    background-color: hsl(var(--warning-soft));
+    color: hsl(var(--warning));
   }
 
   /* ============================================================
@@ -319,9 +389,25 @@
     border-color: hsl(var(--border));
     background-color: hsl(var(--muted));
   }
+
+  /* ============================================================
+     SUBTLE GRADIENT for hero areas — adds visual richness
+     without committing to glassmorphism or saturated gradients
+     ============================================================ */
+  .surface-gradient {
+    background:
+      radial-gradient(80% 60% at 100% 0%, hsl(var(--brand) / 0.05), transparent 60%),
+      radial-gradient(60% 80% at 0% 100%, hsl(var(--positive) / 0.03), transparent 60%),
+      hsl(var(--card));
+  }
+  .surface-gradient-emerald {
+    background:
+      radial-gradient(70% 70% at 0% 0%, hsl(var(--positive) / 0.10), transparent 65%),
+      hsl(var(--card));
+  }
 }
 
-/* Respect reduced motion preferences */
+/* Respect reduced motion preferences globally */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -53,6 +53,14 @@ import {
   CATEGORY_OPTIONS,
   type TransactionCategory,
 } from "@/features/transactions/types";
+import {
+  AnimatedNumber,
+  AnimatedSwitch,
+  FadeIn,
+  StaggerContainer,
+  StaggerItem,
+  motion,
+} from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
 // -------------------------------------------------------------------------
@@ -144,49 +152,57 @@ export default function SimulatePage() {
   }, []);
 
   return (
-    <div className="space-y-10 animate-fade-in">
+    <div className="space-y-10">
       {/* Page header */}
-      <header className="flex items-start justify-between gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Decision Simulator</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
-            Model a financial decision against your actual baseline. See the cash-flow impact,
-            flexibility shift, and long-term consequences before you commit.
-          </p>
-        </div>
-        <Sliders className="h-5 w-5 text-muted-foreground mt-1.5" strokeWidth={1.5} />
-      </header>
+      <FadeIn>
+        <header className="flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Decision Simulator</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
+              Model a financial decision against your actual baseline. See the cash-flow impact,
+              flexibility shift, and long-term consequences before you commit.
+            </p>
+          </div>
+          <Sliders className="h-5 w-5 text-muted-foreground mt-1.5" strokeWidth={1.5} />
+        </header>
+      </FadeIn>
 
       {/* Two-column on desktop: scenario builder (sticky) + results */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_1fr]">
         {/* Scenario builder */}
-        <aside className="lg:sticky lg:top-6 lg:self-start space-y-6">
-          <ScenarioBuilder
-            scenario={scenario}
-            onChange={setScenario}
-            onTypeChange={handleTypeChange}
-          />
-        </aside>
+        <FadeIn delay={0.05}>
+          <aside className="lg:sticky lg:top-6 lg:self-start space-y-6">
+            <ScenarioBuilder
+              scenario={scenario}
+              onChange={setScenario}
+              onTypeChange={handleTypeChange}
+            />
+          </aside>
+        </FadeIn>
 
-        {/* Results */}
+        {/* Results — stagger the stack into view */}
         <section className="space-y-8">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
+            <FadeIn>
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            </FadeIn>
           )}
 
           {result ? (
-            <>
-              <ImpactSummary result={result} />
-              <FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} />
-              <ProjectionChart projection={result.projection} />
-              <TradeoffAnalysis tradeoffs={result.tradeoffs} />
-              <ConsequenceInsights insights={result.insights} />
-              {!result.baseline.hasEnoughData && <LowDataNotice />}
-            </>
+            <StaggerContainer className="space-y-8" stagger={0.06}>
+              <StaggerItem><ImpactSummary result={result} /></StaggerItem>
+              <StaggerItem><FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} /></StaggerItem>
+              <StaggerItem><ProjectionChart projection={result.projection} /></StaggerItem>
+              <StaggerItem><TradeoffAnalysis tradeoffs={result.tradeoffs} /></StaggerItem>
+              <StaggerItem><ConsequenceInsights insights={result.insights} /></StaggerItem>
+              {!result.baseline.hasEnoughData && (
+                <StaggerItem><LowDataNotice /></StaggerItem>
+              )}
+            </StaggerContainer>
           ) : (
-            <LoadingState loading={loading} />
+            <FadeIn delay={0.1}><LoadingState loading={loading} /></FadeIn>
           )}
         </section>
       </div>
@@ -512,15 +528,23 @@ function FlexibilityCard({
         {/* Current */}
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Current</p>
-          <p className="stat-value text-3xl tabular-nums">{flexibility.currentScore}<span className="text-base text-muted-foreground">/100</span></p>
+          <p className="stat-value text-3xl tabular-nums">
+            <AnimatedNumber value={flexibility.currentScore} duration={0.6} />
+            <span className="text-base text-muted-foreground">/100</span>
+          </p>
           <p className={cn("text-sm font-medium", currentMeta.cls)}>{currentMeta.label}</p>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div className={cn("h-full", currentMeta.bar)} style={{ width: `${flexibility.currentScore}%` }} />
+            <motion.div
+              className={cn("h-full", currentMeta.bar)}
+              initial={{ width: 0 }}
+              animate={{ width: `${flexibility.currentScore}%` }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            />
           </div>
         </div>
 
-        {/* Arrow + delta */}
-        <div className="text-center hidden sm:block">
+        {/* Arrow + delta — switches its color/sign smoothly with content */}
+        <AnimatedSwitch viewKey={String(Math.sign(delta)) + Math.abs(delta).toFixed(1)} className="text-center hidden sm:block">
           <div className={cn(
             "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
             delta >= 0
@@ -530,15 +554,23 @@ function FlexibilityCard({
             {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
           </div>
-        </div>
+        </AnimatedSwitch>
 
         {/* Projected */}
         <div className="space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">After this decision</p>
-          <p className="stat-value text-3xl tabular-nums">{flexibility.projectedScore}<span className="text-base text-muted-foreground">/100</span></p>
+          <p className="stat-value text-3xl tabular-nums">
+            <AnimatedNumber value={flexibility.projectedScore} duration={0.6} />
+            <span className="text-base text-muted-foreground">/100</span>
+          </p>
           <p className={cn("text-sm font-medium", projectedMeta.cls)}>{projectedMeta.label}</p>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div className={cn("h-full", projectedMeta.bar)} style={{ width: `${flexibility.projectedScore}%` }} />
+            <motion.div
+              className={cn("h-full", projectedMeta.bar)}
+              initial={{ width: 0 }}
+              animate={{ width: `${flexibility.projectedScore}%` }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            />
           </div>
         </div>
       </div>
@@ -590,8 +622,8 @@ function ProjectionChart({ projection }: { projection: Projection }) {
               <stop offset="95%" stopColor="hsl(220 9% 46%)" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="grad-after" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="hsl(217 91% 60%)" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+              <stop offset="5%"  stopColor="hsl(234 50% 53%)" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="hsl(234 50% 53%)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -616,7 +648,7 @@ function ProjectionChart({ projection }: { projection: Projection }) {
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
           />
           <Area type="monotone" dataKey="before" stroke="hsl(220 9% 46%)" strokeWidth={2} fill="url(#grad-before)" dot={false} />
-          <Area type="monotone" dataKey="after"  stroke="hsl(217 91% 60%)" strokeWidth={2} fill="url(#grad-after)"  dot={false} />
+          <Area type="monotone" dataKey="after"  stroke="hsl(234 50% 53%)" strokeWidth={2} fill="url(#grad-after)"  dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
