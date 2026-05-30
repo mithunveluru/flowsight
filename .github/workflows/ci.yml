@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    name: Backend - Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flowsight_test
+          POSTGRES_USER: flowsight
+          POSTGRES_PASSWORD: ci_test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Build and test
+        run: mvn verify -q
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/flowsight_test
+          DB_USERNAME: flowsight
+          DB_PASSWORD: ci_test_password
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'Y2lfdGVzdF9zZWNyZXRfa2V5X21pbmltdW1fMjU2X2JpdHNfbG9uZ19wbGFjZWhvbGRlcg==' }}
+
+      - name: Build Docker image
+        run: docker build -t flowsight-backend:ci .
+
+  frontend:
+    name: Frontend - Build & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+      - name: Build Docker image
+        run: docker build -t flowsight-frontend:ci .

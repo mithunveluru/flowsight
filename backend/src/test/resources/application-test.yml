@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/flowsight_test}
+    username: ${DB_USERNAME:flowsight}
+    password: ${DB_PASSWORD:flowsight}
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:dGVzdF9zZWNyZXRfa2V5X3RoYXRfaXNfbG9uZ19lbm91Z2hfZm9yX0hTMjU2X2FsZ29yaXRobV8xMjM0NTY3ODk=}
+      expiration: 3600000
+  cors:
+    allowed-origins: http://localhost:3000

@@ -1,0 +1,187 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  BarChart3,
+  Brain,
+  CreditCard,
+  FileText,
+  Flag,
+  LayoutDashboard,
+  LogOut,
+  Receipt,
+  Repeat,
+  Settings,
+  Sliders,
+  Target,
+  TrendingDown,
+} from "lucide-react";
+import { useAuthStore } from "@/store/auth";
+import { cn } from "@/lib/utils";
+
+const navSections = [
+  {
+    section: "Overview",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    section: "Finances",
+    items: [
+      { label: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
+      { label: "Receipts",     href: "/dashboard/receipts",     icon: Receipt    },
+    ],
+  },
+  {
+    section: "Planning",
+    items: [
+      { label: "Budgets", href: "/dashboard/budgets", icon: Target },
+      { label: "Goals",   href: "/dashboard/goals",   icon: Flag   },
+    ],
+  },
+  {
+    section: "Insights",
+    items: [
+      { label: "Analytics",       href: "/dashboard/analytics", icon: BarChart3    },
+      { label: "Recurring",       href: "/dashboard/recurring", icon: Repeat       },
+      { label: "Leak detection",  href: "/dashboard/leaks",     icon: TrendingDown },
+      { label: "Insights",        href: "/dashboard/insights",  icon: Brain        },
+      { label: "Simulate",        href: "/dashboard/simulate",  icon: Sliders      },
+    ],
+  },
+  {
+    section: "Export",
+    items: [
+      { label: "Reports", href: "/dashboard/reports", icon: FileText },
+    ],
+  },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, clearAuth } = useAuthStore();
+
+  const handleSignOut = () => {
+    clearAuth();
+    router.replace("/auth/login");
+  };
+
+  const initials = user?.fullName
+    ? user.fullName.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()
+    : "U";
+
+  return (
+    <aside
+      className="flex h-full w-sidebar shrink-0 flex-col border-r"
+      style={{
+        backgroundColor: "hsl(var(--sidebar-bg))",
+        borderColor: "hsl(var(--sidebar-border))",
+      }}
+    >
+      {/* Brand mark */}
+      <div className="flex h-header items-center gap-2.5 px-5">
+        <Logo />
+        <span className="text-[15px] font-semibold tracking-tight text-foreground">
+          FlowSight
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
+        {navSections.map((group) => (
+          <div key={group.section} className="mb-6 last:mb-0">
+            <div className="nav-section-label">{group.section}</div>
+            <ul className="space-y-px">
+              {group.items.map((item) => {
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "nav-item",
+                        active ? "nav-item-active" : "nav-item-default"
+                      )}
+                    >
+                      <item.icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      {/* Footer — user card + sign out */}
+      <div
+        className="border-t px-3 py-3"
+        style={{ borderColor: "hsl(var(--sidebar-border))" }}
+      >
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-2.5 rounded-md px-2 py-2 transition-colors hover:bg-muted"
+        >
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white select-none"
+            style={{ backgroundColor: "hsl(var(--primary))" }}
+          >
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-foreground truncate">
+              {user?.fullName ?? "Guest"}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {user?.email ?? ""}
+            </p>
+          </div>
+          <Settings className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+        </Link>
+        <button
+          onClick={handleSignOut}
+          className="mt-1 flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <LogOut className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
+          Sign out
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function Logo() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 22 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect
+        x="0.5"
+        y="0.5"
+        width="21"
+        height="21"
+        rx="6"
+        fill="hsl(var(--primary))"
+      />
+      <path
+        d="M5.5 14.75L9 10.75L12 13.25L16.5 7.75"
+        stroke="white"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="16.5" cy="7.75" r="1.25" fill="white" />
+    </svg>
+  );
+}

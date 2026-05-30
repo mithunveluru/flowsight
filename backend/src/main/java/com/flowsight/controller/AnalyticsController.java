@@ -1,0 +1,61 @@
+package com.flowsight.controller;
+
+import com.flowsight.analytics.AnalyticsService;
+import com.flowsight.dto.analytics.AnalyticsOverviewResponse;
+import com.flowsight.dto.analytics.AnalyticsTrendResponse;
+import com.flowsight.entity.User;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+
+@RestController
+@RequestMapping("/api/v1/analytics")
+@RequiredArgsConstructor
+public class AnalyticsController {
+
+    private final AnalyticsService analyticsService;
+
+    /**
+     * Overview for a date range: totals, category breakdown, top merchants, behavioral alerts.
+     * Defaults to the current calendar month when from/to are omitted.
+     */
+    @GetMapping("/overview")
+    public ResponseEntity<AnalyticsOverviewResponse> overview(
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+        @AuthenticationPrincipal User user
+    ) {
+        LocalDate effectiveTo   = to   != null ? to   : LocalDate.now();
+        LocalDate effectiveFrom = from != null ? from : effectiveTo.withDayOfMonth(1);
+
+        return ResponseEntity.ok(
+            analyticsService.getOverview(user.getId(), effectiveFrom, effectiveTo));
+    }
+
+    /**
+     * Monthly spend / income trend for the last N months plus a 3-month projection.
+     * Defaults to 12 months when months is omitted.
+     */
+    @GetMapping("/trend")
+    public ResponseEntity<AnalyticsTrendResponse> trend(
+        @RequestParam(defaultValue = "12") int months,
+        @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(analyticsService.getTrend(user.getId(), months));
+    }
+
+    /**
+     * Returns the date range and months where the user has transaction data.
+     * Used by the UI to detect imports landing outside the current view.
+     */
+    @GetMapping("/activity-bounds")
+    public ResponseEntity<com.flowsight.dto.analytics.ActivityBoundsResponse> activityBounds(
+        @AuthenticationPrincipal User user
+    ) {
+        return ResponseEntity.ok(analyticsService.getActivityBounds(user.getId()));
+    }
+}

@@ -1,0 +1,74 @@
+services:
+  receipt-ocr:
+    container_name: flowsight-receipt-ocr
+    build:
+      context: https://github.com/bhimrazy/receipt-ocr.git#main:app
+    environment:
+      OPENAI_API_KEY: ${GROQ_API_KEY:-placeholder}
+      OPENAI_BASE_URL: https://api.groq.com/openai/v1
+      OPENAI_MODEL: ${RECEIPT_OCR_MODEL:-meta-llama/llama-4-scout-17b-16e-instruct}
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowsight-postgres
+    environment:
+      POSTGRES_DB: flowsight
+      POSTGRES_USER: flowsight
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowsight_dev}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flowsight-backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/flowsight
+      DB_USERNAME: flowsight
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-flowsight_dev}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3007}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      RECEIPT_OCR_URL: ${RECEIPT_OCR_URL:-http://receipt-ocr:8000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      receipt-ocr:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: flowsight-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    ports:
+      - "3007:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
