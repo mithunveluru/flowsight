@@ -36,9 +36,7 @@ public class ReceiptQuotaService {
 
     private final UserRepository userRepository;
 
-    // -------------------------------------------------------------------------
     // Quota checks
-    // -------------------------------------------------------------------------
 
     /**
      * Throws {@link QuotaExceededException} when the user has no remaining quota.
@@ -67,9 +65,7 @@ public class ReceiptQuotaService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Read API (for UI)
-    // -------------------------------------------------------------------------
 
     public ReceiptQuotaInfo getQuota(User user) {
         boolean unlimited = user.isUnlimitedReceipts();
@@ -85,9 +81,7 @@ public class ReceiptQuotaService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Admin operations
-    // -------------------------------------------------------------------------
 
     @Transactional
     public ReceiptQuotaInfo resetUsage(UUID userId) {

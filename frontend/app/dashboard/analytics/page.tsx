@@ -45,40 +45,33 @@ import {
 } from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Category color palette (hex for Recharts)
-// -------------------------------------------------------------------------
-
-// Category palette — desaturated, executive-grade.
-// Each color was darkened ~10% lightness and pulled 5-15% saturation to
-// reduce the "rainbow dashboard" effect while keeping categories distinct.
+// Category palette — pastel family lifted from CSS chart tokens.
+// Single coherent set; categories distinct but never compete with each other
+// or with the brand colours used on hero metrics.
 const CATEGORY_COLORS: Record<string, string> = {
-  FOOD_DINING:    "#d97a4f",   // muted coral
-  GROCERIES:      "#3f9a6b",   // sage green
-  SHOPPING:       "#8e5fbe",   // muted plum
-  TRANSPORTATION: "#5577c4",   // dusty blue
-  UTILITIES:      "#64748b",   // slate
-  ENTERTAINMENT:  "#c45e96",   // muted rose
-  HEALTHCARE:     "#c44b4b",   // muted red
-  FINANCE:        "#5e6ad2",   // brand indigo
-  EDUCATION:      "#b89020",   // muted gold
-  TRAVEL:         "#2f9e94",   // teal
-  SUBSCRIPTIONS:  "#7a5fc4",   // muted violet
-  INCOME:         "#0f9b8e",   // positive teal
-  TRANSFER:       "#3e9eb0",   // cyan-slate
-  OTHER:          "#94a3b8",   // neutral
-  UNCATEGORIZED:  "#cbd5e1",   // faint
+  FOOD_DINING:    "hsl(var(--chart-1))",   // soft coral
+  GROCERIES:      "hsl(var(--chart-2))",   // sage mint
+  SHOPPING:       "hsl(var(--chart-3))",   // soft plum
+  TRANSPORTATION: "hsl(var(--chart-4))",   // dusty blue
+  UTILITIES:      "hsl(var(--chart-5))",   // slate
+  ENTERTAINMENT:  "hsl(var(--chart-6))",   // muted rose
+  HEALTHCARE:     "hsl(var(--chart-7))",   // soft red
+  FINANCE:        "hsl(var(--chart-8))",   // lavender (brand family)
+  EDUCATION:      "hsl(var(--chart-9))",   // warm sand
+  TRAVEL:         "hsl(var(--chart-10))",  // pastel teal
+  SUBSCRIPTIONS:  "hsl(var(--chart-11))",  // lilac
+  INCOME:         "hsl(var(--chart-12))",  // mint
+  TRANSFER:       "hsl(var(--chart-13))",  // sky cyan
+  OTHER:          "hsl(var(--chart-14))",  // neutral
+  UNCATEGORIZED:  "hsl(var(--chart-15))",  // faint
 };
 
-// Refined chart palette — muted, executive-grade.
-// Spend uses the refined brand indigo; income uses a muted teal.
-// Neither competes with the per-category palette below.
-const SPEND_COLOR  = "#5e6ad2";   // refined indigo (matches --brand)
-const INCOME_COLOR = "#0f9b8e";   // muted teal-green (positive accent)
-
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
+// Spend/income lines on time-series charts. Pulled from CSS tokens so theme
+// changes propagate automatically (light → dark, light → pastel, etc).
+const SPEND_COLOR  = "hsl(var(--chart-spend))";   // soft lavender (brand family)
+const INCOME_COLOR = "hsl(var(--chart-income))";  // pastel teal
+const GRID_COLOR   = "hsl(var(--chart-grid))";
+const AXIS_COLOR   = "hsl(var(--chart-axis))";
 
 function formatINR(value: number, compact = false): string {
   if (compact) {
@@ -103,10 +96,6 @@ function dateRange(preset: DateRangePreset): { from: string; to: string } {
   }
   return { from: fmt(from), to };
 }
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function AnalyticsPage() {
   const searchParams = useSearchParams();
@@ -236,10 +225,6 @@ export default function AnalyticsPage() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Date range selector
-// -------------------------------------------------------------------------
-
 const PRESETS: { value: DateRangePreset; label: string }[] = [
   { value: "1M",  label: "This month" },
   { value: "3M",  label: "3 months"   },
@@ -276,10 +261,6 @@ function DateRangeSelector({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Summary cards
-// -------------------------------------------------------------------------
 
 function SummaryCards({
   overview,
@@ -328,10 +309,6 @@ function SummaryCards({
   );
 }
 
-// -------------------------------------------------------------------------
-// Behavioral alerts
-// -------------------------------------------------------------------------
-
 function AlertsPanel({ alerts }: { alerts: AnalyticsOverview["alerts"] }) {
   return (
     <div className="space-y-3">
@@ -364,10 +341,6 @@ function AlertsPanel({ alerts }: { alerts: AnalyticsOverview["alerts"] }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Monthly trend chart
-// -------------------------------------------------------------------------
 
 function SpendTrendChart({
   trend,
@@ -412,15 +385,15 @@ function SpendTrendChart({
             <stop offset="95%" stopColor={INCOME_COLOR} stopOpacity={0}    />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 11, fill: "#94a3b8" }}
+          tick={{ fontSize: 11, fill: AXIS_COLOR }}
           axisLine={false} tickLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
-          tick={{ fontSize: 11, fill: "#94a3b8" }}
+          tick={{ fontSize: 11, fill: AXIS_COLOR }}
           axisLine={false} tickLine={false}
           tickFormatter={(v) => formatINR(v, true)}
           width={52}
@@ -433,8 +406,8 @@ function SpendTrendChart({
               name === "projSpend" ? "Projected spend" : "Projected income";
             return `${label}: ${formatINR(Number(v))}`;
           }}
-          contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
-          labelStyle={{ color: "#475569", fontWeight: 600 }}
+          contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${GRID_COLOR}` }}
+          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
         />
         <Legend
           iconType="circle" iconSize={8}
@@ -451,10 +424,6 @@ function SpendTrendChart({
     </ResponsiveContainer>
   );
 }
-
-// -------------------------------------------------------------------------
-// Category donut chart
-// -------------------------------------------------------------------------
 
 function CategoryDonutChart({
   overview,
@@ -486,13 +455,13 @@ function CategoryDonutChart({
           {data.map((entry) => (
             <Cell
               key={entry.category}
-              fill={CATEGORY_COLORS[entry.category] ?? "#94a3b8"}
+              fill={CATEGORY_COLORS[entry.category] ?? "hsl(var(--chart-14))"}
             />
           ))}
         </Pie>
         <Tooltip
           formatter={(v: unknown) => formatINR(Number(v))}
-          contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
+          contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${GRID_COLOR}` }}
         />
         <Legend
           iconType="circle" iconSize={8}
@@ -506,10 +475,6 @@ function CategoryDonutChart({
     </ResponsiveContainer>
   );
 }
-
-// -------------------------------------------------------------------------
-// Top merchants bar chart
-// -------------------------------------------------------------------------
 
 function TopMerchantsChart({
   overview,
@@ -530,34 +495,30 @@ function TopMerchantsChart({
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} horizontal={false} />
         <XAxis
           type="number"
-          tick={{ fontSize: 11, fill: "#94a3b8" }}
+          tick={{ fontSize: 11, fill: AXIS_COLOR }}
           axisLine={false} tickLine={false}
           tickFormatter={(v) => formatINR(v, true)}
         />
         <YAxis
           type="category" dataKey="name"
-          tick={{ fontSize: 11, fill: "#64748b" }}
+          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
           axisLine={false} tickLine={false}
           width={90}
           tickFormatter={(v: string) => v.length > 12 ? v.slice(0, 12) + "…" : v}
         />
         <Tooltip
           formatter={(v: unknown) => `Spend: ${formatINR(Number(v))}`}
-          contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
-          cursor={{ fill: "#f8fafc" }}
+          contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${GRID_COLOR}` }}
+          cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
         />
         <Bar dataKey="amount" fill={SPEND_COLOR} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
-
-// -------------------------------------------------------------------------
-// Shared layout pieces
-// -------------------------------------------------------------------------
 
 function Section({
   title,

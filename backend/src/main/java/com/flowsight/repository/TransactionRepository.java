@@ -78,9 +78,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         """, nativeQuery = true)
     List<String> findMonthsWithActivity(@Param("userId") UUID userId);
 
-    // -------------------------------------------------------------------------
     // Analytics queries
-    // -------------------------------------------------------------------------
 
     @Query("""
         SELECT COUNT(t)
@@ -149,9 +147,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("to") LocalDate to
     );
 
-    // -------------------------------------------------------------------------
     // Recurring detection query
-    // -------------------------------------------------------------------------
 
     /** All DEBIT transactions with a non-blank merchant within a lookback window. */
     @Query("""

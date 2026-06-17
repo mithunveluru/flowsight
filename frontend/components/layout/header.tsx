@@ -1,32 +1,41 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   title?: string;
   description?: string;
   actions?: React.ReactNode;
+  onOpenNav?: () => void;
 }
 
-export function Header({ title, description, actions }: HeaderProps) {
+export function Header({ title, description, actions, onOpenNav }: HeaderProps) {
   return (
-    <header className="flex h-header shrink-0 items-center border-b border-border bg-background px-8">
-      {/* Page title — quiet, doesn't compete with main page heading */}
+    <header className="flex h-header shrink-0 items-center gap-2 border-b border-border bg-background px-4 sm:px-6 lg:px-8">
+      {/* Mobile hamburger — opens the sidebar drawer. 44px target. */}
+      <button
+        type="button"
+        onClick={onOpenNav}
+        aria-label="Open navigation"
+        className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+      >
+        <Menu className="h-5 w-5" strokeWidth={1.75} />
+      </button>
+
       <div className="flex-1 min-w-0">
         {title && (
-          <h1 className="text-[13px] font-medium text-muted-foreground truncate">
+          <h1 className="truncate text-[13px] font-medium text-muted-foreground">
             {title}
           </h1>
         )}
         {description && (
-          <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
             {description}
           </p>
         )}
       </div>
 
-      {/* Right-side controls — minimal */}
       <div className="flex items-center gap-2">
         <button
           className={cn(

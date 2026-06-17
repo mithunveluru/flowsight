@@ -77,11 +77,11 @@ const config: Config = {
         },
       },
       boxShadow: {
-        /* Refined card shadows — three-layer specular + drop + hairline ring */
+        /* Soft pastel card shadows — cool slate-lavender, low alpha */
         "card-rest":
-          "0 1px 1px 0 rgba(15, 23, 42, 0.025), 0 2px 6px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.045)",
+          "0 1px 2px 0 rgba(47, 55, 90, 0.025), 0 4px 12px -4px rgba(47, 55, 90, 0.05), 0 0 0 1px rgba(47, 55, 90, 0.04)",
         "card-hover":
-          "0 1px 1px 0 rgba(15, 23, 42, 0.03), 0 4px 12px -3px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.06)",
+          "0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 8px 20px -6px rgba(47, 55, 90, 0.07), 0 0 0 1px rgba(47, 55, 90, 0.055)",
       },
       borderRadius: {
         lg: "var(--radius)",

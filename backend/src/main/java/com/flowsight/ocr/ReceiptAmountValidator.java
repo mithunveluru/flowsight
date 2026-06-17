@@ -58,9 +58,7 @@ public class ReceiptAmountValidator {
     private static final double HIGH_THRESHOLD   = 0.65;
     private static final double MEDIUM_THRESHOLD = 0.40;
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     /**
      * Validates and potentially corrects the receipt-ocr {@code total_amount}.
@@ -98,9 +96,7 @@ public class ReceiptAmountValidator {
         return best;
     }
 
-    // -------------------------------------------------------------------------
     // Candidate builders
-    // -------------------------------------------------------------------------
 
     private AmountCandidate scorePrimary(
         BigDecimal total, BigDecimal regularSum, BigDecimal maxItemPrice
@@ -196,9 +192,7 @@ public class ReceiptAmountValidator {
         return result;
     }
 
-    // -------------------------------------------------------------------------
     // Line item analysis helpers
-    // -------------------------------------------------------------------------
 
     /**
      * Sum of item prices for non-summary line items (product lines only).
@@ -227,9 +221,7 @@ public class ReceiptAmountValidator {
             .orElse(null);
     }
 
-    // -------------------------------------------------------------------------
     // Label classifiers
-    // -------------------------------------------------------------------------
 
     boolean isSummaryLine(String label) {
         return containsPreferred(label) || containsDeprioritized(label);
@@ -242,10 +234,6 @@ public class ReceiptAmountValidator {
     boolean containsDeprioritized(String label) {
         return DEPRIORITIZED.stream().anyMatch(label::contains);
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private AmountConfidence toConfidence(double score) {
         if (score >= HIGH_THRESHOLD)   return AmountConfidence.HIGH;

@@ -87,9 +87,7 @@ public class TradeoffAnalyzer {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Per-scenario tradeoff builders
-    // -------------------------------------------------------------------------
 
     private void addOneTimeTradeoffs(List<Tradeoff> out, FinancialBaseline baseline, ScenarioRequest scenario) {
         BigDecimal amount = scenario.getAmount();
@@ -170,9 +168,7 @@ public class TradeoffAnalyzer {
             "Principal + interest combined."));
     }
 
-    // -------------------------------------------------------------------------
     // Math helpers
-    // -------------------------------------------------------------------------
 
     /** FV of a lump sum invested today: FV = P × (1+r)^n. */
     public BigDecimal futureValueLumpSum(BigDecimal principal, double annualRate, int years) {

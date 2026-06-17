@@ -152,7 +152,8 @@ export default function MonthlyReportPage() {
         {report.categoryBreakdown.length > 0 && (
           <section>
             <SectionLabel>Spend by category</SectionLabel>
-            <table className="mt-4 w-full text-sm">
+            <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                   <th className="py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Category</th>
@@ -183,6 +184,7 @@ export default function MonthlyReportPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </section>
         )}
 
@@ -190,7 +192,8 @@ export default function MonthlyReportPage() {
         {report.topMerchants.length > 0 && (
           <section>
             <SectionLabel>Top merchants</SectionLabel>
-            <table className="mt-4 w-full text-sm">
+            <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                   <th className="py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Merchant</th>
@@ -212,6 +215,7 @@ export default function MonthlyReportPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </section>
         )}
 
@@ -231,7 +235,8 @@ export default function MonthlyReportPage() {
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>
                 {s.entries.length > 0 ? (
-                  <table className="mt-3 w-full text-sm">
+                  <div className="mt-3 overflow-x-auto">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
                         <th className="py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Date</th>
@@ -251,6 +256,7 @@ export default function MonthlyReportPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 ) : (
                   <p className="mt-2 text-xs text-muted-foreground italic">
                     No transactions detected for this section in the current financial year.
@@ -317,10 +323,6 @@ export default function MonthlyReportPage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Sub-components
-// -------------------------------------------------------------------------
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (

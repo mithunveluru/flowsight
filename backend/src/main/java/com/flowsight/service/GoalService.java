@@ -45,9 +45,7 @@ public class GoalService {
     private final UserRepository          userRepository;
     private final AuditLogService         auditLogService;
 
-    // -------------------------------------------------------------------------
     // CRUD
-    // -------------------------------------------------------------------------
 
     @Transactional
     public GoalResponse create(GoalRequest request, UUID userId) {
@@ -139,9 +137,7 @@ public class GoalService {
         return toResponse(goal);
     }
 
-    // -------------------------------------------------------------------------
     // Progress computation
-    // -------------------------------------------------------------------------
 
     private GoalResponse toResponse(FinancialGoal goal) {
         LocalDate today = LocalDate.now();
@@ -202,10 +198,6 @@ public class GoalService {
         else if (percentComplete < percentElapsed - PACE_TOLERANCE_PCT) return "BEHIND";
         else                                                            return "ON_PACE";
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private static double round1(double v) {
         return Math.round(v * 10.0) / 10.0;

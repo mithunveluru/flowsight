@@ -58,9 +58,7 @@ public class IntelligenceReportService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Request handling
-    // -------------------------------------------------------------------------
 
     @Transactional
     public ReportJobResponse createJob(GenerateReportRequest request, User user) {
@@ -122,9 +120,7 @@ public class IntelligenceReportService {
         reportJobRepository.delete(job);
     }
 
-    // -------------------------------------------------------------------------
     // Background generation
-    // -------------------------------------------------------------------------
 
     @Async
     public void generateAsync(UUID jobId) {
@@ -176,9 +172,7 @@ public class IntelligenceReportService {
         });
     }
 
-    // -------------------------------------------------------------------------
     // Date range resolution
-    // -------------------------------------------------------------------------
 
     private DateRange resolveRange(GenerateReportRequest request) {
         LocalDate today = LocalDate.now();

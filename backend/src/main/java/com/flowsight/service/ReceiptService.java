@@ -179,9 +179,7 @@ public class ReceiptService {
         receiptRepository.delete(receipt);
     }
 
-    // -------------------------------------------------------------------------
     // Extraction pipeline
-    // -------------------------------------------------------------------------
 
     /**
      * Tries receipt-ocr LLM service first. Falls back to Tesseract on failure.
@@ -237,9 +235,7 @@ public class ReceiptService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Detail-view reconstruction (avoids re-parsing for stored data)
-    // -------------------------------------------------------------------------
 
     private OcrExtractionResult reconstructExtraction(Receipt receipt) {
         // Structured data is available when either field is populated
@@ -275,9 +271,7 @@ public class ReceiptService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Transaction creation
-    // -------------------------------------------------------------------------
 
     /**
      * Creates a transaction from user-confirmed values.
@@ -320,11 +314,9 @@ public class ReceiptService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Input validation
-    // -------------------------------------------------------------------------
 
-    private void validateUpload(MultipartFile file) {
+    private void validateUpload(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new FlowsightException("File is empty", HttpStatus.BAD_REQUEST);
         }
@@ -341,6 +333,40 @@ public class ReceiptService {
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE
             );
         }
+        // Defense-in-depth: the Content-Type header is client-controlled and trivially
+        // spoofed, so confirm the bytes actually start with a known image signature.
+        // This blocks a polyglot/disguised payload (e.g. an HTML or script file sent
+        // with image/png) from ever reaching the OCR pipeline or disk.
+        if (!hasAllowedImageSignature(file.getBytes())) {
+            throw new FlowsightException(
+                "File content does not match a supported image format",
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE
+            );
+        }
+    }
+
+    /** Magic-byte sniff for the formats in {@link #ALLOWED_MIME_TYPES}. */
+    private boolean hasAllowedImageSignature(byte[] b) {
+        if (b == null || b.length < 12) return false;
+        // JPEG: FF D8 FF
+        if (u(b[0]) == 0xFF && u(b[1]) == 0xD8 && u(b[2]) == 0xFF) return true;
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (u(b[0]) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G'
+            && u(b[4]) == 0x0D && u(b[5]) == 0x0A && u(b[6]) == 0x1A && u(b[7]) == 0x0A) return true;
+        // WebP: "RIFF" .... "WEBP"
+        if (b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+            && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') return true;
+        // TIFF: little-endian "II*\0" or big-endian "MM\0*"
+        if (u(b[0]) == 0x49 && u(b[1]) == 0x49 && u(b[2]) == 0x2A && u(b[3]) == 0x00) return true;
+        if (u(b[0]) == 0x4D && u(b[1]) == 0x4D && u(b[2]) == 0x00 && u(b[3]) == 0x2A) return true;
+        // BMP: "BM"
+        if (b[0] == 'B' && b[1] == 'M') return true;
+        return false;
+    }
+
+    /** Unsigned byte value (0-255) for signature comparison. */
+    private static int u(byte x) {
+        return x & 0xFF;
     }
 
     private String sanitize(String filename) {
@@ -348,9 +374,7 @@ public class ReceiptService {
         return filename.replaceAll("[^a-zA-Z0-9._\\-]", "_");
     }
 
-    // -------------------------------------------------------------------------
     // Response mapping
-    // -------------------------------------------------------------------------
 
     private ReceiptResponse toResponse(Receipt receipt, OcrExtractionResult extraction, Transaction tx) {
         TransactionResponse txResponse = tx != null ? toTransactionResponse(tx) : null;

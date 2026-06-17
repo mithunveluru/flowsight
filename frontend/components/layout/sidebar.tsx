@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,6 +17,7 @@ import {
   Sliders,
   Target,
   TrendingDown,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
@@ -70,10 +72,25 @@ const navSections = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void } = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
+
+  // Auto-close the mobile drawer on route change; on desktop the prop has no
+  // effect because the static layer ignores `open`/`onClose`.
+  useEffect(() => {
+    if (open && onClose) onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
 
   const handleSignOut = () => {
     clearAuth();
@@ -85,22 +102,49 @@ export function Sidebar() {
     : "U";
 
   return (
-    <aside
-      className="flex h-full w-sidebar shrink-0 flex-col border-r"
-      style={{
-        backgroundColor: "hsl(var(--sidebar-bg))",
-        borderColor: "hsl(var(--sidebar-border))",
-      }}
-    >
-      {/* Brand mark */}
-      <div className="flex h-header items-center gap-2.5 px-5">
-        <Logo />
-        <span className="text-[15px] font-semibold tracking-tight text-foreground">
-          FlowSight
-        </span>
-      </div>
+    <>
+      {/* Mobile scrim — covers the rest of the viewport while the drawer is open */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        className={cn(
+          "fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] transition-opacity duration-200 lg:hidden",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+      />
 
-      {/* Navigation */}
+      <aside
+        aria-label="Primary navigation"
+        className={cn(
+          // Mobile: fixed off-canvas drawer that slides in from the left.
+          "fixed left-0 top-0 z-50 flex h-full w-[min(82vw,288px)] flex-col border-r",
+          "transition-transform duration-250 ease-out will-change-transform",
+          open ? "translate-x-0" : "-translate-x-full",
+          // Desktop: static, in-flow sidebar that always shows.
+          "lg:static lg:z-auto lg:w-sidebar lg:shrink-0 lg:translate-x-0 lg:transition-none"
+        )}
+        style={{
+          backgroundColor: "hsl(var(--sidebar-bg))",
+          borderColor: "hsl(var(--sidebar-border))",
+        }}
+      >
+        <div className="flex h-header shrink-0 items-center gap-2.5 px-5">
+          <Logo />
+          <span className="text-[15px] font-semibold tracking-tight text-foreground">
+            FlowSight
+          </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close navigation"
+              className="ml-auto -mr-1 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+            >
+              <X className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          )}
+        </div>
+
       <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
         {navSections.map((group) => (
           <div
@@ -134,7 +178,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer — user card + sign out */}
       <div
         className="border-t px-3 py-3"
         style={{ borderColor: "hsl(var(--sidebar-border))" }}
@@ -167,7 +210,8 @@ export function Sidebar() {
           Sign out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 

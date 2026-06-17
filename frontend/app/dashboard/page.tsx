@@ -67,10 +67,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-12">
-      {/* Hero — calm, generous space, ambient breathing */}
       <FadeIn>
         <section>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {greeting()}, {firstName}.
           </h1>
           <p className="mt-2 text-base text-muted-foreground">
@@ -79,14 +78,12 @@ export default function DashboardPage() {
         </section>
       </FadeIn>
 
-      {/* Primary metric — animates from 0 to the real number */}
       <FadeIn delay={0.08}>
         <section>
           <HeroMetric overview={overview} hasData={!!hasData} />
         </section>
       </FadeIn>
 
-      {/* Quick actions — staggered entrance */}
       <section>
         <FadeIn delay={0.16}>
           <div className="section-header">
@@ -102,7 +99,6 @@ export default function DashboardPage() {
         </StaggerContainer>
       </section>
 
-      {/* Modules — staggered entrance */}
       <section>
         <FadeIn delay={0.24}>
           <div className="section-header">
@@ -123,10 +119,6 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Hero metric
-// -------------------------------------------------------------------------
 
 function HeroMetric({
   overview,
@@ -169,32 +161,31 @@ function HeroMetric({
   const positive = net >= 0;
 
   return (
-    <div className="card-refined relative overflow-hidden p-8 lg:p-10">
-      {/* Ambient breathing glow — very subtle, restrained */}
+    <div className="card-refined relative overflow-hidden p-6 sm:p-8 lg:p-10">
       <AmbientGlow />
 
-      <div className="relative flex items-start justify-between gap-6">
-        <div>
+      <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+        <div className="min-w-0">
           <p className="stat-label">Net cashflow</p>
-          <p className="mt-3 stat-value text-4xl lg:text-5xl">
+          <p className="mt-3 stat-value text-3xl sm:text-4xl lg:text-5xl">
             {positive ? "" : "−"}
             <AnimatedNumber
               value={Math.abs(net)}
               format={(v) => `₹${formatINRDigits(v)}`}
             />
           </p>
-          <div className="mt-4 flex items-center gap-6">
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 sm:gap-x-6">
             <MetricInline label="Spent"        value={overview.totalSpend} />
-            <div className="h-4 w-px bg-border" />
+            <div className="hidden h-4 w-px bg-border sm:block" />
             <MetricInline label="Earned"       value={overview.totalIncome} />
-            <div className="h-4 w-px bg-border" />
+            <div className="hidden h-4 w-px bg-border sm:block" />
             <MetricInline label="Transactions" value={overview.transactionCount} isCount />
           </div>
         </div>
 
         <Link
           href="/dashboard/analytics"
-          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex shrink-0 items-center gap-1 self-start rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           Full analytics
           <ArrowUpRight className="h-3 w-3" strokeWidth={2} />
@@ -226,10 +217,6 @@ function MetricInline({
   );
 }
 
-// -------------------------------------------------------------------------
-// Quick action tile
-// -------------------------------------------------------------------------
-
 function QuickAction({
   label,
   description,
@@ -260,10 +247,6 @@ function QuickAction({
     </Link>
   );
 }
-
-// -------------------------------------------------------------------------
-// Module card
-// -------------------------------------------------------------------------
 
 function ModuleCard({
   icon: Icon,
@@ -299,10 +282,6 @@ function ModuleCard({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Static config
-// -------------------------------------------------------------------------
 
 const quickActions = [
   { label: "Transactions",  description: "Review and record",         href: "/dashboard/transactions",    icon: BarChart3 },

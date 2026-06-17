@@ -4,10 +4,13 @@ import com.flowsight.analytics.AnalyticsService;
 import com.flowsight.dto.analytics.AnalyticsOverviewResponse;
 import com.flowsight.dto.analytics.AnalyticsTrendResponse;
 import com.flowsight.entity.User;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -15,6 +18,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1/analytics")
 @RequiredArgsConstructor
+@Validated
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -42,7 +46,7 @@ public class AnalyticsController {
      */
     @GetMapping("/trend")
     public ResponseEntity<AnalyticsTrendResponse> trend(
-        @RequestParam(defaultValue = "12") int months,
+        @RequestParam(defaultValue = "12") @Min(1) @Max(60) int months,
         @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.ok(analyticsService.getTrend(user.getId(), months));

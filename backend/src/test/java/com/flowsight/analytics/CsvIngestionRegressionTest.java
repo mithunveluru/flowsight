@@ -55,7 +55,11 @@ class CsvIngestionRegressionTest {
         NormalizationService normalization = new NormalizationService();
         CategorizationService categorization = new CategorizationService();
         pipeline = new TransactionIngestionPipeline(normalization, categorization);
-        csvParserService = new CsvParserService();
+        csvParserService = new CsvParserService(
+            new StatementFormatDetector(),
+            new BalanceDeltaCalculator(),
+            new ReconstructedTransactionMapper()
+        );
 
         // CSV import no longer enforces tier limits — stub only audit + rate limiter
         com.flowsight.service.AuditLogService auditStub = org.mockito.Mockito.mock(

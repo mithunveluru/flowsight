@@ -35,10 +35,6 @@ import {
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Zod schema
-// -------------------------------------------------------------------------
-
 const schema = z.object({
   merchant: z.string().min(1, "Merchant name is required").max(255),
   amount: z.coerce
@@ -51,10 +47,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function ReceiptReviewPage() {
   const params = useParams();
@@ -110,10 +102,6 @@ export default function ReceiptReviewPage() {
     />
   );
 }
-
-// -------------------------------------------------------------------------
-// Review form
-// -------------------------------------------------------------------------
 
 function ReviewForm({
   receipt,
@@ -380,10 +368,6 @@ function ReviewForm({
   );
 }
 
-// -------------------------------------------------------------------------
-// Fallback states
-// -------------------------------------------------------------------------
-
 function OcrFailureFallback({ receipt }: { receipt: Receipt }) {
   return (
     <div className="max-w-xl space-y-5 animate-fade-in">
@@ -455,10 +439,6 @@ function AlreadyConfirmed({ receipt }: { receipt: Receipt }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Small helpers
-// -------------------------------------------------------------------------
 
 function ConfidenceBadge({ confidence }: { confidence: number | null }) {
   if (confidence == null) return null;

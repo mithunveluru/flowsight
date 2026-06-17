@@ -38,9 +38,7 @@ public class OcrService implements OcrProvider {
 
     private final OcrPreprocessor preprocessor;
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     /** Implements {@link OcrProvider} — delegates to {@link #extractDocument}. */
     @Override
@@ -71,9 +69,7 @@ public class OcrService implements OcrProvider {
         return extractDocument(imagePath).plainText();
     }
 
-    // -------------------------------------------------------------------------
     // Internals
-    // -------------------------------------------------------------------------
 
     private OcrDocument doExtractDocument(Path imagePath) {
         // First attempt: TSV extraction (gives confidence + position per line)
@@ -134,9 +130,7 @@ public class OcrService implements OcrProvider {
         }
     }
 
-    // -------------------------------------------------------------------------
     // TSV parsing
-    // -------------------------------------------------------------------------
 
     /**
      * Parses Tesseract TSV output into a list of {@link OcrLine}s sorted by top-y.

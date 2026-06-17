@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
@@ -11,11 +12,6 @@ interface ShellProps {
   actions?: React.ReactNode;
 }
 
-/**
- * Derive the section-accent CSS variable from the current route so every
- * `.accent-edge` and `.nav-item-active` on the page picks up a consistent
- * identity color. Defaults to the brand indigo for unknown routes.
- */
 function accentForPath(pathname: string | null): string {
   if (!pathname) return "var(--brand)";
   if (pathname.startsWith("/dashboard/analytics"))    return "var(--accent-insights)";
@@ -34,18 +30,24 @@ function accentForPath(pathname: string | null): string {
 export function Shell({ children, title, description, actions }: ShellProps) {
   const pathname = usePathname();
   const sectionAccent = accentForPath(pathname);
+  const [navOpen, setNavOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header title={title} description={description} actions={actions} />
+        <Header
+          title={title}
+          description={description}
+          actions={actions}
+          onOpenNav={() => setNavOpen(true)}
+        />
         <main
           className="flex-1 overflow-y-auto"
           style={{ ["--section-accent" as string]: sectionAccent }}
         >
-          <div className="mx-auto w-full max-w-6xl px-8 py-10 lg:px-12 lg:py-12">
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-12">
             {children}
           </div>
         </main>

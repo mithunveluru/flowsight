@@ -94,9 +94,7 @@ public class ReceiptOcrClientService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Package-visible for testing
-    // -------------------------------------------------------------------------
 
     byte[] buildMultipartBody(Path imagePath, String boundary) throws IOException {
         byte[] fileBytes = Files.readAllBytes(imagePath);
@@ -131,10 +129,6 @@ public class ReceiptOcrClientService {
             return Optional.empty();
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private String probeMimeType(Path path) {
         String name = path.getFileName().toString().toLowerCase();

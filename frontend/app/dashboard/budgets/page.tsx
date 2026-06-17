@@ -37,10 +37,6 @@ import {
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -58,10 +54,6 @@ const schema = z.object({
   rollover:     z.boolean().optional(),
 });
 type FormValues = z.infer<typeof schema>;
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function BudgetsPage() {
   const [summary,  setSummary]  = useState<BudgetSummary | null>(null);
@@ -162,10 +154,6 @@ export default function BudgetsPage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Components
-// -------------------------------------------------------------------------
 
 function SummaryCards({ summary }: { summary: BudgetSummary }) {
   const remaining = Math.max(0, summary.totalBudgeted - summary.totalSpent);
@@ -272,10 +260,6 @@ function BudgetCard({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Form drawer
-// -------------------------------------------------------------------------
 
 function BudgetFormDrawer({
   budget,

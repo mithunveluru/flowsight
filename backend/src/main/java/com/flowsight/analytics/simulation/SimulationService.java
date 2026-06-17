@@ -74,9 +74,7 @@ public class SimulationService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Delta computation per scenario type
-    // -------------------------------------------------------------------------
 
     private Deltas computeDeltas(ScenarioRequest scenario) {
         return switch (scenario.getType()) {

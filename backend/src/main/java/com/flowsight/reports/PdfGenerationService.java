@@ -38,9 +38,7 @@ import java.util.List;
 @Slf4j
 public class PdfGenerationService {
 
-    // -------------------------------------------------------------------------
     // Design tokens — mirror the web UI palette
-    // -------------------------------------------------------------------------
     private static final Color INK         = new Color(0x1B, 0x1F, 0x26); // near-black foreground
     private static final Color INK_SOFT    = new Color(0x6B, 0x72, 0x80); // muted secondary
     private static final Color INK_FAINT   = new Color(0x9C, 0xA3, 0xAF); // captions
@@ -71,9 +69,7 @@ public class PdfGenerationService {
     private static final DateTimeFormatter GEN_DATE_FMT =
         DateTimeFormatter.ofPattern("d MMMM yyyy");
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     public byte[] generate(ReportData data, ReportInsightGenerator.ReportNarrative narrative) throws IOException {
         Document doc = new Document(PageSize.A4, MARGIN, MARGIN, MARGIN, MARGIN);
@@ -145,9 +141,7 @@ public class PdfGenerationService {
         return out.toByteArray();
     }
 
-    // -------------------------------------------------------------------------
     // Page decorator — header strip and footer with page numbers
-    // -------------------------------------------------------------------------
 
     private static class PageDecorator extends PdfPageEventHelper {
         @Override
@@ -182,9 +176,7 @@ public class PdfGenerationService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Section primitives
-    // -------------------------------------------------------------------------
 
     private void renderCover(Document doc, ReportData data) throws DocumentException {
         // Vertical breathing room at top
@@ -516,9 +508,7 @@ public class PdfGenerationService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Table cell primitives
-    // -------------------------------------------------------------------------
 
     private PdfPCell tableHeader(String text) {
         PdfPCell c = new PdfPCell(new Phrase(text, TABLE_HEADER));
@@ -548,9 +538,7 @@ public class PdfGenerationService {
         return c;
     }
 
-    // -------------------------------------------------------------------------
     // Drawing helpers
-    // -------------------------------------------------------------------------
 
     private void addDivider(Document doc) throws DocumentException {
         PdfPTable t = new PdfPTable(1);

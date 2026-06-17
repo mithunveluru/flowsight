@@ -23,10 +23,6 @@ import type {
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
@@ -51,11 +47,9 @@ const ACTION_LABELS: Record<string, string> = {
   RECEIPT_CONFIRMED:   "Receipt confirmed",
   BUDGET_CREATED:      "Budget created",
   GOAL_CREATED:        "Goal created",
+  PASSWORD_RESET_REQUESTED: "Password reset requested",
+  PASSWORD_RESET_COMPLETED: "Password reset completed",
 };
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -109,10 +103,6 @@ export default function SettingsPage() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Profile
-// -------------------------------------------------------------------------
-
 function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
   return (
     <Card
@@ -135,10 +125,6 @@ function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () =
     </Card>
   );
 }
-
-// -------------------------------------------------------------------------
-// Receipt quota — the only artificial limit in the product
-// -------------------------------------------------------------------------
 
 function ReceiptQuotaCard({ account }: { account: Account }) {
   const q = account.receiptQuota;
@@ -198,10 +184,6 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
   );
 }
 
-// -------------------------------------------------------------------------
-// Audit log
-// -------------------------------------------------------------------------
-
 function AuditLogCard({
   log, currentPage, onPageChange,
 }: {
@@ -219,7 +201,7 @@ function AuditLogCard({
       {log.content.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>
       ) : (
-        <div className="-mx-6">
+        <div className="-mx-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
@@ -284,10 +266,6 @@ function AuditRow({ entry }: { entry: AuditLogEntry }) {
     </tr>
   );
 }
-
-// -------------------------------------------------------------------------
-// Shared primitives
-// -------------------------------------------------------------------------
 
 function Card({
   icon, title, description, children,

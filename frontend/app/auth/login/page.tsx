@@ -91,7 +91,7 @@ export default function LoginPage() {
             error={errors.password?.message}
             rightSlot={
               <Link
-                href="#"
+                href="/auth/forgot-password"
                 className="text-xs text-slate-500 transition-colors hover:text-slate-900"
               >
                 Forgot password?

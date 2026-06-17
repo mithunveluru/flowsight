@@ -31,10 +31,6 @@ import {
 } from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -51,10 +47,6 @@ const SEVERITY_DOT: Record<Severity, string> = {
   MEDIUM: "bg-amber-500",
   LOW:    "bg-blue-500",
 };
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function InsightsPage() {
   const [data,    setData]    = useState<InsightsResponse | null>(null);
@@ -131,10 +123,6 @@ export default function InsightsPage() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Header
-// -------------------------------------------------------------------------
-
 function Header({ summary }: { summary?: string }) {
   return (
     <div>
@@ -149,10 +137,6 @@ function Header({ summary }: { summary?: string }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Savings hero — total potential
-// -------------------------------------------------------------------------
 
 function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
   return (
@@ -184,10 +168,6 @@ function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
     </section>
   );
 }
-
-// -------------------------------------------------------------------------
-// Behavioral patterns
-// -------------------------------------------------------------------------
 
 function PatternsSection({ patterns }: { patterns: BehavioralPattern[] }) {
   return (
@@ -227,10 +207,6 @@ function PatternCard({ pattern }: { pattern: BehavioralPattern }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Recommendations
-// -------------------------------------------------------------------------
 
 function RecommendationsSection({ recommendations }: { recommendations: Recommendation[] }) {
   return (
@@ -302,10 +278,6 @@ function RecommendationCard({ recommendation: r }: { recommendation: Recommendat
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Decision consequences
-// -------------------------------------------------------------------------
 
 function ConsequencesSection({ consequences }: { consequences: ConsequenceProjection[] }) {
   return (
@@ -384,10 +356,6 @@ function Projection({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Layout primitives
-// -------------------------------------------------------------------------
 
 function SectionHeader({
   icon, title, subtitle,

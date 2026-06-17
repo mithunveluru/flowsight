@@ -43,9 +43,7 @@ public class ReceiptParserService {
     private static final Pattern REPEATED_CHAR_PATTERN =
         Pattern.compile("([A-Za-z0-9])\\1{4,}");
 
-    // -------------------------------------------------------------------------
     // Total amount patterns — priority-ordered
-    // -------------------------------------------------------------------------
 
     private static final List<Pattern> TOTAL_PATTERNS = List.of(
         Pattern.compile(
@@ -60,9 +58,7 @@ public class ReceiptParserService {
             Pattern.MULTILINE)
     );
 
-    // -------------------------------------------------------------------------
     // Date patterns
-    // -------------------------------------------------------------------------
 
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
         DateTimeFormatter.ofPattern("dd/MM/yyyy"),
@@ -84,9 +80,7 @@ public class ReceiptParserService {
             Pattern.CASE_INSENSITIVE)
     );
 
-    // -------------------------------------------------------------------------
     // Public entry points
-    // -------------------------------------------------------------------------
 
     /** Preferred: uses structured per-line data for position/confidence scoring. */
     public OcrExtractionResult parse(OcrDocument document) {
@@ -119,9 +113,7 @@ public class ReceiptParserService {
         return parse(OcrDocument.fromPlainText(ocrText));
     }
 
-    // -------------------------------------------------------------------------
     // Merchant resolution — heuristic first, AI on ambiguity/low-confidence/corruption
-    // -------------------------------------------------------------------------
 
     private String resolveMerchant(OcrDocument document, String text) {
         MerchantCandidate candidate = merchantExtractor.extractWithScore(document);
@@ -169,9 +161,7 @@ public class ReceiptParserService {
         return avgLen < 2.0;
     }
 
-    // -------------------------------------------------------------------------
     // Amount extraction
-    // -------------------------------------------------------------------------
 
     BigDecimal extractTotal(String text) {
         for (Pattern pattern : TOTAL_PATTERNS) {
@@ -197,9 +187,7 @@ public class ReceiptParserService {
         return largest;
     }
 
-    // -------------------------------------------------------------------------
     // Date extraction
-    // -------------------------------------------------------------------------
 
     LocalDate extractDate(String text) {
         for (Pattern datePattern : DATE_PATTERNS) {
@@ -211,10 +199,6 @@ public class ReceiptParserService {
         }
         return null;
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private BigDecimal parseMoney(String raw) {
         if (raw == null) return null;

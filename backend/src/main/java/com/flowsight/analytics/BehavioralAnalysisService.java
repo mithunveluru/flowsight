@@ -70,9 +70,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 1) Weekend overspend
-    // -------------------------------------------------------------------------
 
     private BehavioralPattern detectWeekendOverspend(List<Transaction> txns) {
         BigDecimal weekendTotal = BigDecimal.ZERO;
@@ -116,9 +114,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 2) Lifestyle inflation
-    // -------------------------------------------------------------------------
 
     private BehavioralPattern detectLifestyleInflation(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
@@ -154,9 +150,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 3) Category concentration
-    // -------------------------------------------------------------------------
 
     private BehavioralPattern detectCategoryConcentration(List<Transaction> txns) {
         Map<TransactionCategory, BigDecimal> byCategory = txns.stream()
@@ -192,9 +186,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 4) Increasing transaction frequency
-    // -------------------------------------------------------------------------
 
     private BehavioralPattern detectIncreasingFrequency(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
@@ -223,9 +215,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 5) Average ticket size growth
-    // -------------------------------------------------------------------------
 
     private BehavioralPattern detectLargeTicketTrend(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
@@ -261,9 +251,7 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Summary
-    // -------------------------------------------------------------------------
 
     private String buildSummary(List<BehavioralPattern> patterns) {
         if (patterns.isEmpty()) {
@@ -279,10 +267,6 @@ public class BehavioralAnalysisService {
             default                       -> "Active spender";
         };
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private static int severityOrder(BehavioralPattern p) {
         return switch (p.getSeverity()) {

@@ -59,9 +59,7 @@ public class AnalyticsService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Overview
-    // -------------------------------------------------------------------------
 
     public AnalyticsOverviewResponse getOverview(UUID userId, LocalDate from, LocalDate to) {
         BigDecimal totalSpend  = coalesce(transactionRepository.sumByTypeAndDateRange(userId, TransactionType.DEBIT,  from, to));
@@ -85,9 +83,7 @@ public class AnalyticsService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Trend + forecast
-    // -------------------------------------------------------------------------
 
     public AnalyticsTrendResponse getTrend(UUID userId, int months) {
         int capped = Math.min(Math.max(months, 1), 24);
@@ -101,9 +97,7 @@ public class AnalyticsService {
         return AnalyticsTrendResponse.builder().points(points).build();
     }
 
-    // -------------------------------------------------------------------------
     // Category breakdown
-    // -------------------------------------------------------------------------
 
     private List<CategoryBreakdownItem> buildCategoryBreakdown(
         UUID userId, LocalDate from, LocalDate to, BigDecimal totalSpend
@@ -132,9 +126,7 @@ public class AnalyticsService {
         return items;
     }
 
-    // -------------------------------------------------------------------------
     // Top merchants
-    // -------------------------------------------------------------------------
 
     private List<MerchantSummary> buildTopMerchants(UUID userId, LocalDate from, LocalDate to) {
         List<Object[]> rows = transactionRepository.topMerchantsRaw(
@@ -151,9 +143,7 @@ public class AnalyticsService {
         return items;
     }
 
-    // -------------------------------------------------------------------------
     // Behavioral alerts
-    // -------------------------------------------------------------------------
 
     private List<SpendAlert> buildAlerts(
         UUID userId, LocalDate from, LocalDate to, List<CategoryBreakdownItem> current
@@ -209,9 +199,7 @@ public class AnalyticsService {
             .collect(Collectors.toList());
     }
 
-    // -------------------------------------------------------------------------
     // Monthly trend helpers
-    // -------------------------------------------------------------------------
 
     private List<MonthlyTrendPoint> fillMonthGaps(List<Object[]> raw, LocalDate from, LocalDate to) {
         Map<String, Object[]> map = new LinkedHashMap<>();
@@ -269,10 +257,6 @@ public class AnalyticsService {
         }
         return forecast;
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private static BigDecimal coalesce(BigDecimal v) {
         return v != null ? v : BigDecimal.ZERO;

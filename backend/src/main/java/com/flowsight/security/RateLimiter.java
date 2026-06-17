@@ -25,9 +25,7 @@ public class RateLimiter {
 
     private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
-    // -------------------------------------------------------------------------
     // Tuned per endpoint
-    // -------------------------------------------------------------------------
 
     /** Auth endpoints: 5 requests per minute per IP. Reasonable for honest users, painful for brute-force. */
     public void checkAuthAttempt(String clientId) {
@@ -39,9 +37,17 @@ public class RateLimiter {
         check("upload:" + clientId, 30, 60 * 60_000);
     }
 
-    // -------------------------------------------------------------------------
+    /** Password reset requests: 5 per hour per IP. Bounded but humane for honest retries. */
+    public void checkPasswordResetRequest(String clientId) {
+        check("pwreset-req:" + clientId, 5, 60 * 60_000);
+    }
+
+    /** Password reset confirmations: 10 per hour per IP. Slows token brute force. */
+    public void checkPasswordResetConfirm(String clientId) {
+        check("pwreset-confirm:" + clientId, 10, 60 * 60_000);
+    }
+
     // Core token bucket
-    // -------------------------------------------------------------------------
 
     private void check(String key, int capacity, long refillIntervalMillis) {
         TokenBucket bucket = buckets.computeIfAbsent(key,

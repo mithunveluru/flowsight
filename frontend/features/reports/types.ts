@@ -44,10 +44,6 @@ export interface MonthlyReport {
   taxSummary: TaxSummary;
 }
 
-// -------------------------------------------------------------------------
-// Phase 12: Financial intelligence reports
-// -------------------------------------------------------------------------
-
 export type ReportPreset =
   | "LAST_7_DAYS"
   | "LAST_30_DAYS"

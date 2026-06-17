@@ -75,9 +75,7 @@ public class LeakDetectionService {
     private final TransactionRepository      transactionRepository;
     private final RecurringPatternRepository patternRepository;
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     public LeakDetectionResponse detectLeaks(UUID userId) {
         LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
@@ -117,9 +115,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 1) Duplicate subscriptions
-    // -------------------------------------------------------------------------
 
     private LeakInsight detectDuplicateSubscriptions(
         List<RecurringPattern> patterns,
@@ -180,9 +176,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 2) Subscription creep
-    // -------------------------------------------------------------------------
 
     private LeakInsight detectSubscriptionCreep(List<RecurringPattern> patterns, List<Transaction> allTxns) {
         // Group transactions by merchant for fast lookup
@@ -240,9 +234,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 3) High-frequency small spend (silent drains)
-    // -------------------------------------------------------------------------
 
     private LeakInsight detectHighFrequencySmallSpend(List<Transaction> txns) {
         // Aggregate per merchant within lookback window
@@ -296,9 +288,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // 4) Bank fees
-    // -------------------------------------------------------------------------
 
     private LeakInsight detectBankFees(List<Transaction> txns) {
         // Group fee transactions by merchant
@@ -352,10 +342,6 @@ public class LeakDetectionService {
             .items(items)
             .build();
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private Map<String, TransactionCategory> buildMerchantCategoryMap(List<Transaction> txns) {
         // Use the latest (rightmost in sort order) category for each merchant

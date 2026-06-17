@@ -37,6 +37,13 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  data:
+    web:
+      pageable:
+        # Cap client-supplied ?size= so a single request cannot demand an unbounded page.
+        max-page-size: 100
+        default-page-size: 25
+
 server:
   port: ${PORT:8080}
   error:
@@ -72,6 +79,16 @@ application:
     # Admins can override per user (custom limit or unlimited) via /api/v1/admin/quota.
     # The value is read once at startup; per-user limits are stored in users.receipt_limit.
     default-limit: ${RECEIPT_DEFAULT_LIMIT:50}
+  email:
+    # Resend transactional email. If api-key is empty the service logs the reset
+    # link instead of dispatching — adequate for local development and CI.
+    resend:
+      api-key: ${RESEND_API_KEY:}
+    from: ${RESEND_FROM_EMAIL:FlowSight <noreply@flowsight.app>}
+    reply-to: ${RESEND_REPLY_TO:}
+  password-reset:
+    expiration-minutes: ${PASSWORD_RESET_EXPIRATION_MINUTES:30}
+    frontend-url: ${FRONTEND_URL:http://localhost:3007}
 
 logging:
   level:

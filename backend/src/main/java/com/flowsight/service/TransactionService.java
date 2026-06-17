@@ -4,12 +4,14 @@ import com.flowsight.analytics.CsvParserService;
 import com.flowsight.analytics.TransactionIngestionPipeline;
 import com.flowsight.dto.transaction.*;
 import com.flowsight.entity.*;
+import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.ResourceNotFoundException;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,6 +36,17 @@ public class TransactionService {
     private final UserService userService;
     private final AuditLogService    auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
+
+    /** Explicit CSV ceiling, independent of (and below) the global multipart limit. */
+    private static final long MAX_CSV_BYTES = 5L * 1024 * 1024; // 5 MB
+    /**
+     * Content types browsers and OSes commonly attach to .csv files. We treat a
+     * missing content type as acceptable (some clients omit it) but always require
+     * a .csv extension, so the extension check is the real gate.
+     */
+    private static final Set<String> ALLOWED_CSV_CONTENT_TYPES = Set.of(
+        "text/csv", "application/csv", "text/plain",
+        "application/vnd.ms-excel", "application/octet-stream");
 
     @Transactional
     public TransactionResponse create(CreateTransactionRequest request, UUID userId) {
@@ -88,6 +103,7 @@ public class TransactionService {
     @Transactional
     public BulkImportResult importCsv(MultipartFile file, UUID userId) throws IOException {
         rateLimiter.checkUploadAttempt(userId.toString());
+        validateCsvUpload(file);
 
         User user = userService.findById(userId);
         CsvParserService.ParseResult parsed = csvParserService.parse(file);
@@ -139,6 +155,36 @@ public class TransactionService {
             .lastTransactionDate(lastDate)
             .totalAmountImported(totalImported)
             .build();
+    }
+
+    /**
+     * Validates a CSV upload before parsing: non-empty, within the explicit size
+     * ceiling, with a .csv extension and a recognizable (or absent) content type.
+     * Rejects masqueraded payloads (e.g. a 50 MB binary renamed to .csv is blocked
+     * by both the multipart limit and this size check; a .exe is blocked by the
+     * extension check) before any parsing work is done.
+     */
+    private void validateCsvUpload(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new FlowsightException("CSV file is empty", HttpStatus.BAD_REQUEST);
+        }
+        if (file.getSize() > MAX_CSV_BYTES) {
+            throw new FlowsightException(
+                "CSV exceeds the 5 MB limit (" + (file.getSize() / 1024 / 1024) + " MB uploaded)",
+                HttpStatus.BAD_REQUEST);
+        }
+        String name = file.getOriginalFilename();
+        if (name == null || !name.toLowerCase(Locale.ROOT).endsWith(".csv")) {
+            throw new FlowsightException(
+                "Only .csv files are accepted for import", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        }
+        String contentType = file.getContentType();
+        if (contentType != null
+            && !ALLOWED_CSV_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new FlowsightException(
+                "Unsupported content type for CSV import: " + contentType,
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        }
     }
 
     private Transaction findOwnedOrThrow(UUID id, UUID userId) {

@@ -50,9 +50,7 @@ public class BudgetService {
     private final UserRepository        userRepository;
     private final AuditLogService       auditLogService;
 
-    // -------------------------------------------------------------------------
     // CRUD
-    // -------------------------------------------------------------------------
 
     @Transactional
     public BudgetResponse create(BudgetRequest request, UUID userId) {
@@ -145,9 +143,7 @@ public class BudgetService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Live spend computation
-    // -------------------------------------------------------------------------
 
     private MonthlyContext computeMonthlyContext(UUID userId) {
         YearMonth thisMonth = YearMonth.now();
@@ -219,10 +215,6 @@ public class BudgetService {
             .status(status)
             .build();
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private static BigDecimal toBD(Object o) {
         if (o == null) return BigDecimal.ZERO;

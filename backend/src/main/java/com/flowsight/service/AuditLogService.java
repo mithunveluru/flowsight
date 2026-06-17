@@ -38,6 +38,8 @@ public class AuditLogService {
     public static final String ACTION_RECEIPT_CONFIRMED    = "RECEIPT_CONFIRMED";
     public static final String ACTION_BUDGET_CREATED       = "BUDGET_CREATED";
     public static final String ACTION_GOAL_CREATED         = "GOAL_CREATED";
+    public static final String ACTION_PASSWORD_RESET_REQUESTED = "PASSWORD_RESET_REQUESTED";
+    public static final String ACTION_PASSWORD_RESET_COMPLETED = "PASSWORD_RESET_COMPLETED";
 
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper       objectMapper;
@@ -90,9 +92,7 @@ public class AuditLogService {
         log(null, ACTION_USER_LOGIN_FAILED, "User", null, Map.of("email", email));
     }
 
-    // -------------------------------------------------------------------------
     // Request context helpers — safe to call outside an HTTP request
-    // -------------------------------------------------------------------------
 
     private String extractIpAddress() {
         if (currentRequest == null) return null;
@@ -119,9 +119,7 @@ public class AuditLogService {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Query helpers
-    // -------------------------------------------------------------------------
 
     public org.springframework.data.domain.Page<AuditLog> list(
         UUID userId, org.springframework.data.domain.Pageable pageable

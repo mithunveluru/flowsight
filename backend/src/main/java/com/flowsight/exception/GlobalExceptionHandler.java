@@ -1,15 +1,19 @@
 package com.flowsight.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,6 +36,68 @@ public class GlobalExceptionHandler {
                 .error("Validation Failed")
                 .message("Request validation failed")
                 .violations(violations)
+                .timestamp(Instant.now())
+                .build());
+    }
+
+    // Constraint violations on @Validated method params (@RequestParam / @PathVariable bounds).
+    // Without this, a param-level violation would fall through to the generic 500 handler.
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex) {
+        List<String> violations = ex.getConstraintViolations()
+            .stream()
+            .map(v -> {
+                String path = v.getPropertyPath().toString();
+                String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+                return field + ": " + v.getMessage();
+            })
+            .toList();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(400)
+                .error("Validation Failed")
+                .message("Request validation failed")
+                .violations(violations)
+                .timestamp(Instant.now())
+                .build());
+    }
+
+    // Type mismatch on a path/query param (e.g. malformed UUID, unknown enum value, bad date).
+    // Previously these reached the catch-all handler and returned 500 instead of 400.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String required = ex.getRequiredType() != null
+            ? ex.getRequiredType().getSimpleName()
+            : "the expected type";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(400)
+                .error("Bad Request")
+                .message("Parameter '" + ex.getName() + "' must be a valid " + required)
+                .timestamp(Instant.now())
+                .build());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParam(MissingServletRequestParameterException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(400)
+                .error("Bad Request")
+                .message("Required parameter '" + ex.getParameterName() + "' is missing")
+                .timestamp(Instant.now())
+                .build());
+    }
+
+    // Malformed / unparseable JSON request body. Kept generic so we never echo body content.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiError.builder()
+                .status(400)
+                .error("Bad Request")
+                .message("Malformed or unreadable request body")
                 .timestamp(Instant.now())
                 .build());
     }

@@ -4,147 +4,195 @@
 
 @layer base {
   /* ============================================================
-     LIGHT THEME — refined fintech palette
-     - background: barely-tinted off-white (lifts pure-white cards visually)
-     - accent: refined indigo (Linear/Stripe family — less neon than pure blue)
-     - semantics: muted teal for positive, warm amber for caution
-     - borders: very thin and slightly indigo-tinted for warmth
+     LIGHT THEME — premium pastel palette
+     Direction: calm, modern, trustworthy. Soft lavender brand,
+     pastel teal/mint positives, warm peach cautions. Surfaces
+     carry a barely-cool tint so white cards lift naturally.
      ============================================================ */
   :root {
-    /* Surfaces — subtle cool warmth on the body so cards lift naturally */
-    --background: 220 25% 99%;
-    --foreground: 222 28% 11%;
+    /* Surfaces — barely-cool off-white; cards stay pure white */
+    --background: 224 30% 99%;
+    --foreground: 224 24% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 28% 11%;
+    --card-foreground: 224 24% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 28% 11%;
+    --popover-foreground: 224 24% 14%;
 
-    /* Primary — deep slate-indigo for dark filled buttons */
-    --primary: 222 38% 13%;
+    /* Primary — softened slate-indigo for dark filled buttons.
+       Less brutal than near-black, still high-contrast on light. */
+    --primary: 226 30% 18%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 22% 96.5%;
-    --secondary-foreground: 222 28% 13%;
+    --secondary: 226 30% 96.5%;
+    --secondary-foreground: 224 24% 16%;
 
-    --muted: 220 22% 96.5%;
-    --muted-foreground: 220 10% 44%;
+    --muted: 226 30% 96.5%;
+    --muted-foreground: 224 11% 46%;
 
-    --accent: 220 22% 96%;
-    --accent-foreground: 222 28% 13%;
+    --accent: 226 30% 96%;
+    --accent-foreground: 224 24% 16%;
 
-    --destructive: 0 60% 50%;
+    --destructive: 358 58% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders — slightly indigo, very thin */
-    --border: 220 18% 91.5%;
-    --input: 220 18% 89%;
-    --ring: 234 50% 50%;
+    /* Borders — very thin, faint cool-lavender tint */
+    --border: 224 22% 93%;
+    --input: 224 22% 90.5%;
+    --ring: 238 52% 60%;
 
-    /* Slightly more generous corner radius — 12px reads as "premium" */
+    /* 12px reads as "premium" */
     --radius: 0.75rem;
 
-    /* Sidebar — barely-tinted blue-warm */
-    --sidebar-bg: 220 25% 98.5%;
-    --sidebar-fg: 220 11% 38%;
-    --sidebar-fg-active: 222 28% 11%;
-    --sidebar-border: 220 18% 92%;
+    /* Sidebar — slight warm cool, near-white */
+    --sidebar-bg: 226 32% 98.5%;
+    --sidebar-fg: 224 11% 42%;
+    --sidebar-fg-active: 224 24% 14%;
+    --sidebar-border: 224 22% 93%;
 
-    /* Brand — refined indigo (Linear-family, restrained, professional) */
-    --brand: 234 50% 53%;
-    --brand-soft: 234 60% 96.5%;
+    /* Brand — soft lavender-indigo. Pulled toward violet, low
+       saturation. Reads premium and approachable, not neon. */
+    --brand: 238 48% 60%;
+    --brand-soft: 240 60% 97%;
     --brand-foreground: 0 0% 100%;
 
-    /* Semantic accents — muted, executive-grade */
-    --positive: 168 56% 36%;       /* muted teal-green */
-    --positive-soft: 168 50% 95%;
-    --caution: 35 78% 50%;          /* warm amber */
-    --caution-soft: 35 90% 95%;
-    --warning: 0 60% 50%;
-    --warning-soft: 0 85% 96%;
+    /* Semantic accents — pastel, restful */
+    --positive: 162 42% 42%;       /* pastel mint-teal */
+    --positive-soft: 162 50% 96%;
+    --caution: 28 72% 56%;         /* warm peach-amber */
+    --caution-soft: 32 86% 96%;
+    --warning: 358 55% 58%;
+    --warning-soft: 358 80% 96.5%;
 
     /* ------------------------------------------------------------
-       Section accents — low-saturation, executive-grade.
+       Section accents — pastel, low-saturation, calm.
        Used by the sidebar active indicator and per-page hero
        accents. Pick *one* identity per surface area; never paint
        the whole UI in section colors.
        ------------------------------------------------------------ */
-    --accent-overview:     220 45% 48%;  /* muted blue       */
-    --accent-insights:     240 38% 56%;  /* soft indigo      */
-    --accent-reports:      28  18% 38%;  /* warm graphite    */
-    --accent-simulate:     180 38% 38%;  /* subtle teal      */
-    --accent-receipts:     215 22% 44%;  /* slate            */
-    --accent-transactions: 215 22% 44%;  /* slate            */
-    --accent-budgets:      168 30% 40%;  /* sage-teal        */
-    --accent-goals:        168 30% 40%;
-    --accent-recurring:    240 38% 56%;
-    --accent-leaks:        28  18% 38%;
+    --accent-overview:     218 48% 60%;  /* soft blue        */
+    --accent-insights:     248 42% 66%;  /* soft lavender    */
+    --accent-reports:      28  28% 52%;  /* warm graphite    */
+    --accent-simulate:     180 32% 48%;  /* pastel teal      */
+    --accent-receipts:     215 24% 55%;  /* slate            */
+    --accent-transactions: 215 24% 55%;  /* slate            */
+    --accent-budgets:      162 32% 48%;  /* mint-sage        */
+    --accent-goals:        162 32% 48%;
+    --accent-recurring:    248 42% 66%;
+    --accent-leaks:        28  28% 52%;
+
+    /* ------------------------------------------------------------
+       Chart palette — coherent pastel family, calibrated for
+       readability on light surfaces. Categories desaturated and
+       lifted in lightness so they read as a single family rather
+       than competing primaries. Consumed by chart components.
+       ------------------------------------------------------------ */
+    --chart-spend:   238 48% 64%;  /* soft lavender (brand family) */
+    --chart-income:  168 36% 46%;  /* pastel teal                  */
+    --chart-grid:    224 22% 93%;  /* matches --border             */
+    --chart-axis:    224 12% 60%;  /* readable on light            */
+
+    --chart-1:  16  62% 70%;       /* soft coral       */
+    --chart-2:  152 32% 58%;       /* sage mint        */
+    --chart-3:  268 36% 70%;       /* soft plum        */
+    --chart-4:  212 48% 68%;       /* dusty blue       */
+    --chart-5:  220 12% 62%;       /* slate            */
+    --chart-6:  330 42% 72%;       /* muted rose       */
+    --chart-7:  6   52% 68%;       /* soft red         */
+    --chart-8:  238 48% 72%;       /* lavender         */
+    --chart-9:  42  56% 64%;       /* warm sand        */
+    --chart-10: 178 32% 56%;       /* pastel teal      */
+    --chart-11: 282 36% 72%;       /* lilac            */
+    --chart-12: 168 36% 50%;       /* mint             */
+    --chart-13: 196 36% 62%;       /* sky cyan         */
+    --chart-14: 224 14% 70%;       /* neutral          */
+    --chart-15: 224 16% 86%;       /* faint            */
   }
 
   /* ============================================================
-     DARK THEME — graphite, not pure black
-     - background: deep slate (#10131a-ish), softer on eyes than #000
-     - cards: a hair lighter than background for natural layering
-     - borders: very subtle to avoid noise
+     DARK THEME — graphite with the pastel family lifted for
+     legibility. Same hues as light, raised lightness, kept calm.
      ============================================================ */
   .dark {
-    --background: 222 28% 8%;
-    --foreground: 213 27% 92%;
+    --background: 224 22% 9%;
+    --foreground: 224 20% 92%;
 
-    --card: 222 25% 11%;
-    --card-foreground: 213 27% 92%;
+    --card: 224 20% 12%;
+    --card-foreground: 224 20% 92%;
 
-    --popover: 222 28% 9%;
-    --popover-foreground: 213 27% 92%;
+    --popover: 224 22% 10%;
+    --popover-foreground: 224 20% 92%;
 
-    --primary: 213 27% 95%;
-    --primary-foreground: 222 28% 10%;
+    --primary: 224 20% 95%;
+    --primary-foreground: 224 22% 11%;
 
-    --secondary: 222 22% 14%;
-    --secondary-foreground: 213 27% 92%;
+    --secondary: 224 18% 15%;
+    --secondary-foreground: 224 20% 92%;
 
-    --muted: 222 22% 13%;
-    --muted-foreground: 215 16% 62%;
+    --muted: 224 18% 14%;
+    --muted-foreground: 215 14% 64%;
 
-    --accent: 222 22% 16%;
-    --accent-foreground: 210 40% 96%;
+    --accent: 224 18% 17%;
+    --accent-foreground: 224 20% 95%;
 
-    --destructive: 0 55% 50%;
+    --destructive: 358 52% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 18% 19%;
-    --input: 222 18% 19%;
-    --ring: 234 60% 62%;
+    --border: 224 16% 20%;
+    --input: 224 16% 20%;
+    --ring: 238 62% 70%;
 
-    --sidebar-bg: 222 28% 7%;
-    --sidebar-fg: 215 16% 60%;
-    --sidebar-fg-active: 213 27% 95%;
-    --sidebar-border: 222 22% 14%;
+    --sidebar-bg: 224 22% 8%;
+    --sidebar-fg: 215 14% 62%;
+    --sidebar-fg-active: 224 20% 95%;
+    --sidebar-border: 224 18% 15%;
 
-    /* Brand — brightened for legibility on graphite */
-    --brand: 234 70% 68%;
-    --brand-soft: 234 32% 18%;
-    --brand-foreground: 222 28% 10%;
+    /* Brand — lifted lavender for graphite legibility */
+    --brand: 240 68% 74%;
+    --brand-soft: 240 30% 20%;
+    --brand-foreground: 224 22% 11%;
 
-    --positive: 168 55% 50%;
-    --positive-soft: 168 30% 16%;
-    --caution: 35 75% 60%;
-    --caution-soft: 35 25% 18%;
-    --warning: 0 65% 60%;
-    --warning-soft: 0 25% 18%;
+    --positive: 162 46% 56%;
+    --positive-soft: 162 25% 17%;
+    --caution: 30 72% 66%;
+    --caution-soft: 30 24% 19%;
+    --warning: 358 60% 66%;
+    --warning-soft: 358 24% 19%;
 
-    /* Section accents — brightened for dark surfaces */
-    --accent-overview:     220 55% 65%;
-    --accent-insights:     240 50% 70%;
-    --accent-reports:      28  30% 60%;
-    --accent-simulate:     180 45% 55%;
-    --accent-receipts:     215 35% 65%;
-    --accent-transactions: 215 35% 65%;
-    --accent-budgets:      168 40% 55%;
-    --accent-goals:        168 40% 55%;
-    --accent-recurring:    240 50% 70%;
-    --accent-leaks:        28  30% 60%;
+    /* Section accents — lifted to read on graphite */
+    --accent-overview:     218 58% 70%;
+    --accent-insights:     248 54% 76%;
+    --accent-reports:      28  36% 64%;
+    --accent-simulate:     180 42% 60%;
+    --accent-receipts:     215 36% 68%;
+    --accent-transactions: 215 36% 68%;
+    --accent-budgets:      162 42% 60%;
+    --accent-goals:        162 42% 60%;
+    --accent-recurring:    248 54% 76%;
+    --accent-leaks:        28  36% 64%;
+
+    /* Chart palette — lifted for dark legibility */
+    --chart-spend:   240 64% 74%;
+    --chart-income:  168 42% 58%;
+    --chart-grid:    224 16% 20%;
+    --chart-axis:    224 14% 62%;
+
+    --chart-1:  16  64% 72%;
+    --chart-2:  152 36% 64%;
+    --chart-3:  268 42% 76%;
+    --chart-4:  212 52% 72%;
+    --chart-5:  220 14% 66%;
+    --chart-6:  330 48% 76%;
+    --chart-7:  6   58% 72%;
+    --chart-8:  240 54% 78%;
+    --chart-9:  42  60% 68%;
+    --chart-10: 178 36% 60%;
+    --chart-11: 282 40% 76%;
+    --chart-12: 168 40% 56%;
+    --chart-13: 196 42% 66%;
+    --chart-14: 224 16% 74%;
+    --chart-15: 224 16% 36%;
   }
 }
 
@@ -225,45 +273,44 @@
 
 @layer components {
   /* ============================================================
-     CARDS — refined with a 3-layer specular + drop shadow that
-     reads as "crafted" rather than "boxed". The ring-shaped
-     inset shadow acts as a refined hairline border without the
-     harshness of a CSS border.
+     CARDS — soft pastel surface: hairline ring + a low specular
+     drop tinted with a cool slate-lavender (47,55,90) so cards
+     feel light and lifted rather than harsh-bordered.
      ============================================================ */
   .card-refined {
     @apply rounded-xl bg-card;
     box-shadow:
-      0 1px 1px 0 rgba(15, 23, 42, 0.025),
-      0 2px 6px -2px rgba(15, 23, 42, 0.04),
-      0 0 0 1px rgba(15, 23, 42, 0.045);
+      0 1px 2px 0 rgba(47, 55, 90, 0.025),
+      0 4px 12px -4px rgba(47, 55, 90, 0.05),
+      0 0 0 1px rgba(47, 55, 90, 0.04);
     transition: box-shadow 180ms ease, transform 180ms ease;
   }
   .card-refined:hover {
     box-shadow:
-      0 1px 1px 0 rgba(15, 23, 42, 0.03),
-      0 4px 12px -3px rgba(15, 23, 42, 0.06),
-      0 0 0 1px rgba(15, 23, 42, 0.06);
+      0 1px 2px 0 rgba(47, 55, 90, 0.03),
+      0 8px 20px -6px rgba(47, 55, 90, 0.07),
+      0 0 0 1px rgba(47, 55, 90, 0.055);
   }
 
   /* Elevation utilities — graduated levels */
   .elev-1 {
     box-shadow:
-      0 1px 1px 0 rgba(15, 23, 42, 0.02),
-      0 0 0 1px rgba(15, 23, 42, 0.04);
+      0 1px 2px 0 rgba(47, 55, 90, 0.02),
+      0 0 0 1px rgba(47, 55, 90, 0.035);
   }
   .elev-2 {
     box-shadow:
-      0 2px 6px -2px rgba(15, 23, 42, 0.05),
-      0 0 0 1px rgba(15, 23, 42, 0.045);
+      0 2px 8px -3px rgba(47, 55, 90, 0.05),
+      0 0 0 1px rgba(47, 55, 90, 0.04);
   }
   .elev-3 {
     box-shadow:
-      0 16px 36px -12px rgba(15, 23, 42, 0.16),
-      0 6px 14px -6px rgba(15, 23, 42, 0.08),
-      0 0 0 1px rgba(15, 23, 42, 0.05);
+      0 20px 40px -16px rgba(47, 55, 90, 0.14),
+      0 6px 16px -6px rgba(47, 55, 90, 0.08),
+      0 0 0 1px rgba(47, 55, 90, 0.045);
   }
 
-  /* Dark mode shadow tuning — use rings tinted toward the surface, not black */
+  /* Dark mode shadow tuning — rings tinted toward the surface, not black */
   .dark .card-refined,
   .dark .elev-1,
   .dark .elev-2 {
@@ -431,9 +478,9 @@
   .card-tactile {
     @apply rounded-xl bg-card;
     box-shadow:
-      0 1px 1px 0 rgba(15, 23, 42, 0.025),
-      0 2px 6px -2px rgba(15, 23, 42, 0.04),
-      0 0 0 1px rgba(15, 23, 42, 0.045);
+      0 1px 2px 0 rgba(47, 55, 90, 0.025),
+      0 4px 12px -4px rgba(47, 55, 90, 0.05),
+      0 0 0 1px rgba(47, 55, 90, 0.04);
     transition:
       box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
       transform   220ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -442,9 +489,9 @@
   .card-tactile:hover {
     transform: translateY(-1px);
     box-shadow:
-      0 1px 1px 0 rgba(15, 23, 42, 0.035),
-      0 10px 24px -8px rgba(15, 23, 42, 0.10),
-      0 0 0 1px rgba(15, 23, 42, 0.075);
+      0 1px 2px 0 rgba(47, 55, 90, 0.03),
+      0 12px 28px -10px rgba(47, 55, 90, 0.10),
+      0 0 0 1px rgba(99, 102, 145, 0.10);
   }
   .dark .card-tactile {
     box-shadow:

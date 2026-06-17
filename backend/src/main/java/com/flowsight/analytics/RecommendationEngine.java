@@ -71,9 +71,7 @@ public class RecommendationEngine {
             .collect(Collectors.toList());
     }
 
-    // -------------------------------------------------------------------------
     // Source converters
-    // -------------------------------------------------------------------------
 
     private Recommendation fromLeak(LeakInsight leak) {
         if (leak.getMonthlyImpact() == null
@@ -170,10 +168,6 @@ public class RecommendationEngine {
             ))
             .build();
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private static String mapSeverity(String leakSeverity) {
         return switch (leakSeverity) {

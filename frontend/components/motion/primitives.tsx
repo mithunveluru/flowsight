@@ -1,18 +1,8 @@
 "use client";
 
-/**
- * Reusable motion primitives — every page in the product should compose these
- * rather than hand-rolling framer-motion configs. Three goals:
- *   1. One ease curve everywhere (a refined ease-out-quint that feels Apple-ish)
- *   2. One duration scale (250ms enters, 180ms hovers, 400ms reveals)
- *   3. Respect prefers-reduced-motion globally (handled in globals.css; primitives still gate motion props)
- *
- * Usage:
- *   <FadeIn delay={0.05}>...</FadeIn>
- *   <StaggerContainer><StaggerItem>...</StaggerItem></StaggerContainer>
- *   <RevealOnScroll>...</RevealOnScroll>
- *   <AnimatedNumber value={1234} format={(n) => `₹${n.toLocaleString("en-IN")}`} />
- */
+// Shared motion primitives. One ease curve (EASE_OUT) and one duration
+// scale (DURATION); every primitive gates on prefers-reduced-motion so
+// the rest of the app does not need to think about it.
 
 import {
   AnimatePresence,
@@ -28,10 +18,6 @@ import {
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-// -------------------------------------------------------------------------
-// Design tokens for motion — keep all transitions consistent
-// -------------------------------------------------------------------------
-
 /** Refined ease-out-quint — looks like macOS spring without being bouncy. */
 export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 /** Ease-in-out for ambient looped motion (hero backgrounds). */
@@ -45,10 +31,6 @@ export const DURATION = {
 } as const;
 
 const baseEnter: Transition = { duration: DURATION.base, ease: EASE_OUT };
-
-// -------------------------------------------------------------------------
-// FadeIn — drop-in replacement for animate-fade-in
-// -------------------------------------------------------------------------
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -75,10 +57,6 @@ export function FadeIn({
     </motion.div>
   );
 }
-
-// -------------------------------------------------------------------------
-// StaggerContainer + StaggerItem — for entrance choreography
-// -------------------------------------------------------------------------
 
 const staggerContainerVariants: Variants = {
   hidden: { opacity: 1 },
@@ -138,10 +116,6 @@ export function StaggerItem({
   );
 }
 
-// -------------------------------------------------------------------------
-// RevealOnScroll — animates in once when the element enters the viewport
-// -------------------------------------------------------------------------
-
 export function RevealOnScroll({
   children, delay = 0, className, yOffset = 14,
 }: {
@@ -168,10 +142,6 @@ export function RevealOnScroll({
     </motion.div>
   );
 }
-
-// -------------------------------------------------------------------------
-// AnimatedNumber — tweens between values with tabular-nums formatting
-// -------------------------------------------------------------------------
 
 interface AnimatedNumberProps {
   value: number;
@@ -276,10 +246,6 @@ export function AnimatedSwitch({
   );
 }
 
-// -------------------------------------------------------------------------
-// PulseDot — for live/processing status indicators
-// -------------------------------------------------------------------------
-
 export function PulseDot({
   className,
   color = "hsl(var(--brand))",
@@ -300,8 +266,5 @@ export function PulseDot({
   );
 }
 
-// -------------------------------------------------------------------------
-// Re-export framer-motion primitives that pages may need directly
-// -------------------------------------------------------------------------
 export { motion, AnimatePresence };
 export type { MotionProps };

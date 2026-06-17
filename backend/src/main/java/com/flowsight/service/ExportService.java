@@ -71,9 +71,7 @@ public class ExportService {
             from.format(ISO_DATE), to.format(ISO_DATE));
     }
 
-    // -------------------------------------------------------------------------
     // CSV escaping
-    // -------------------------------------------------------------------------
 
     private static void appendCsvRow(StringBuilder sb, String... fields) {
         for (int i = 0; i < fields.length; i++) {

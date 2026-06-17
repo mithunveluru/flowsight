@@ -177,9 +177,7 @@ public class MerchantNormalizationService {
     private static final Pattern NON_ALPHANUM_PATTERN = Pattern.compile("[^a-z0-9 ]");
     private static final Pattern WHITESPACE_PATTERN   = Pattern.compile("\\s+");
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     /**
      * Normalizes a raw merchant string for grouping and display.
@@ -238,10 +236,6 @@ public class MerchantNormalizationService {
         return normalize(raw).getKey();
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
     private String stripSuffixes(String s) {
         boolean changed = true;
         while (changed) {
@@ -283,9 +277,7 @@ public class MerchantNormalizationService {
         return key.length() > 0 ? key.toString() : s.replace(" ", "");
     }
 
-    // -------------------------------------------------------------------------
     // Result type
-    // -------------------------------------------------------------------------
 
     @Value
     public static class Normalized {

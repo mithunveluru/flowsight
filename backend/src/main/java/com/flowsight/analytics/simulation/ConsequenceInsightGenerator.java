@@ -56,9 +56,7 @@ public class ConsequenceInsightGenerator {
         return out;
     }
 
-    // -------------------------------------------------------------------------
     // Individual insight builders
-    // -------------------------------------------------------------------------
 
     private ConsequenceInsight buildCashFlowInsight(
         FinancialBaseline baseline, ScenarioRequest scenario, BigDecimal monthlyImpact

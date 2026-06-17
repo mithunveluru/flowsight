@@ -89,9 +89,7 @@ public class ReceiptOcrMapper {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Sanitizers — package-visible for testing
-    // -------------------------------------------------------------------------
 
     BigDecimal sanitizeAmount(BigDecimal raw) {
         if (raw == null) return null;

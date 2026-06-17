@@ -22,10 +22,6 @@ import type {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -42,10 +38,6 @@ const TIER_STYLES: Record<ConfidenceTier, { label: string; cls: string }> = {
   MEDIUM:   { label: "Medium",   cls: "border-blue-200    bg-blue-50    text-blue-700"    },
   POSSIBLE: { label: "Possible", cls: "border-slate-200   bg-slate-100  text-slate-600"   },
 };
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function RecurringPage() {
   const [patterns, setPatterns] = useState<RecurringPattern[]>([]);
@@ -201,10 +193,6 @@ export default function RecurringPage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Components
-// -------------------------------------------------------------------------
 
 function Section({
   title, count, icon, hint, children,

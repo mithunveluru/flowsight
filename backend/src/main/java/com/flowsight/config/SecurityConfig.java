@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,6 +47,8 @@ public class SecurityConfig {
                 // Only the registration and login endpoints are public — /me and all others require auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // Admin-only endpoints require ROLE_ADMIN
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -53,6 +56,25 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            )
+            // Defense-in-depth response headers. This service returns only JSON, so the
+            // CSP is locked to 'none' — there is no first-party script/style/frame to allow.
+            // HSTS is emitted only over HTTPS (Spring Security gates it on a secure request),
+            // so local HTTP development is unaffected.
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())                 // X-Frame-Options: DENY
+                .contentTypeOptions(opts -> {})                      // X-Content-Type-Options: nosniff
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31_536_000))                    // 1 year
+                .addHeaderWriter(new StaticHeadersWriter(
+                    "Referrer-Policy", "strict-origin-when-cross-origin"))
+                .addHeaderWriter(new StaticHeadersWriter(
+                    "Content-Security-Policy",
+                    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"))
+                .addHeaderWriter(new StaticHeadersWriter(
+                    "Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"))
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

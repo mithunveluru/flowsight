@@ -63,10 +63,6 @@ import {
 } from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number): string {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -101,10 +97,6 @@ const SEVERITY_META: Record<Severity, { dot: string; ring: string; icon: React.E
   WARNING:  { dot: "bg-red-500",     ring: "border-red-200",     icon: AlertTriangle },
 };
 
-// -------------------------------------------------------------------------
-// Default scenarios for quick exploration
-// -------------------------------------------------------------------------
-
 const DEFAULT_SCENARIO: Record<ScenarioType, ScenarioRequest> = {
   ONE_TIME_PURCHASE:  { type: "ONE_TIME_PURCHASE",  name: "New phone",       amount: 60000,  category: "SHOPPING"      },
   RECURRING_EXPENSE:  { type: "RECURRING_EXPENSE",  name: "Streaming bundle", amount: 999,    category: "ENTERTAINMENT", durationMonths: 12 },
@@ -118,10 +110,6 @@ const SCENARIO_TAB_META: Record<ScenarioType, { label: string; icon: React.Eleme
   SAVINGS_ADJUSTMENT: { label: "Adjust savings",     icon: PiggyBank },
   LOAN_EMI:           { label: "Take a loan",        icon: TrendingDown },
 };
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function SimulatePage() {
   const [scenario, setScenario] = useState<ScenarioRequest>(DEFAULT_SCENARIO.ONE_TIME_PURCHASE);
@@ -208,10 +196,6 @@ export default function SimulatePage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Scenario Builder
-// -------------------------------------------------------------------------
 
 function ScenarioBuilder({
   scenario,
@@ -434,10 +418,6 @@ function CategorySelect({
   );
 }
 
-// -------------------------------------------------------------------------
-// Impact summary
-// -------------------------------------------------------------------------
-
 function ImpactSummary({ result }: { result: SimulationResult }) {
   const positive = result.monthlyImpact >= 0;
 
@@ -494,10 +474,6 @@ function ImpactSummary({ result }: { result: SimulationResult }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Flexibility card
-// -------------------------------------------------------------------------
 
 function FlexibilityCard({
   flexibility,
@@ -589,10 +565,6 @@ function FlexibilityCard({
   );
 }
 
-// -------------------------------------------------------------------------
-// Projection chart — 12-month before vs after
-// -------------------------------------------------------------------------
-
 function ProjectionChart({ projection }: { projection: Projection }) {
   const data = useMemo(() => {
     return projection.before.map((p, i) => ({
@@ -616,18 +588,18 @@ function ProjectionChart({ projection }: { projection: Projection }) {
         <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="grad-before" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="hsl(220 9% 46%)" stopOpacity={0.12} />
-              <stop offset="95%" stopColor="hsl(220 9% 46%)" stopOpacity={0} />
+              <stop offset="5%"  stopColor="hsl(var(--chart-axis))" stopOpacity={0.12} />
+              <stop offset="95%" stopColor="hsl(var(--chart-axis))" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="grad-after" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="hsl(234 50% 53%)" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="hsl(234 50% 53%)" stopOpacity={0} />
+              <stop offset="5%"  stopColor="hsl(var(--chart-spend))" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="hsl(var(--chart-spend))" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }} axisLine={false} tickLine={false} />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }}
             axisLine={false} tickLine={false}
             tickFormatter={(v: number) => formatINRCompact(v)}
             width={56}
@@ -637,25 +609,21 @@ function ProjectionChart({ projection }: { projection: Projection }) {
               const lbl = name === "before" ? "Current trajectory" : "With this decision";
               return `${lbl}: ${formatINR(Number(v))}`;
             }}
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
-            labelStyle={{ color: "#475569", fontWeight: 600 }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--chart-grid))" }}
+            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
           />
           <Legend
             iconType="circle" iconSize={8}
             formatter={(v) => v === "before" ? "Current trajectory" : "With this decision"}
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
           />
-          <Area type="monotone" dataKey="before" stroke="hsl(220 9% 46%)" strokeWidth={2} fill="url(#grad-before)" dot={false} />
-          <Area type="monotone" dataKey="after"  stroke="hsl(234 50% 53%)" strokeWidth={2} fill="url(#grad-after)"  dot={false} />
+          <Area type="monotone" dataKey="before" stroke="hsl(var(--chart-axis))" strokeWidth={2} fill="url(#grad-before)" dot={false} />
+          <Area type="monotone" dataKey="after"  stroke="hsl(var(--chart-spend))" strokeWidth={2} fill="url(#grad-after)"  dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Tradeoff analysis
-// -------------------------------------------------------------------------
 
 function TradeoffAnalysis({ tradeoffs }: { tradeoffs: Tradeoff[] }) {
   if (tradeoffs.length === 0) return null;
@@ -682,10 +650,6 @@ function TradeoffAnalysis({ tradeoffs }: { tradeoffs: Tradeoff[] }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Consequence insights
-// -------------------------------------------------------------------------
 
 function ConsequenceInsights({ insights }: { insights: ConsequenceInsight[] }) {
   if (insights.length === 0) return null;
@@ -721,10 +685,6 @@ function InsightRow({ insight }: { insight: ConsequenceInsight }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Low-data + loading states
-// -------------------------------------------------------------------------
 
 function LowDataNotice() {
   return (

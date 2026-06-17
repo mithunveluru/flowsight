@@ -82,9 +82,7 @@ public class GroqAIProvider implements AITransactionInterpreter {
         }
     }
 
-    // -------------------------------------------------------------------------
     // Request building
-    // -------------------------------------------------------------------------
 
     String buildUserMessage(String rawOcrText, List<String> candidates) {
         String limitedText = limitLines(rawOcrText);
@@ -115,9 +113,7 @@ public class GroqAIProvider implements AITransactionInterpreter {
         return mapper.writeValueAsString(body);
     }
 
-    // -------------------------------------------------------------------------
     // HTTP call
-    // -------------------------------------------------------------------------
 
     private String post(String body) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
@@ -139,9 +135,7 @@ public class GroqAIProvider implements AITransactionInterpreter {
         return response.body();
     }
 
-    // -------------------------------------------------------------------------
     // Response parsing
-    // -------------------------------------------------------------------------
 
     Optional<AIInterpretation> parseResponse(String responseBody) {
         try {
@@ -171,10 +165,6 @@ public class GroqAIProvider implements AITransactionInterpreter {
             return Optional.empty();
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     static String limitLines(String text) {
         if (text == null) return "";

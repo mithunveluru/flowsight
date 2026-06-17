@@ -115,9 +115,7 @@ public class TaxDeductionDetector {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Section builder
-    // -------------------------------------------------------------------------
 
     private TaxSection buildSection(
         List<Transaction> debits, String code, String name, String description,

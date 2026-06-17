@@ -43,9 +43,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MerchantExtractor {
 
-    // -------------------------------------------------------------------------
     // Exclusion sets
-    // -------------------------------------------------------------------------
 
     private static final Set<String> EXCLUDED_SUBSTRINGS = Set.of(
         // greeting / header noise — never a merchant name
@@ -119,16 +117,12 @@ public class MerchantExtractor {
         return Map.entry(Pattern.compile(regex, Pattern.CASE_INSENSITIVE), replacement);
     }
 
-    // -------------------------------------------------------------------------
     // Thresholds (package-visible so MerchantCandidate can reference them)
-    // -------------------------------------------------------------------------
 
     static final double LOW_CONFIDENCE_THRESHOLD = 0.40;
     static final double AMBIGUITY_MARGIN          = 0.08;
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     /**
      * Returns the best merchant name, or {@code null} if no candidate survives exclusions.
@@ -196,9 +190,7 @@ public class MerchantExtractor {
             .collect(Collectors.toList());
     }
 
-    // -------------------------------------------------------------------------
     // Scoring
-    // -------------------------------------------------------------------------
 
     double scoreLine(OcrLine line) {
         String text = line.getText() == null ? "" : line.getText().trim();
@@ -242,9 +234,7 @@ public class MerchantExtractor {
         return score;
     }
 
-    // -------------------------------------------------------------------------
     // Exclusions
-    // -------------------------------------------------------------------------
 
     boolean isExcluded(String text) {
         String lower = text.toLowerCase(Locale.ROOT);
@@ -266,9 +256,7 @@ public class MerchantExtractor {
         return false;
     }
 
-    // -------------------------------------------------------------------------
     // Normalisation
-    // -------------------------------------------------------------------------
 
     String normalize(String raw) {
         if (raw == null) return "";
@@ -286,10 +274,6 @@ public class MerchantExtractor {
 
         return result;
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private boolean isAllCaps(String text) {
         long letters = text.chars().filter(Character::isLetter).count();

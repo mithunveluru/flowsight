@@ -39,9 +39,7 @@ public class ReportInsightGenerator {
         );
     }
 
-    // -------------------------------------------------------------------------
     // 1. Executive summary — front page
-    // -------------------------------------------------------------------------
 
     private List<String> buildExecutiveSummary(ReportData d) {
         List<String> lines = new ArrayList<>();
@@ -113,9 +111,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // 2. Spending behavior analysis
-    // -------------------------------------------------------------------------
 
     private List<String> buildBehaviorAnalysis(ReportData d) {
         List<String> lines = new ArrayList<>();
@@ -154,9 +150,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // 3. Leak analysis
-    // -------------------------------------------------------------------------
 
     private List<LeakLine> buildLeakAnalysis(ReportData d) {
         List<LeakLine> lines = new ArrayList<>();
@@ -175,9 +169,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // 4. Recurring summary
-    // -------------------------------------------------------------------------
 
     private List<String> buildRecurringSummary(ReportData d) {
         List<String> lines = new ArrayList<>();
@@ -214,9 +206,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // 5. Consequence paragraph
-    // -------------------------------------------------------------------------
 
     private List<String> buildConsequenceParagraph(ReportData d) {
         List<String> lines = new ArrayList<>();
@@ -250,9 +240,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // 6. Recommendation lines
-    // -------------------------------------------------------------------------
 
     private List<RecommendationLine> buildRecommendationLines(ReportData d) {
         List<RecommendationLine> lines = new ArrayList<>();
@@ -275,9 +263,7 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // -------------------------------------------------------------------------
     // Output structures
-    // -------------------------------------------------------------------------
 
     @Value
     public static class ReportNarrative {

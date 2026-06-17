@@ -1,18 +1,5 @@
 "use client";
 
-/**
- * Auth showcase panel.
- *
- * Lives in the auth layout. Renders the left side of the auth experience on
- * desktop and a compact strip above the form on mobile. The page itself only
- * contributes the form on the right; everything narrative belongs here so the
- * left-right composition is owned by one component.
- *
- * Content adapts to the current route: /auth/login frames the rotating cards
- * as "what this product surfaces for people like you"; /auth/register frames
- * them as "what you unlock by creating an account".
- */
-
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -32,10 +19,6 @@ import {
   StaggerItem,
   motion,
 } from "@/components/motion/primitives";
-
-/* -----------------------------------------------------------------------------
- * Content
- * -------------------------------------------------------------------------- */
 
 type Tone = "warn" | "neutral" | "positive";
 
@@ -144,10 +127,6 @@ const OUTCOMES = [
   "Evaluate financial decisions",
 ];
 
-/* -----------------------------------------------------------------------------
- * Showcase root
- * -------------------------------------------------------------------------- */
-
 export function Showcase({ variant = "desktop" }: { variant?: "desktop" | "mobile" }) {
   const pathname = usePathname();
   const mode: "login" | "signup" = pathname?.includes("register") ? "signup" : "login";
@@ -166,10 +145,6 @@ export function Showcase({ variant = "desktop" }: { variant?: "desktop" | "mobil
 
   return <DesktopPanel mode={mode} insight={insights[idx]} count={insights.length} activeIdx={idx} />;
 }
-
-/* -----------------------------------------------------------------------------
- * Desktop panel — the heart of the auth experience
- * -------------------------------------------------------------------------- */
 
 function DesktopPanel({
   mode,
@@ -197,10 +172,8 @@ function DesktopPanel({
 
   return (
     <div className="relative flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#f7f6f1] text-slate-900">
-      {/* Layered atmospheric background */}
       <BackgroundLayers />
 
-      {/* Content */}
       <div className="relative z-10 flex h-full flex-col px-12 py-12 xl:px-16 xl:py-14 2xl:px-20">
         <FadeIn>
           <Brand />
@@ -222,13 +195,11 @@ function DesktopPanel({
           </FadeIn>
         </div>
 
-        {/* Featured insight card */}
         <FadeIn delay={0.3} className="mt-12">
           <FeaturedInsight insight={insight} />
           <InsightProgress count={count} activeIdx={activeIdx} />
         </FadeIn>
 
-        {/* Outcome chips */}
         <div className="mt-auto pt-10">
           <StaggerContainer className="grid grid-cols-2 gap-x-6 gap-y-3 max-w-[28rem]" stagger={0.05}>
             {OUTCOMES.map((label) => (
@@ -251,10 +222,6 @@ function DesktopPanel({
     </div>
   );
 }
-
-/* -----------------------------------------------------------------------------
- * Mobile strip — compact narrative above the form
- * -------------------------------------------------------------------------- */
 
 function MobileStrip({
   mode,
@@ -293,10 +260,6 @@ function MobileStrip({
   );
 }
 
-/* -----------------------------------------------------------------------------
- * Brand mark
- * -------------------------------------------------------------------------- */
-
 function Brand({ compact }: { compact?: boolean } = {}) {
   return (
     <div className="flex items-center gap-2.5">
@@ -323,10 +286,6 @@ function Logo() {
     </svg>
   );
 }
-
-/* -----------------------------------------------------------------------------
- * Featured insight card — the centerpiece. Swaps every few seconds.
- * -------------------------------------------------------------------------- */
 
 function FeaturedInsight({ insight, compact }: { insight: Insight; compact?: boolean }) {
   return (
@@ -418,10 +377,6 @@ function InsightProgress({
   );
 }
 
-/* -----------------------------------------------------------------------------
- * Sparkline — tiny, animated, decorative
- * -------------------------------------------------------------------------- */
-
 function Sparkline({
   points,
   accent,
@@ -481,10 +436,6 @@ function Sparkline({
   );
 }
 
-/* -----------------------------------------------------------------------------
- * Outcome row — small static row of what FlowSight does
- * -------------------------------------------------------------------------- */
-
 function OutcomeRow({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2.5 text-[13px] text-slate-600">
@@ -493,10 +444,6 @@ function OutcomeRow({ label }: { label: string }) {
     </div>
   );
 }
-
-/* -----------------------------------------------------------------------------
- * Background layers — restrained atmosphere
- * -------------------------------------------------------------------------- */
 
 function BackgroundLayers({ mobile }: { mobile?: boolean } = {}) {
   return (
@@ -554,10 +501,6 @@ function FlowLine() {
     </svg>
   );
 }
-
-/* -----------------------------------------------------------------------------
- * Tone helpers
- * -------------------------------------------------------------------------- */
 
 function toneToAccent(tone: Tone): { fg: string; bg: string } {
   switch (tone) {

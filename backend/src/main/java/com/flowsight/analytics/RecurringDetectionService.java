@@ -81,9 +81,7 @@ public class RecurringDetectionService {
     private final UserRepository              userRepository;
     private final MerchantNormalizationService merchantNormalizer;
 
-    // -------------------------------------------------------------------------
     // Public API
-    // -------------------------------------------------------------------------
 
     /**
      * Runs detection, persists patterns, and returns all active (non-dismissed) patterns.
@@ -217,9 +215,7 @@ public class RecurringDetectionService {
         return toResponse(patternRepository.save(p));
     }
 
-    // -------------------------------------------------------------------------
     // Detection algorithm
-    // -------------------------------------------------------------------------
 
     private Map<String, MerchantGroup> groupByNormalizedMerchant(List<Transaction> txns) {
         Map<String, MerchantGroup> groups = new LinkedHashMap<>();
@@ -325,9 +321,7 @@ public class RecurringDetectionService {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // Response mapping
-    // -------------------------------------------------------------------------
 
     private RecurringPatternResponse toResponse(RecurringPattern p) {
         LocalDate today = LocalDate.now();
@@ -382,10 +376,6 @@ public class RecurringDetectionService {
             .daysUntilNext(daysUntilNext)
             .build();
     }
-
-    // -------------------------------------------------------------------------
-    // Utilities
-    // -------------------------------------------------------------------------
 
     private TransactionCategory mostCommonCategory(List<Transaction> txns) {
         return txns.stream()

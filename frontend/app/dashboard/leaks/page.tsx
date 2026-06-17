@@ -24,10 +24,6 @@ import type {
 } from "@/features/leaks/types";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Style maps
-// -------------------------------------------------------------------------
-
 const SEVERITY_STYLES: Record<LeakSeverity, { ringCls: string; badgeCls: string; label: string }> = {
   HIGH:   { ringCls: "border-red-200    bg-red-50",    badgeCls: "border-red-200    bg-red-100    text-red-700",    label: "High impact"   },
   MEDIUM: { ringCls: "border-amber-200  bg-amber-50",  badgeCls: "border-amber-200  bg-amber-100  text-amber-700",  label: "Medium impact" },
@@ -44,10 +40,6 @@ const LEAK_TYPE_META: Record<LeakType, { icon: React.ElementType; iconCls: strin
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function LeaksPage() {
   const [data, setData]       = useState<LeakDetectionResponse | null>(null);
@@ -112,10 +104,6 @@ export default function LeaksPage() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Hero: total potential savings
-// -------------------------------------------------------------------------
-
 function SavingsHero({ data }: { data: LeakDetectionResponse }) {
   return (
     <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-6">
@@ -139,10 +127,6 @@ function SavingsHero({ data }: { data: LeakDetectionResponse }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Leak card — collapsible
-// -------------------------------------------------------------------------
 
 function LeakCard({ leak }: { leak: LeakInsight }) {
   const [open, setOpen] = useState(false);
@@ -218,10 +202,6 @@ function LeakCard({ leak }: { leak: LeakInsight }) {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Skeleton & empty states
-// -------------------------------------------------------------------------
 
 function LoadingSkeleton() {
   return (

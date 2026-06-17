@@ -43,10 +43,6 @@ import {
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -68,10 +64,6 @@ function previousMonthRange(): { from: string; to: string } {
   const fmt = (d: Date) => d.toISOString().split("T")[0];
   return { from: fmt(firstOfPrev), to: fmt(lastOfPrev) };
 }
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function ReportsPage() {
   return (
@@ -97,10 +89,6 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// CSV export
-// -------------------------------------------------------------------------
 
 function CsvExportCard() {
   const [from,      setFrom]      = useState(isoMonthStart());
@@ -193,10 +181,6 @@ function CsvExportCard() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Monthly report links
-// -------------------------------------------------------------------------
-
 function MonthlyReportsCard() {
   const thisMonth = { from: isoMonthStart(), to: isoToday() };
   const lastMonth = previousMonthRange();
@@ -250,10 +234,6 @@ function ReportLink({ label, period, href }: { label: string; period: string; hr
     </Link>
   );
 }
-
-// -------------------------------------------------------------------------
-// Tax summary preview
-// -------------------------------------------------------------------------
 
 function TaxSummaryCard() {
   const [summary, setSummary] = useState<TaxSummary | null>(null);
@@ -322,10 +302,6 @@ function TaxSummaryCard() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Layout primitives
-// -------------------------------------------------------------------------
-
 function Section({
   icon, title, description, children,
 }: {
@@ -361,10 +337,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Intelligence Reports — premium PDF generator (Phase 12)
-// -------------------------------------------------------------------------
 
 const PRESET_OPTIONS: { value: ReportPreset; label: string }[] = [
   { value: "LAST_7_DAYS",  label: "Last 7 days"  },

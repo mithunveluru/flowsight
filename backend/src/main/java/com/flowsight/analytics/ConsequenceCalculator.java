@@ -76,10 +76,6 @@ public class ConsequenceCalculator {
             .build();
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
     private ConsequenceProjection projectFromPattern(RecurringPattern p) {
         // Convert to monthly equivalent based on period
         BigDecimal monthly = p.getEstimatedAmount()

@@ -22,10 +22,6 @@ import type { Goal, GoalStatus, PaceStatus } from "@/features/goals/types";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// -------------------------------------------------------------------------
-// Helpers
-// -------------------------------------------------------------------------
-
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
@@ -54,10 +50,6 @@ const contributionSchema = z.object({
   amount: z.coerce.number({ invalid_type_error: "Enter an amount" }).positive("Amount must be greater than zero"),
 });
 type ContributionValues = z.infer<typeof contributionSchema>;
-
-// -------------------------------------------------------------------------
-// Page
-// -------------------------------------------------------------------------
 
 export default function GoalsPage() {
   const [goals,    setGoals]    = useState<Goal[]>([]);
@@ -206,10 +198,6 @@ export default function GoalsPage() {
   );
 }
 
-// -------------------------------------------------------------------------
-// Goal card
-// -------------------------------------------------------------------------
-
 function GoalCard({
   goal, onEdit, onDelete, onContribute,
 }: {
@@ -283,10 +271,6 @@ function GoalCard({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Goal form
-// -------------------------------------------------------------------------
 
 function GoalFormDrawer({
   goal, onClose, onSaved,
@@ -416,10 +400,6 @@ function GoalFormDrawer({
     </div>
   );
 }
-
-// -------------------------------------------------------------------------
-// Contribute drawer
-// -------------------------------------------------------------------------
 
 function ContributeDrawer({
   goalId, onClose, onSaved,
