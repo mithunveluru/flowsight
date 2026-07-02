@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s - FlowSight",
   },
   description:
-    "Behavioral financial intelligence platform. Detect spending leaks, simulate consequences, and understand the patterns behind your finances.",
+    "See where your money goes, find spending worth recovering, and understand the habits behind it, all in one place.",
 };
 
 export const viewport: Viewport = {

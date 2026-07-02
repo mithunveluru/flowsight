@@ -75,6 +75,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--warning))",
           soft: "hsl(var(--warning-soft))",
         },
+        signal: {
+          DEFAULT: "hsl(var(--signal))",
+          soft: "hsl(var(--signal-soft))",
+        },
       },
       boxShadow: {
         /* Soft pastel card shadows — cool slate-lavender, low alpha */

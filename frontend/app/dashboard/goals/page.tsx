@@ -17,6 +17,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatusMarker } from "@/components/ui/signals";
 import { goalsApi } from "@/features/goals/api";
 import type { Goal, GoalStatus, PaceStatus } from "@/features/goals/types";
 import { ApiError } from "@/lib/api";
@@ -26,13 +27,13 @@ function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
-const PACE_META: Record<PaceStatus, { label: string; cls: string }> = {
-  ON_PACE:   { label: "On pace",     cls: "border-blue-200    bg-blue-50    text-blue-700"    },
-  AHEAD:     { label: "Ahead",       cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  BEHIND:    { label: "Behind",      cls: "border-amber-200   bg-amber-50   text-amber-700"   },
-  COMPLETED: { label: "Completed",   cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  OVERDUE:   { label: "Overdue",     cls: "border-red-200     bg-red-50     text-red-700"     },
-  ABANDONED: { label: "Abandoned",   cls: "border-slate-200   bg-slate-100  text-slate-500"   },
+const PACE_META: Record<PaceStatus, { label: string; cls: string; rail: string }> = {
+  ON_PACE:   { label: "On pace",     cls: "text-blue-600",    rail: "bg-blue-500"    },
+  AHEAD:     { label: "Ahead",       cls: "text-emerald-600", rail: "bg-emerald-500" },
+  BEHIND:    { label: "Behind",      cls: "text-amber-600",   rail: "bg-amber-500"   },
+  COMPLETED: { label: "Completed",   cls: "text-emerald-600", rail: "bg-emerald-500" },
+  OVERDUE:   { label: "Overdue",     cls: "text-red-600",     rail: "bg-red-500"     },
+  ABANDONED: { label: "Abandoned",   cls: "text-slate-500",   rail: "bg-slate-300"   },
 };
 
 const ICON_CHOICES = ["🏠", "✈️", "🚗", "💍", "🎓", "💼", "🏖️", "💰", "📱", "💻", "🎯", "🎁"];
@@ -215,9 +216,10 @@ function GoalCard({
 
   return (
     <div className={cn(
-      "rounded-lg border bg-white p-5 group transition-colors",
+      "relative overflow-hidden rounded-lg border bg-white p-5 group transition-colors",
       isCompleted ? "border-emerald-200" : "border-slate-200 hover:border-slate-300"
     )}>
+      <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-[3px]", paceMeta.rail)} />
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -226,9 +228,7 @@ function GoalCard({
           </div>
           <p className="mt-0.5 text-xs text-slate-400">Target {targetDate}</p>
         </div>
-        <span className={cn("inline-flex items-center shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap", paceMeta.cls)}>
-          {paceMeta.label}
-        </span>
+        <StatusMarker label={paceMeta.label} className={cn("shrink-0", paceMeta.cls)} />
       </div>
 
       <div className="space-y-2">

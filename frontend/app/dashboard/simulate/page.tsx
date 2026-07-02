@@ -145,9 +145,9 @@ export default function SimulatePage() {
       <FadeIn>
         <header className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Decision simulator</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">What if?</h1>
             <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
-              Test a financial decision against your real baseline. See the cashflow impact, flexibility shift, and long-term consequences before you commit.
+              Thinking about a big purchase or a new commitment? See how it would affect your money, your breathing room, and your savings before you decide.
             </p>
           </div>
           <Sliders className="h-5 w-5 text-muted-foreground mt-1.5" strokeWidth={1.5} />
@@ -491,9 +491,9 @@ function FlexibilityCard({
       <div className="flex items-start gap-3 mb-5">
         <Gauge className="h-4 w-4 text-muted-foreground mt-0.5" strokeWidth={1.75} />
         <div>
-          <p className="text-sm font-semibold text-foreground">Financial flexibility</p>
+          <p className="text-sm font-semibold text-foreground">Breathing room</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Room to absorb surprises and pursue what comes next.
+            How much room you'd have to absorb surprises and pursue what comes next.
           </p>
         </div>
       </div>

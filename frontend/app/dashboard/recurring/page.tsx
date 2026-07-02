@@ -20,6 +20,7 @@ import type {
   RecurringStatus,
 } from "@/features/recurring/types";
 import { Button } from "@/components/ui/button";
+import { StatusMarker } from "@/components/ui/signals";
 import { cn } from "@/lib/utils";
 
 function formatINR(v: number) {
@@ -27,16 +28,16 @@ function formatINR(v: number) {
 }
 
 const STATUS_STYLES: Record<RecurringStatus, { label: string; cls: string }> = {
-  ACTIVE:   { label: "Active",    cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  DUE_SOON: { label: "Due soon",  cls: "border-blue-200   bg-blue-50   text-blue-700"     },
-  OVERDUE:  { label: "Overdue",   cls: "border-amber-200  bg-amber-50  text-amber-700"    },
-  MISSED:   { label: "Missed",    cls: "border-red-200    bg-red-50    text-red-700"      },
+  ACTIVE:   { label: "Active",    cls: "text-emerald-600" },
+  DUE_SOON: { label: "Due soon",  cls: "text-blue-600"    },
+  OVERDUE:  { label: "Overdue",   cls: "text-amber-600"   },
+  MISSED:   { label: "Missed",    cls: "text-red-600"     },
 };
 
 const TIER_STYLES: Record<ConfidenceTier, { label: string; cls: string }> = {
-  HIGH:     { label: "High",     cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  MEDIUM:   { label: "Medium",   cls: "border-blue-200    bg-blue-50    text-blue-700"    },
-  POSSIBLE: { label: "Possible", cls: "border-slate-200   bg-slate-100  text-slate-600"   },
+  HIGH:     { label: "High",     cls: "text-emerald-600" },
+  MEDIUM:   { label: "Medium",   cls: "text-blue-600"    },
+  POSSIBLE: { label: "Possible", cls: "text-slate-500"   },
 };
 
 export default function RecurringPage() {
@@ -104,9 +105,9 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Recurring payments</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Subscriptions &amp; bills</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            Patterns detected from your history. Confirm or dismiss each to sharpen accuracy.
+            The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={scan} disabled={scanning || loading}>
@@ -129,10 +130,10 @@ export default function RecurringPage() {
         <>
           {/* Summary cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Monthly recurring"        value={formatINR(totalMonthly)} icon={Repeat}        cls="text-orange-500"  bg="bg-orange-50 border-orange-100" />
-            <StatCard label="Annual commitment"        value={formatINR(totalAnnual)}  icon={CalendarClock} cls="text-blue-500"    bg="bg-blue-50 border-blue-100"     />
+            <StatCard label="Per month"                value={formatINR(totalMonthly)} icon={Repeat}        cls="text-orange-500"  bg="bg-orange-50 border-orange-100" />
+            <StatCard label="Per year"                 value={formatINR(totalAnnual)}  icon={CalendarClock} cls="text-blue-500"    bg="bg-blue-50 border-blue-100"     />
             <StatCard label="Active subscriptions"     value={String(patterns.length)} icon={CheckCircle2}  cls="text-emerald-500" bg="bg-emerald-50 border-emerald-100" />
-            <StatCard label="Cancellation candidates"  value={String(cancellable)}     icon={TrendingDown}  cls="text-violet-500"  bg="bg-violet-50 border-violet-100"   />
+            <StatCard label="Worth cancelling"         value={String(cancellable)}     icon={TrendingDown}  cls="text-violet-500"  bg="bg-violet-50 border-violet-100"   />
           </div>
 
           {/* Confirmed section */}
@@ -141,7 +142,7 @@ export default function RecurringPage() {
               title="Confirmed by you"
               count={confirmed.length}
               icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-              hint="These are preserved across re-scans and refreshed with latest data."
+              hint="We'll keep these and refresh them every time you re-scan."
             >
               <PatternsTable
                 patterns={confirmed}
@@ -156,10 +157,10 @@ export default function RecurringPage() {
           {/* Detected section */}
           {detected.length > 0 && (
             <Section
-              title="Detected"
+              title="Looks recurring"
               count={detected.length}
               icon={<Sparkles className="h-3.5 w-3.5 text-blue-600" />}
-              hint="High and medium confidence patterns auto-detected from your transactions."
+              hint="We're fairly confident these repeat. Confirm the ones that do."
             >
               <PatternsTable
                 patterns={detected}
@@ -174,10 +175,10 @@ export default function RecurringPage() {
           {/* Possible section */}
           {possible.length > 0 && (
             <Section
-              title="Possible recurring"
+              title="Maybe recurring"
               count={possible.length}
               icon={<HelpCircle className="h-3.5 w-3.5 text-slate-500" />}
-              hint="Low-confidence matches — confirm if recurring, dismiss otherwise."
+              hint="We're not sure about these. Confirm the ones that repeat, dismiss the rest."
             >
               <PatternsTable
                 patterns={possible}
@@ -291,22 +292,20 @@ function PatternRow({
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-slate-900">{pattern.merchant}</span>
           {pattern.isCancellationCandidate && (
-            <span className="inline-flex items-center gap-0.5 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-xs text-violet-700">
-              <TrendingDown className="h-2.5 w-2.5" /> Optional
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600">
+              <TrendingDown className="h-3 w-3" strokeWidth={2} /> Optional
             </span>
           )}
         </div>
         <p className="mt-0.5 text-xs text-slate-400">
-          {pattern.occurrenceCount} occurrences detected
+          Seen {pattern.occurrenceCount} times so far
         </p>
       </td>
       <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
         {pattern.periodLabel}
       </td>
       <td className="px-4 py-3">
-        <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium", tier.cls)}>
-          {tier.label}
-        </span>
+        <StatusMarker label={tier.label} className={tier.cls} />
         <p className="mt-0.5 text-xs text-slate-400">
           {(Number(pattern.confidence) * 100).toFixed(0)}%
         </p>
@@ -332,9 +331,7 @@ function PatternRow({
         )}
       </td>
       <td className="px-4 py-3">
-        <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium", status.cls)}>
-          {status.label}
-        </span>
+        <StatusMarker label={status.label} className={status.cls} />
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-1">
@@ -385,9 +382,9 @@ function EmptyState({ onScan, scanning }: { onScan: () => void; scanning: boolea
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
       <Repeat className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No recurring payments detected</p>
+      <p className="text-sm font-medium text-slate-900">No subscriptions found yet</p>
       <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-        Two or more transactions from the same merchant are usually enough to surface a pattern.
+        Once we see the same charge a couple of times, it'll show up here automatically.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Button size="sm" onClick={onScan} disabled={scanning}>

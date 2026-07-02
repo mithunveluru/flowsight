@@ -53,18 +53,18 @@ const navSections = [
     ],
   },
   {
-    section: "Insights",
+    section: "Understand",
     accent: "var(--accent-insights)",
     items: [
-      { label: "Analytics",       href: "/dashboard/analytics", icon: BarChart3    },
-      { label: "Recurring",       href: "/dashboard/recurring", icon: Repeat       },
-      { label: "Leak detection",  href: "/dashboard/leaks",     icon: TrendingDown },
-      { label: "Insights",        href: "/dashboard/insights",  icon: Brain        },
-      { label: "Simulate",        href: "/dashboard/simulate",  icon: Sliders      },
+      { label: "Trends",        href: "/dashboard/analytics", icon: BarChart3    },
+      { label: "Subscriptions", href: "/dashboard/recurring", icon: Repeat       },
+      { label: "Money drains",  href: "/dashboard/leaks",     icon: TrendingDown },
+      { label: "Habits",        href: "/dashboard/insights",  icon: Brain        },
+      { label: "What-if",       href: "/dashboard/simulate",  icon: Sliders      },
     ],
   },
   {
-    section: "Export",
+    section: "Reports",
     accent: "var(--accent-reports)",
     items: [
       { label: "Reports", href: "/dashboard/reports", icon: FileText },

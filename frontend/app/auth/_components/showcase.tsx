@@ -47,7 +47,7 @@ const LOGIN_INSIGHTS: Insight[] = [
   },
   {
     icon: Repeat,
-    category: "Recurring commitments",
+    category: "Subscriptions & bills",
     headline: "14% of monthly spend is recurring",
     metric: "₹11,240",
     delta: { value: "7 services", direction: "flat" },
@@ -67,11 +67,11 @@ const LOGIN_INSIGHTS: Insight[] = [
   },
   {
     icon: TrendingDown,
-    category: "Recoverable spend",
+    category: "Money worth recovering",
     headline: "₹4,200 looks recoverable in subscriptions",
     metric: "₹4,200",
     delta: { value: "-21%", direction: "down" },
-    context: "Duplicate services and price creep detected",
+    context: "Duplicate services and creeping prices",
     tone: "positive",
     sparkline: [0.95, 0.92, 0.9, 0.88, 0.85, 0.82, 0.8, 0.78, 0.75, 0.72, 0.7, 0.68, 0.66, 0.64, 0.62, 0.6, 0.58, 0.56, 0.54, 0.52, 0.5, 0.48, 0.46, 0.44],
   },
@@ -80,7 +80,7 @@ const LOGIN_INSIGHTS: Insight[] = [
 const SIGNUP_INSIGHTS: Insight[] = [
   {
     icon: Sparkles,
-    category: "Behavioral analysis",
+    category: "Spending patterns",
     headline: "See the patterns behind your spending",
     metric: "850+",
     delta: { value: "patterns", direction: "flat" },
@@ -90,7 +90,7 @@ const SIGNUP_INSIGHTS: Insight[] = [
   },
   {
     icon: Repeat,
-    category: "Recurring commitments",
+    category: "Subscriptions & bills",
     headline: "Find what you forgot you were paying for",
     metric: "₹11,240",
     delta: { value: "/ month", direction: "flat" },
@@ -100,31 +100,31 @@ const SIGNUP_INSIGHTS: Insight[] = [
   },
   {
     icon: Lightbulb,
-    category: "Decision simulator",
+    category: "What-if planning",
     headline: "Model decisions before you make them",
     metric: "10y",
     delta: { value: "horizon", direction: "flat" },
-    context: "EMI impact, savings delay, flexibility shift",
+    context: "Monthly hit, savings delay, breathing room",
     tone: "positive",
     sparkline: [0.3, 0.32, 0.35, 0.4, 0.42, 0.46, 0.5, 0.52, 0.55, 0.6, 0.62, 0.66, 0.7, 0.72, 0.76, 0.78, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96],
   },
   {
     icon: TrendingDown,
-    category: "Recoverable spend",
+    category: "Money worth recovering",
     headline: "Recover what's quietly slipping away",
     metric: "₹4,200",
     delta: { value: "found", direction: "down" },
-    context: "Duplicate subs, price creep, silent drains",
+    context: "Duplicate subs, creeping prices, small daily habits",
     tone: "positive",
     sparkline: [0.95, 0.92, 0.9, 0.88, 0.85, 0.82, 0.8, 0.78, 0.75, 0.72, 0.7, 0.68, 0.66, 0.64, 0.62, 0.6, 0.58, 0.56, 0.54, 0.52, 0.5, 0.48, 0.46, 0.44],
   },
 ];
 
 const OUTCOMES = [
-  "Understand spending patterns",
-  "Discover recurring commitments",
-  "Identify financial leaks",
-  "Evaluate financial decisions",
+  "Understand your spending patterns",
+  "Spot your subscriptions and bills",
+  "Find money worth recovering",
+  "Try a decision before you make it",
 ];
 
 export function Showcase({ variant = "desktop" }: { variant?: "desktop" | "mobile" }) {
@@ -162,12 +162,12 @@ function DesktopPanel({
       ? {
           eyebrow: "Welcome to FlowSight",
           title: "A clearer view of where your money goes.",
-          sub: "Sign up to see what behavioral patterns, recurring commitments, and decision modelling look like on your own data.",
+          sub: "Sign up to see your spending patterns, the subscriptions you're paying for, and what a big decision would really cost, all on your own data.",
         }
       : {
-          eyebrow: "Financial intelligence, for individuals",
+          eyebrow: "Your money, made clear",
           title: "Understand the decisions behind your finances.",
-          sub: "Welcome back. Your patterns, observations, and projections are waiting where you left them.",
+          sub: "Welcome back. Your patterns, your trends, and what they add up to are right where you left them.",
         };
 
   return (

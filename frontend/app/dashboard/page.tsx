@@ -104,7 +104,7 @@ export default function DashboardPage() {
           <div className="section-header">
             <div>
               <p className="section-title">Explore</p>
-              <p className="section-subtitle">Tools available across the platform</p>
+              <p className="section-subtitle">Everything FlowSight can do for you</p>
             </div>
           </div>
         </FadeIn>
@@ -293,32 +293,32 @@ const quickActions = [
 const modules = [
   {
     icon: BarChart3, href: "/dashboard/analytics",
-    title: "Financial overview",
-    description: "Monthly trends, category breakdown, top merchants, and behavioral observations.",
+    title: "Spending trends",
+    description: "Where your money goes each month, by category, merchant, and over time.",
   },
   {
     icon: Repeat, href: "/dashboard/recurring",
-    title: "Recurring payments",
-    description: "Subscriptions and recurring bills, with cancellation candidates surfaced.",
+    title: "Subscriptions & bills",
+    description: "Every recurring charge in one place, with the ones worth cancelling flagged.",
   },
   {
     icon: TrendingDown, href: "/dashboard/leaks",
-    title: "Recoverable spending",
-    description: "Duplicate subscriptions, price creep, silent drains, and bank fees in one view.",
+    title: "Money drains",
+    description: "Duplicate subscriptions, creeping prices, small daily habits, and fees worth recovering.",
   },
   {
     icon: Target, href: "/dashboard/budgets",
-    title: "Budgets and goals",
-    description: "Set monthly limits, save toward what matters, and track progress over time.",
+    title: "Budgets & goals",
+    description: "Set monthly limits, save toward what matters, and watch your progress.",
   },
   {
     icon: Receipt, href: "/dashboard/receipts",
-    title: "Receipt review",
-    description: "Receipt analysis with editable extraction and review-first confirmation.",
+    title: "Receipts",
+    description: "Snap a receipt, check what we read off it, and save it in a tap.",
   },
   {
     icon: Brain, href: "/dashboard/insights",
-    title: "Observations",
-    description: "Behavioral patterns, recommendations, and the long-term cost of recurring choices.",
+    title: "Your money habits",
+    description: "The patterns in how you spend, what you could do, and what it adds up to over time.",
   },
 ];

@@ -66,6 +66,23 @@
     --warning-soft: 358 80% 96.5%;
 
     /* ------------------------------------------------------------
+       AI SIGNAL LANGUAGE — semantic aliases for the intelligence
+       layer (behavioral signals, insights, predictions, anomalies).
+       These alias the base palette so they auto-adapt in dark mode
+       and never introduce a color that bypasses the token system.
+       `--signal` is the single "intelligence" accent (lavender-indigo).
+       Severity maps: HIGH→warning, MEDIUM→caution, LOW→signal.
+       ------------------------------------------------------------ */
+    --signal: var(--brand);
+    --signal-soft: var(--brand-soft);
+    --severity-high: var(--warning);
+    --severity-high-soft: var(--warning-soft);
+    --severity-medium: var(--caution);
+    --severity-medium-soft: var(--caution-soft);
+    --severity-low: var(--brand);
+    --severity-low-soft: var(--brand-soft);
+
+    /* ------------------------------------------------------------
        Section accents — pastel, low-saturation, calm.
        Used by the sidebar active indicator and per-page hero
        accents. Pick *one* identity per surface area; never paint
@@ -433,31 +450,6 @@
     @apply outline-none;
     border-color: hsl(var(--brand));
     box-shadow: 0 0 0 3px hsl(var(--brand) / 0.14);
-  }
-
-  /* ============================================================
-     BADGES — restrained, semantic
-     ============================================================ */
-  .badge {
-    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
-    transition: background-color 150ms ease;
-  }
-  .badge-neutral  { @apply bg-muted text-foreground/80; }
-  .badge-blue     {
-    background-color: hsl(var(--brand-soft));
-    color: hsl(var(--brand));
-  }
-  .badge-positive {
-    background-color: hsl(var(--positive-soft));
-    color: hsl(var(--positive));
-  }
-  .badge-caution  {
-    background-color: hsl(var(--caution-soft));
-    color: hsl(var(--caution));
-  }
-  .badge-warning  {
-    background-color: hsl(var(--warning-soft));
-    color: hsl(var(--warning));
   }
 
   /* ============================================================

@@ -440,7 +440,7 @@ function IntelligenceReportsCard() {
     <Section
       icon={<Sparkles className="h-4 w-4" strokeWidth={1.75} />}
       title="Financial review"
-      description="A narrative PDF covering your spending behavior, recurring commitments, recoverable spend, and what to do next."
+      description="A readable PDF covering your spending, your subscriptions, the money worth recovering, and what to do next."
     >
       <div className="space-y-5">
         {/* Generator */}
@@ -526,8 +526,8 @@ function IntelligenceReportsCard() {
 const ANALYSIS_STEPS = [
   "Reviewing your transactions",
   "Tracing spending patterns",
-  "Mapping recurring commitments",
-  "Surfacing recoverable spend",
+  "Rounding up your subscriptions",
+  "Finding money worth recovering",
   "Drafting the summary",
   "Composing the document",
 ] as const;

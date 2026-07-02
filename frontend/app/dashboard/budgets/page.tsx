@@ -20,6 +20,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatusMarker } from "@/components/ui/signals";
 import {
   Select,
   SelectContent,
@@ -42,10 +43,10 @@ function formatINR(v: number) {
 }
 
 const STATUS_META: Record<BudgetStatus, { label: string; cls: string; bar: string; iconBg: string }> = {
-  ON_TRACK:       { label: "On track",      cls: "border-emerald-200 bg-emerald-50 text-emerald-700", bar: "bg-emerald-500", iconBg: "bg-emerald-50 border-emerald-100 text-emerald-600" },
-  NEAR_LIMIT:     { label: "Near limit",    cls: "border-amber-200   bg-amber-50   text-amber-700",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
-  PROJECTED_OVER: { label: "Trending over", cls: "border-amber-200   bg-amber-50   text-amber-700",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
-  OVER:           { label: "Over budget",   cls: "border-red-200     bg-red-50     text-red-700",     bar: "bg-red-500",     iconBg: "bg-red-50     border-red-100     text-red-600" },
+  ON_TRACK:       { label: "On track",      cls: "text-emerald-600", bar: "bg-emerald-500", iconBg: "bg-emerald-50 border-emerald-100 text-emerald-600" },
+  NEAR_LIMIT:     { label: "Near limit",    cls: "text-amber-600",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
+  PROJECTED_OVER: { label: "Trending over", cls: "text-amber-600",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
+  OVER:           { label: "Over budget",   cls: "text-red-600",     bar: "bg-red-500",     iconBg: "bg-red-50     border-red-100     text-red-600" },
 };
 
 const schema = z.object({
@@ -193,7 +194,8 @@ function BudgetCard({
   const pct = Math.min(100, budget.percentUsed);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 group hover:border-slate-300 transition-colors">
+    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-5 group hover:border-slate-300 transition-colors">
+      <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-[3px]", meta.bar)} />
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -210,9 +212,7 @@ function BudgetCard({
             {budget.daysRemaining} days left in month
           </p>
         </div>
-        <span className={cn("inline-flex items-center shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap", meta.cls)}>
-          {meta.label}
-        </span>
+        <StatusMarker label={meta.label} className={cn("shrink-0", meta.cls)} />
       </div>
 
       {/* Progress bar */}

@@ -7,7 +7,7 @@ import {
   Receipt,
   Shield,
   Sliders,
-  MessageSquare,
+  Repeat,
   TrendingDown,
   CheckCircle2,
 } from "lucide-react";
@@ -64,7 +64,7 @@ export default function Home() {
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
             <span className="text-xs font-medium text-blue-700">
-              Financial intelligence, for individuals
+              Your money, made clear
             </span>
           </div>
           <h1 className="mb-5 text-[2.75rem] font-semibold leading-[1.15] tracking-tight text-slate-900">
@@ -116,7 +116,7 @@ export default function Home() {
             A clearer layer on top of your finances
           </h2>
           <p className="mt-2 text-slate-500">
-            From raw transactions to meaningful observation, in one place.
+            From everyday spending to a picture you can actually act on, in one place.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
@@ -179,7 +179,7 @@ export default function Home() {
               Built around your privacy
             </h2>
             <p className="text-slate-500 leading-relaxed">
-              FlowSight is privacy-first by design. We do not store banking credentials, connect directly to financial institutions, or expose raw entity data through the API.
+              FlowSight is private by design. We never ask for your banking login, never connect directly to your bank, and never share or sell your data.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 md:w-1/2 sm:grid-cols-2">
@@ -201,7 +201,7 @@ export default function Home() {
               Ready to see your finances clearly?
             </h2>
             <p className="mb-8 text-slate-400">
-              Start free. No credit card required. Full access to every product feature.
+              Start free. No credit card needed. Everything FlowSight does, included.
             </p>
             <Link
               href="/auth/register"
@@ -246,67 +246,67 @@ const stats = [
 const features = [
   {
     icon: Activity,
-    title: "Behavioral patterns",
+    title: "Spending patterns",
     description:
-      "Late-night spending, weekend overruns, and lifestyle inflation, surfaced before they compound.",
+      "Late-night splurges, weekend overruns, and lifestyle creep, spotted before they add up.",
   },
   {
     icon: TrendingDown,
-    title: "Recoverable spending",
+    title: "Money worth recovering",
     description:
-      "Duplicate subscriptions, price creep, silent drains, and bank fees, each with a confidence score.",
+      "Duplicate subscriptions, creeping prices, small daily habits, and fees, with how much you'd save by fixing each.",
   },
   {
     icon: Sliders,
-    title: "Decision simulation",
+    title: "Decisions, before you make them",
     description:
-      "The real cost of a purchase, modeled out: EMI impact, savings delay, and how much flexibility you would give up.",
+      "See the real cost of a big purchase: the monthly hit, how much it delays your savings, and how much breathing room you'd give up.",
   },
   {
     icon: Receipt,
-    title: "Receipt analysis",
+    title: "Receipts in a tap",
     description:
-      "Capture merchant, amount, and date from a photo. Review before saving, then categorized into your ledger.",
+      "Snap a photo and we pull out the merchant, amount, and date. Check it over, then save it to your records.",
   },
   {
-    icon: MessageSquare,
-    title: "Bank SMS parsing",
+    icon: Repeat,
+    title: "Subscriptions & bills",
     description:
-      "Reconstructs a complete financial timeline from transactional SMS, with merchant resolution and confidence scoring.",
+      "Every recurring charge in one place, so price hikes and forgotten free trials never slip past you.",
   },
   {
     icon: Brain,
-    title: "Tailored recommendations",
+    title: "Suggestions made for you",
     description:
-      "Optimization suggestions grounded in your actual spending patterns, behavioral triggers, and goals.",
+      "Practical tips grounded in how you actually spend and what you're saving toward, never generic advice.",
   },
 ];
 
 const steps = [
   {
-    title: "Bring your data in",
+    title: "Add your spending",
     description:
-      "Upload a CSV, scan a receipt, or import bank SMS. FlowSight normalizes the rest.",
+      "Upload a bank statement, type in a transaction, or snap a receipt. We tidy up the rest.",
   },
   {
-    title: "We do the analysis",
+    title: "We make sense of it",
     description:
-      "Patterns, anomalies, and confidence scores get applied across every transaction.",
+      "We sort every transaction, spot your patterns, and find the money worth recovering.",
   },
   {
     title: "Act on what matters",
     description:
-      "Review what is recoverable, simulate decisions before you make them, and follow recommendations ranked by impact.",
+      "See what you can save, try out a decision before you commit, and follow tips ranked by impact.",
   },
 ];
 
 const trustPoints = [
-  "Modern session handling, never long-lived tokens in storage",
-  "Passwords salted and hashed, never stored in the clear",
-  "No direct connection to your bank or financial institutions",
-  "Privacy-first API surface, no raw records in responses",
-  "Validated input at every request boundary",
-  "Strict separation between storage and what is returned",
+  "Your sign-in stays protected with short-lived, secure sessions",
+  "Passwords are encrypted, never stored as plain text",
+  "We never connect directly to your bank",
+  "Your data is never shared or sold",
+  "Everything you enter is checked before it's saved",
+  "You only ever see your own information",
 ];
 
 /* ─── Logo mark ─────────────────────────────────────────────── */
