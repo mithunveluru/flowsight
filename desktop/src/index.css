@@ -1,0 +1,334 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Geist — the same typeface the web app uses. Loading it is the single biggest
+   lift to the companion's polish vs. falling back to the system UI font. */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =============================================================================
+   FlowSight desktop companion — tokens & component classes reused verbatim from
+   the web app (frontend/app/globals.css) so the reused ui/* + signals primitives
+   render identically. The only divergences: fonts fall back to a system stack
+   (no next/font here), and the window is transparent so the app paints a single
+   floating rounded panel instead of a full-bleed page background.
+   ============================================================================= */
+
+@layer base {
+  :root {
+    --font-geist-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+    --background: 224 30% 99%;
+    --foreground: 224 24% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 24% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 24% 14%;
+    --primary: 226 30% 18%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 226 30% 96.5%;
+    --secondary-foreground: 224 24% 16%;
+    --muted: 226 30% 96.5%;
+    --muted-foreground: 224 11% 46%;
+    --accent: 226 30% 96%;
+    --accent-foreground: 224 24% 16%;
+    --destructive: 358 58% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 22% 93%;
+    --input: 224 22% 90.5%;
+    --ring: 238 52% 60%;
+    --radius: 0.75rem;
+    --sidebar-bg: 226 32% 98.5%;
+    --sidebar-fg: 224 11% 42%;
+    --sidebar-fg-active: 224 24% 14%;
+    --sidebar-border: 224 22% 93%;
+    --brand: 238 48% 60%;
+    --brand-soft: 240 60% 97%;
+    --brand-foreground: 0 0% 100%;
+    --positive: 162 42% 42%;
+    --positive-soft: 162 50% 96%;
+    --caution: 28 72% 56%;
+    --caution-soft: 32 86% 96%;
+    --warning: 358 55% 58%;
+    --warning-soft: 358 80% 96.5%;
+
+    /* AI Signal language — semantic aliases over the base palette */
+    --signal: var(--brand);
+    --signal-soft: var(--brand-soft);
+    --severity-high: var(--warning);
+    --severity-high-soft: var(--warning-soft);
+    --severity-medium: var(--caution);
+    --severity-medium-soft: var(--caution-soft);
+    --severity-low: var(--brand);
+    --severity-low-soft: var(--brand-soft);
+
+    --chart-spend: 238 48% 64%;
+    --chart-income: 168 36% 46%;
+    --chart-grid: 224 22% 93%;
+    --chart-axis: 224 12% 60%;
+  }
+
+  .dark {
+    --background: 224 22% 9%;
+    --foreground: 224 20% 92%;
+    --card: 224 20% 12%;
+    --card-foreground: 224 20% 92%;
+    --popover: 224 22% 10%;
+    --popover-foreground: 224 20% 92%;
+    --primary: 224 20% 95%;
+    --primary-foreground: 224 22% 11%;
+    --secondary: 224 18% 15%;
+    --secondary-foreground: 224 20% 92%;
+    --muted: 224 18% 14%;
+    --muted-foreground: 215 14% 64%;
+    --accent: 224 18% 17%;
+    --accent-foreground: 224 20% 95%;
+    --destructive: 358 52% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 16% 20%;
+    --input: 224 16% 20%;
+    --ring: 238 62% 70%;
+    --sidebar-bg: 224 22% 8%;
+    --sidebar-fg: 215 14% 62%;
+    --sidebar-fg-active: 224 20% 95%;
+    --sidebar-border: 224 18% 15%;
+    --brand: 240 68% 74%;
+    --brand-soft: 240 30% 20%;
+    --brand-foreground: 224 22% 11%;
+    --positive: 162 46% 56%;
+    --positive-soft: 162 25% 17%;
+    --caution: 30 72% 66%;
+    --caution-soft: 30 24% 19%;
+    --warning: 358 60% 66%;
+    --warning-soft: 358 24% 19%;
+    --chart-spend: 240 64% 74%;
+    --chart-income: 168 42% 58%;
+    --chart-grid: 224 16% 20%;
+    --chart-axis: 224 14% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  html {
+    font-feature-settings: "ss01", "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    /* Transparent — the frameless Tauri window shows the rounded app shell. */
+    @apply text-foreground;
+    background: transparent;
+    font-family: var(--font-geist-sans);
+    text-wrap: pretty;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-offset-background;
+    --tw-ring-color: hsl(var(--brand) / 0.55);
+  }
+
+  ::selection {
+    background-color: hsl(var(--brand) / 0.18);
+    color: hsl(var(--foreground));
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+
+  code, kbd, pre {
+    @apply font-mono;
+  }
+}
+
+@layer components {
+  /* The single floating panel that fills the frameless window. A layered, very
+     low-saturation radial wash gives the surface depth instead of flat white. */
+  .app-shell {
+    @apply flex h-full w-full flex-col overflow-hidden rounded-2xl;
+    background:
+      radial-gradient(125% 80% at 100% 0%, hsl(var(--brand) / 0.07), transparent 55%),
+      radial-gradient(110% 70% at 0% 100%, hsl(var(--positive) / 0.045), transparent 55%),
+      hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    box-shadow:
+      0 24px 60px -20px rgba(20, 24, 45, 0.32),
+      0 8px 24px -10px rgba(20, 24, 45, 0.18),
+      0 0 0 1px rgba(47, 55, 90, 0.05);
+  }
+  .dark .app-shell {
+    background:
+      radial-gradient(125% 80% at 100% 0%, hsl(var(--brand) / 0.10), transparent 55%),
+      radial-gradient(110% 70% at 0% 100%, hsl(var(--positive) / 0.06), transparent 55%),
+      hsl(var(--background));
+    box-shadow:
+      0 24px 60px -18px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+
+  /* Cards — reused verbatim from the web app */
+  .card-refined {
+    @apply rounded-xl bg-card;
+    box-shadow:
+      0 1px 2px 0 rgba(47, 55, 90, 0.025),
+      0 4px 12px -4px rgba(47, 55, 90, 0.05),
+      0 0 0 1px rgba(47, 55, 90, 0.04);
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+  .card-refined:hover {
+    box-shadow:
+      0 1px 2px 0 rgba(47, 55, 90, 0.03),
+      0 8px 20px -6px rgba(47, 55, 90, 0.07),
+      0 0 0 1px rgba(47, 55, 90, 0.055);
+  }
+  .card-tactile {
+    @apply rounded-xl bg-card;
+    box-shadow:
+      0 1px 2px 0 rgba(47, 55, 90, 0.025),
+      0 4px 12px -4px rgba(47, 55, 90, 0.05),
+      0 0 0 1px rgba(47, 55, 90, 0.04);
+    transition:
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .card-tactile:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 2px 0 rgba(47, 55, 90, 0.03),
+      0 12px 28px -10px rgba(47, 55, 90, 0.10),
+      0 0 0 1px rgba(99, 102, 145, 0.10);
+  }
+  .dark .card-refined,
+  .dark .card-tactile {
+    box-shadow:
+      0 1px 1px 0 rgba(0, 0, 0, 0.20),
+      0 2px 6px -2px rgba(0, 0, 0, 0.30),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .section-header {
+    @apply flex items-end justify-between gap-4 mb-4;
+  }
+
+  .stat-value {
+    @apply text-3xl font-semibold tabular-nums text-foreground;
+    letter-spacing: -0.022em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-muted-foreground;
+    letter-spacing: 0.025em;
+  }
+  .text-overline {
+    @apply text-[10px] font-semibold uppercase text-muted-foreground;
+    letter-spacing: 0.08em;
+  }
+
+  .input-base {
+    @apply h-10 w-full rounded-lg border bg-background px-3 text-sm
+           placeholder:text-muted-foreground
+           disabled:cursor-not-allowed disabled:opacity-50;
+    border-color: hsl(var(--input));
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .input-base:hover:not(:disabled):not(:focus) {
+    border-color: hsl(var(--border));
+  }
+  .input-base:focus {
+    @apply outline-none;
+    border-color: hsl(var(--brand));
+    box-shadow: 0 0 0 3px hsl(var(--brand) / 0.14);
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-neutral {
+    @apply bg-muted text-foreground/80;
+  }
+  .badge-blue {
+    background-color: hsl(var(--brand-soft));
+    color: hsl(var(--brand));
+  }
+  .badge-positive {
+    background-color: hsl(var(--positive-soft));
+    color: hsl(var(--positive));
+  }
+
+  .kbd-hint {
+    @apply inline-flex items-center justify-center rounded border px-1.5 text-[10px] font-medium text-muted-foreground;
+    height: 18px;
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--muted));
+  }
+
+  .surface-gradient-emerald {
+    background:
+      radial-gradient(70% 70% at 0% 0%, hsl(var(--positive) / 0.10), transparent 65%),
+      hsl(var(--card));
+  }
+
+  /* The draggable region of the frameless window. */
+  .drag-region {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
