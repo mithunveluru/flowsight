@@ -1,0 +1,76 @@
+# Render Blueprint for the FlowSight backend and database.
+# The frontend deploys separately on Vercel (see DEPLOYMENT.md).
+#
+# Confirm plan names and region against your Render account before applying;
+# plan identifiers change over time. Secrets marked `sync: false` must be filled
+# in the Render dashboard after the first deploy.
+
+services:
+  - type: web
+    name: flowsight-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: oregon           # confirm/adjust
+    plan: starter            # confirm/adjust
+    healthCheckPath: /actuator/health
+    envVars:
+      # Generated once by Render and kept stable across deploys.
+      - key: JWT_SECRET
+        generateValue: true
+
+      # Database wiring. DB_URL must be a JDBC URL, which cannot be built from
+      # fromDatabase fields, so set it manually to:
+      #   jdbc:postgresql://<internal host>:<port>/flowsight
+      # (host and port are on the flowsight-db Info page). Credentials below are
+      # injected automatically.
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        fromDatabase:
+          name: flowsight-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: flowsight-db
+          property: password
+
+      # Must match the deployed Vercel frontend, else the browser blocks all API
+      # calls (CORS) and reset links point to the wrong host.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false          # e.g. https://your-app.vercel.app
+      - key: FRONTEND_URL
+        sync: false          # e.g. https://your-app.vercel.app
+
+      # Gmail SMTP password-reset delivery (App Password).
+      - key: EMAIL_PROVIDER
+        value: gmail
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+
+      # Must stay false in production (leaking it enables account enumeration).
+      - key: PASSWORD_RESET_DEV_EXPOSE_LINK
+        value: "false"
+
+      # Leave empty to skip the external OCR microservice; the backend image
+      # ships Tesseract as a built-in fallback. Set to the service URL if you
+      # deploy receipt-ocr separately.
+      - key: RECEIPT_OCR_URL
+        value: ""
+      - key: GROQ_API_KEY
+        sync: false          # optional; only used by the OCR microservice
+
+databases:
+  - name: flowsight-db
+    databaseName: flowsight
+    user: flowsight
+    region: oregon           # confirm/adjust; keep same region as the service
+    plan: basic-256mb        # confirm/adjust
