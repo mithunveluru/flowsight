@@ -20,6 +20,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +64,15 @@ public class AuthService {
 
         user = userRepository.save(user);
         log.info("Registered new user: {}", user.getEmail());
-        auditLogService.log(user, AuditLogService.ACTION_USER_REGISTERED, "User", user.getId().toString());
+
+        // Audit AFTER this transaction commits. AuditLogService.log runs in a
+        // REQUIRES_NEW transaction; if invoked inline it would try to insert an
+        // audit_logs row referencing a user row that is not yet committed,
+        // violating the FK and rolling back the whole registration. Deferring to
+        // afterCommit lets the new user be visible to that separate transaction.
+        final User registered = user;
+        auditAfterCommit(() -> auditLogService.log(
+            registered, AuditLogService.ACTION_USER_REGISTERED, "User", registered.getId().toString()));
 
         String token = jwtService.generateToken(buildExtraClaims(user), user);
         return toAuthResponse(token, user);
@@ -91,6 +101,24 @@ public class AuthService {
         auditLogService.log(user, AuditLogService.ACTION_USER_LOGIN, "User", user.getId().toString());
         String token = jwtService.generateToken(buildExtraClaims(user), user);
         return toAuthResponse(token, user);
+    }
+
+    /**
+     * Run an audit action after the current transaction commits, so any
+     * REQUIRES_NEW audit write can see rows persisted by this transaction. If no
+     * transaction is active (e.g. unit tests), run it immediately.
+     */
+    private void auditAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     /** Use the client IP as the rate-limit key (or "unknown" if not in a request). */
