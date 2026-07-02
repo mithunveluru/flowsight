@@ -32,19 +32,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OcrService implements OcrProvider {
+public class OcrService {
 
     private static final int TIMEOUT_SECONDS = 30;
 
     private final OcrPreprocessor preprocessor;
 
     // Public API
-
-    /** Implements {@link OcrProvider} — delegates to {@link #extractDocument}. */
-    @Override
-    public OcrDocument extract(Path imagePath) {
-        return extractDocument(imagePath);
-    }
 
     /**
      * Preprocesses {@code imagePath}, runs Tesseract in TSV mode, and returns a
