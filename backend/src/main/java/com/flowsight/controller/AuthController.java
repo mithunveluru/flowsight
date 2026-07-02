@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,10 +27,10 @@ public class AuthController {
 
     // Identical response body for every forgot-password request — never reveals
     // whether the email belongs to a registered account.
-    private static final Map<String, String> FORGOT_PASSWORD_RESPONSE = Map.of(
-        "message",
-        "If an account exists for that email, we have sent a link to reset your password."
-    );
+    private static final String FORGOT_PASSWORD_MESSAGE =
+        "If an account exists for that email, we have sent a link to reset your password.";
+    private static final Map<String, String> FORGOT_PASSWORD_RESPONSE =
+        Map.of("message", FORGOT_PASSWORD_MESSAGE);
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
@@ -51,7 +52,16 @@ public class AuthController {
         HttpServletRequest httpRequest
     ) {
         rateLimiter.checkPasswordResetRequest(clientIp(httpRequest));
-        passwordResetService.requestReset(request.getEmail());
+        // Returns a link only when the DEV-only dev-expose-link flag is on; in
+        // normal/production operation this is always empty, so the response is
+        // identical for every email and reveals nothing about account existence.
+        Optional<String> devResetUrl = passwordResetService.requestReset(request.getEmail());
+        if (devResetUrl.isPresent()) {
+            return ResponseEntity.ok(Map.of(
+                "message", FORGOT_PASSWORD_MESSAGE,
+                "devResetUrl", devResetUrl.get()
+            ));
+        }
         return ResponseEntity.ok(FORGOT_PASSWORD_RESPONSE);
     }
 

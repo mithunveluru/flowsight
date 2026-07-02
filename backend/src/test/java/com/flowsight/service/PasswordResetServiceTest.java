@@ -257,6 +257,51 @@ class PasswordResetServiceTest {
         assertThat(seen).hasSize(50);
     }
 
+    @Test
+    void requestReset_devExposeLinkOff_returnsEmpty_evenForActiveUser() {
+        // Default (production) behavior: the link is never returned to the caller,
+        // so the response cannot be used to enumerate accounts.
+        ReflectionTestUtils.setField(service, "devExposeLink", false);
+        User user = activeUser();
+        when(userRepository.findByEmail("ada@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Optional<String> result = service.requestReset("ada@example.com");
+
+        assertThat(result).isEmpty();
+        // The email is still dispatched — only the caller-facing exposure changes.
+        verify(emailService).sendPasswordReset(eq("ada@example.com"), anyString(), anyString());
+    }
+
+    @Test
+    void requestReset_devExposeLinkOn_returnsTheSameUrlThatWasEmailed() {
+        ReflectionTestUtils.setField(service, "devExposeLink", true);
+        User user = activeUser();
+        when(userRepository.findByEmail("ada@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Optional<String> result = service.requestReset("ada@example.com");
+
+        ArgumentCaptor<String> urlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendPasswordReset(anyString(), anyString(), urlCaptor.capture());
+        assertThat(result).contains(urlCaptor.getValue());
+        assertThat(result.get()).startsWith("https://app.example/auth/reset-password?token=");
+    }
+
+    @Test
+    void requestReset_devExposeLinkOn_unknownUser_stillReturnsEmpty() {
+        // Enumeration safety must hold even with the dev flag on: a non-existent
+        // account yields no link, so present-vs-empty cannot leak existence beyond
+        // the explicit, opt-in dev affordance for real accounts.
+        ReflectionTestUtils.setField(service, "devExposeLink", true);
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+
+        Optional<String> result = service.requestReset("ghost@example.com");
+
+        assertThat(result).isEmpty();
+        verify(emailService, never()).sendPasswordReset(anyString(), anyString(), anyString());
+    }
+
     private User activeUser() {
         return User.builder()
             .id(UUID.randomUUID())

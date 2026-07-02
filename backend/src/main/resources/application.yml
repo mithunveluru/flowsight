@@ -37,6 +37,25 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  # Gmail SMTP for password-reset delivery. Host defaults so JavaMailSender is
+  # always autoconfigured; GmailEmailService logs the link instead of sending
+  # when username/password are empty (local/CI without credentials).
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   data:
     web:
       pageable:
@@ -67,7 +86,10 @@ application:
       secret-key: ${JWT_SECRET}
       expiration: ${JWT_EXPIRATION:86400000}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3007}
+    # Web app (3007), Tauri desktop dev server (1420), and the Tauri webview
+    # production origins (tauri://localhost on Linux/macOS, http://tauri.localhost
+    # on Windows). Patterns are matched via setAllowedOriginPatterns.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3007,http://localhost:1420,tauri://localhost,http://tauri.localhost}
   storage:
     upload-dir: ${UPLOAD_DIR:/tmp/flowsight-receipts}
   groq:
@@ -80,8 +102,14 @@ application:
     # The value is read once at startup; per-user limits are stored in users.receipt_limit.
     default-limit: ${RECEIPT_DEFAULT_LIMIT:50}
   email:
-    # Resend transactional email. If api-key is empty the service logs the reset
-    # link instead of dispatching — adequate for local development and CI.
+    # Which EmailService implementation is active: gmail (default) or resend.
+    # Business logic is provider-agnostic; swap here without code changes.
+    provider: ${EMAIL_PROVIDER:gmail}
+    # Gmail From header. Leave empty to send as the authenticated MAIL_USERNAME
+    # (Gmail rejects a From that is not the account or an authorized alias).
+    gmail-from: ${MAIL_FROM:}
+    # Resend transactional email (used only when provider=resend). If api-key is
+    # empty the service logs the reset link instead of dispatching.
     resend:
       api-key: ${RESEND_API_KEY:}
     from: ${RESEND_FROM_EMAIL:FlowSight <noreply@flowsight.app>}
@@ -89,6 +117,11 @@ application:
   password-reset:
     expiration-minutes: ${PASSWORD_RESET_EXPIRATION_MINUTES:30}
     frontend-url: ${FRONTEND_URL:http://localhost:3007}
+    # DEV ONLY. When true, the /forgot-password response includes the reset link
+    # so the flow can be exercised locally without a configured email provider
+    # (the link is otherwise only written to logs). This reveals whether an email
+    # is registered, so it MUST stay false in any shared or production environment.
+    dev-expose-link: ${PASSWORD_RESET_DEV_EXPOSE_LINK:false}
 
 logging:
   level:

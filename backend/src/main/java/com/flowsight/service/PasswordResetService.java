@@ -50,15 +50,26 @@ public class PasswordResetService {
     @Value("${application.password-reset.frontend-url:http://localhost:3007}")
     private String frontendBaseUrl;
 
+    // DEV ONLY. When true, requestReset returns the freshly minted reset URL so
+    // callers can surface it for local testing without a configured mail provider.
+    // Default false; must never be enabled in a shared/production environment.
+    @Value("${application.password-reset.dev-expose-link:false}")
+    private boolean devExposeLink;
+
     /**
      * Issue a reset link for the email if it belongs to an active user.
      *
-     * Always returns silently; the response to the user is identical whether or
-     * not the email exists. This prevents callers from enumerating registered
-     * accounts via this endpoint.
+     * The caller-facing response must be identical whether or not the email
+     * exists, so this returns the reset URL only as a DEV testing aid and only
+     * when {@code dev-expose-link} is enabled; otherwise it returns
+     * {@link Optional#empty()} regardless of whether a token was issued. This
+     * keeps account enumeration impossible in normal/production operation.
+     *
+     * @return the freshly minted reset URL when (and only when) dev-expose-link
+     *         is on and a token was issued; otherwise empty.
      */
     @Transactional
-    public void requestReset(String rawEmail) {
+    public Optional<String> requestReset(String rawEmail) {
         String email = normalize(rawEmail);
         String requestingIp = extractIpAddress();
 
@@ -73,7 +84,7 @@ public class PasswordResetService {
                 null,
                 Map.of("email", email, "outcome", "no_active_user")
             );
-            return;
+            return Optional.empty();
         }
 
         User user = maybeUser.get();
@@ -102,6 +113,8 @@ public class PasswordResetService {
         );
 
         log.info("Password reset token issued for user {}", user.getId());
+
+        return devExposeLink ? Optional.of(resetUrl) : Optional.empty();
     }
 
     /**
