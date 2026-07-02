@@ -30,6 +30,17 @@ public class SimulationService {
     private final TradeoffAnalyzer            tradeoffAnalyzer;
     private final ConsequenceInsightGenerator insightGenerator;
 
+    /**
+     * Read-only current flexibility score with no scenario applied. Reuses the
+     * same baseline + scoring engines as {@link #simulate}; passing the current
+     * baseline as its own projection yields a zero delta and the current tier.
+     * Backs the desktop companion's at-a-glance financial-health gauge.
+     */
+    public FlexibilityScore currentFlexibility(UUID userId) {
+        FinancialBaseline current = baselineCalculator.compute(userId);
+        return flexibilityCalculator.compute(current, current);
+    }
+
     public SimulationResult simulate(UUID userId, ScenarioRequest scenario) {
         FinancialBaseline current = baselineCalculator.compute(userId);
 

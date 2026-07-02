@@ -1,6 +1,7 @@
 package com.flowsight.controller;
 
 import com.flowsight.analytics.simulation.SimulationService;
+import com.flowsight.dto.simulation.FlexibilityScore;
 import com.flowsight.dto.simulation.ScenarioRequest;
 import com.flowsight.dto.simulation.SimulationResult;
 import com.flowsight.entity.User;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,5 +32,15 @@ public class SimulationController {
         @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.ok(simulationService.simulate(user.getId(), scenario));
+    }
+
+    /**
+     * Returns the authenticated user's current financial flexibility score with
+     * no scenario applied. Read-only and stateless; used by the desktop
+     * companion's overview gauge. Reuses the same engines as {@link #simulate}.
+     */
+    @GetMapping("/flexibility")
+    public ResponseEntity<FlexibilityScore> currentFlexibility(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(simulationService.currentFlexibility(user.getId()));
     }
 }
