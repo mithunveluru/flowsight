@@ -2,7 +2,9 @@ services:
   receipt-ocr:
     container_name: flowsight-receipt-ocr
     build:
-      context: https://github.com/bhimrazy/receipt-ocr.git#main:app
+      # Pinned to a specific commit for reproducible builds. Bump this SHA to
+      # pull upstream changes; vendor/fork the service if it needs local patches.
+      context: https://github.com/bhimrazy/receipt-ocr.git#ac1c5fcd9c0d6fcea27aa2a39d2fd2ff54914a24:app
     environment:
       OPENAI_API_KEY: ${GROQ_API_KEY:-placeholder}
       OPENAI_BASE_URL: https://api.groq.com/openai/v1
