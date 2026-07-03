@@ -27,7 +27,7 @@ const useToastStore = create<ToastState>((set) => ({
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
-/** Imperative helper for non-component call sites. */
+// imperative helper for non-component call sites
 export const toast = {
   success: (m: string) => useToastStore.getState().push(m, "success"),
   error: (m: string) => useToastStore.getState().push(m, "error"),

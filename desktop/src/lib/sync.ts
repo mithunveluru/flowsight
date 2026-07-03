@@ -8,10 +8,7 @@ import { bumpRefresh } from "~/lib/refresh";
 import { leaksApi } from "~/api/leaks";
 import { insightsApi } from "~/api/insights";
 
-// Background sync: a modest heartbeat that (1) keeps the visible data fresh and
-// (2) fires a native notification when a NEW high-priority signal appears since
-// the last check. Comparison is done against a persisted set of seen signal ids
-// so the user is notified once per signal, never spammed.
+// Background sync: refresh visible data and fire a native notification once per new HIGH signal.
 
 const INTERVAL_MS = 5 * 60 * 1000;
 const SEEN_FILE = "sync.json";
@@ -23,7 +20,7 @@ function syncStore(): Promise<Store> {
   return storePromise;
 }
 
-/** Collect the ids of every currently-active HIGH-severity signal. */
+// ids of every active HIGH-severity signal
 async function currentHighSignals(): Promise<{ ids: string[]; titles: Record<string, string> }> {
   const ids: string[] = [];
   const titles: Record<string, string> = {};
@@ -67,8 +64,7 @@ async function check(firstRun: boolean): Promise<void> {
 
     await store.set(SEEN_KEY, ids);
 
-    // Never notify on the very first check of a session — only on genuinely new
-    // signals that appear while the app is running.
+    // never notify on the first check of a session; only genuinely new signals
     if (firstRun || fresh.length === 0) return;
     if (!(await ensureNotifyPermission())) return;
 
@@ -78,7 +74,7 @@ async function check(firstRun: boolean): Promise<void> {
         : `${fresh.length} new high-priority signals need your attention`;
     sendNotification({ title: "FlowSight", body });
   } catch {
-    /* sync failures are non-fatal */
+    // non-fatal
   }
 }
 

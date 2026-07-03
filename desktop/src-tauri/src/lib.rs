@@ -1,14 +1,5 @@
-// FlowSight desktop companion — Tauri 2 shell.
-//
-// Responsibilities live entirely on the Rust side so the webview stays a thin,
-// fast UI: a frameless window with two modes, a system tray, a global show/hide
-// shortcut, and Raycast-style hide-on-blur (Widget mode only). All business
-// logic stays in the backend; this process only manages the window.
-//
-// Two window modes:
-//   * Widget   — compact, always-on-top, off-taskbar launcher. Hides on blur.
-//   * Expanded — a normal resizable desktop app window (taskbar, maximize,
-//                snap, drag-resize). Does NOT hide on blur.
+// FlowSight desktop companion (Tauri 2 shell): frameless window, tray, global shortcut.
+// Widget mode is compact and hides on blur; Expanded is a normal window. Logic stays in the backend.
 
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},

@@ -1,14 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 
-// Thin wrappers over the app-defined Rust commands. Kept in one place so views
-// never import the Tauri API directly.
+// Thin wrappers over the Rust commands; views never import the Tauri API directly.
 
-/** Hide the popup window (Raycast-style dismiss; Escape / "done" actions). */
+// hide the popup (Raycast-style dismiss)
 export function hideWindow(): Promise<void> {
   return invoke("hide_window");
 }
 
-/** Open the full web workspace in the user's default browser. */
+// open the web workspace in the default browser
 export function openWorkspace(): Promise<void> {
   return invoke("open_workspace");
 }

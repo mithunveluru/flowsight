@@ -7,11 +7,7 @@ interface AsyncResult<T> {
   loading: boolean;
 }
 
-/**
- * Runs `fn` on mount, whenever `deps` change, and whenever the global refresh
- * key bumps (window focus / interval). Keeps the last data visible during a
- * refresh so the UI does not flash empty.
- */
+// Runs fn on mount, on deps change, and on the global refresh key; keeps last data during refresh.
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncResult<T> {
   const refreshKey = useRefresh((s) => s.key);
   const [data, setData] = useState<T | null>(null);

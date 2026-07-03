@@ -1,8 +1,6 @@
 import { startResize } from "~/lib/window-mode";
 
-// Invisible edge/corner grips for the frameless Expanded window — a borderless
-// window has no native frame to drag, so we forward edge drags to the OS via
-// start_resize_dragging. Rendered only in Expanded mode.
+// Invisible edge/corner grips for the frameless Expanded window; forward drags to the OS.
 const HANDLES: [string, string][] = [
   ["north", "top-0 left-2 right-2 h-1 cursor-n-resize"],
   ["south", "bottom-0 left-2 right-2 h-1 cursor-s-resize"],

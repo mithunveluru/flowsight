@@ -1,8 +1,6 @@
 import { create } from "zustand";
 
-// A monotonically increasing key bumped whenever the window regains focus (and
-// on an interval while open). Views depend on it to re-fetch, giving the
-// companion its "always current on show" behavior without a data-fetch library.
+// Monotonic key bumped on focus and on an interval; views depend on it to re-fetch.
 interface RefreshState {
   key: number;
   bump: () => void;

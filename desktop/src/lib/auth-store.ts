@@ -2,9 +2,7 @@ import { create } from "zustand";
 import { load, type Store } from "@tauri-apps/plugin-store";
 import type { UserProfile } from "@/features/auth/types";
 
-// JWT + profile persisted to the OS app-data dir via tauri-plugin-store (the
-// desktop webview has no shared browser localStorage with the web app, so the
-// companion keeps its own session). autoSave flushes writes to disk.
+// JWT + profile persisted to the OS app-data dir; desktop has no shared localStorage.
 const STORE_FILE = "auth.json";
 
 let storePromise: Promise<Store> | null = null;
@@ -57,12 +55,12 @@ export const useAuth = create<AuthState>((set) => ({
   },
 }));
 
-/** Non-hook accessor for the API layer. */
+// non-hook accessor for the API layer
 export function getToken(): string | null {
   return useAuth.getState().token;
 }
 
-/** Called by the API layer on a 401 to drop the stale session. */
+// the API layer calls this on a 401 to drop the session
 export function forceLogout(): void {
   void useAuth.getState().clear();
 }

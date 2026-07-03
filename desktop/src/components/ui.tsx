@@ -2,11 +2,7 @@ import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
-// Lightweight local primitives styled with the shared token classes. We reuse
-// the AI Signals language (signals.tsx) and motion primitives directly from the
-// web app; for plain buttons/inputs we keep small token-driven components here
-// rather than pulling the web app's Radix-based ui/* chain into the companion,
-// which keeps the desktop bundle lean (a core goal of the companion).
+// Small local token-styled primitives; keeps the desktop bundle lean vs the web app's Radix ui/*.
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
 

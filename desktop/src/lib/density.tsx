@@ -1,9 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-// Density is derived from the *actual* shell width (via ResizeObserver), not a
-// window-mode label — so the UI adapts identically whether it's a small floating
-// widget, a narrow side panel, a medium companion, or a maximized desktop window.
-// Information density increases progressively as more space becomes available.
+// Density derived from actual shell width (ResizeObserver), not a window-mode label.
 export type Density = "compact" | "medium" | "large";
 
 function fromWidth(w: number): Density {

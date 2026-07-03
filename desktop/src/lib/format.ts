@@ -23,21 +23,21 @@ export function formatINRPrecise(amount: number): string {
   }).format(amount);
 }
 
-/** "12 Jun" style short date from an ISO date string. */
+// "12 Jun" style short date from an ISO date string.
 export function formatShortDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-/** Today's date as yyyy-MM-dd in local time. */
+// Today's date as yyyy-MM-dd in local time.
 export function todayISO(): string {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60_000;
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
 }
 
-/** First day of the current ISO week (Monday) as yyyy-MM-dd. */
+// First day of the current ISO week (Monday) as yyyy-MM-dd.
 export function weekStartISO(): string {
   const d = new Date();
   const day = (d.getDay() + 6) % 7; // 0 = Monday
@@ -46,7 +46,7 @@ export function weekStartISO(): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
 }
 
-/** First day of the current month as yyyy-MM-dd. */
+// First day of the current month as yyyy-MM-dd.
 export function monthStartISO(): string {
   const d = new Date();
   d.setDate(1);

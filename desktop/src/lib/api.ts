@@ -40,14 +40,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
 async function handle<T>(res: Response, auth: boolean): Promise<T> {
   if (!res.ok) {
-    // Expired/invalid token — drop the session so the app routes back to login.
+    // expired token: drop the session so the app routes back to login
     if (res.status === 401 && auth) forceLogout();
 
     let errorBody: { message?: string; violations?: string[] } = {};
     try {
       errorBody = await res.json();
     } catch {
-      /* non-JSON error body */
+      // non-JSON error body
     }
     throw new ApiError(errorBody.message ?? "Request failed", res.status, errorBody.violations);
   }
@@ -69,7 +69,7 @@ export const api = {
   delete: <T>(path: string, options?: Omit<RequestOptions, "body" | "method">) =>
     request<T>(path, { ...options, method: "DELETE" }),
 
-  /** Multipart upload (receipts, CSV) — sets auth but lets the browser set the boundary. */
+  // multipart upload; sets auth but lets the browser set the boundary
   upload: async <T>(path: string, form: FormData): Promise<T> => {
     const token = getToken();
     const res = await fetch(`${API_BASE}${path}`, {
