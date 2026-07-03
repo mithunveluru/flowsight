@@ -18,32 +18,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Detects recurring payment patterns from a user's transaction history.
- *
- * <p>Algorithm per merchant group:
- * <ol>
- *   <li>Normalize merchants via {@link MerchantNormalizationService}
- *       (brand aliases, suffix stripping, txn-reference removal).</li>
- *   <li>Sort transactions by date, compute all consecutive intervals.</li>
- *   <li>Take the median interval and classify into a {@link RecurringPeriod}.</li>
- *   <li>Score confidence from four signals:
- *       occurrence count, interval consistency (tolerating one missed cycle),
- *       amount stability, and category match.</li>
- *   <li>Persist patterns (preserving user-confirmed and dismissed ones).</li>
- * </ol>
- *
- * <p>Minimum requirements to emit a pattern:
- * <ul>
- *   <li>≥ 2 occurrences</li>
- *   <li>Median interval matches a known period</li>
- *   <li>Confidence ≥ 0.30 (POSSIBLE tier — surfaced for user review)</li>
- * </ul>
- *
- * <p>User-confirmed patterns are <em>always</em> preserved across re-scans, their
- * metadata refreshed from the latest transactions. Dismissed patterns are also
- * preserved so they don't reappear in re-scans.
- */
+// Detects recurring payment patterns from transaction history.
+// Confidence blends occurrence count, interval consistency, amount stability, category.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -54,13 +30,13 @@ public class RecurringDetectionService {
     private static final int     MIN_OCCURRENCES  = 2;
     private static final int     MIN_KEY_LENGTH   = 3;
 
-    // Confidence weight tuning
+    // confidence weights
     private static final double  W_OCCURRENCE = 0.35;
     private static final double  W_CONSISTENCY = 0.35;
     private static final double  W_AMOUNT      = 0.15;
     private static final double  W_CATEGORY    = 0.15;
 
-    // Categories that boost confidence (typical recurring-payment buckets)
+    // categories that boost confidence
     private static final Set<TransactionCategory> RECURRING_CATEGORIES = Set.of(
         TransactionCategory.SUBSCRIPTIONS,
         TransactionCategory.UTILITIES,
@@ -81,18 +57,7 @@ public class RecurringDetectionService {
     private final UserRepository              userRepository;
     private final MerchantNormalizationService merchantNormalizer;
 
-    // Public API
-
-    /**
-     * Runs detection, persists patterns, and returns all active (non-dismissed) patterns.
-     *
-     * <p>State handling per composite key (normalizedKey + period):
-     * <ul>
-     *   <li><b>Dismissed</b> — preserved, excluded from response</li>
-     *   <li><b>User-confirmed</b> — preserved, metadata refreshed from latest detection</li>
-     *   <li><b>Auto-detected (default)</b> — fully replaced by fresh detection</li>
-     * </ul>
-     */
+    // Detect, persist, and return active patterns. Confirmed and dismissed keys survive re-scans.
     @Transactional
     public List<RecurringPatternResponse> detectAndRefresh(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow();
@@ -100,13 +65,12 @@ public class RecurringDetectionService {
         LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
         List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, from);
 
-        // Index existing patterns by composite key
         Map<String, RecurringPattern> existing = patternRepository
             .findByUserIdOrderByConfidenceDesc(userId).stream()
             .collect(Collectors.toMap(
                 p -> compositeKey(p.getNormalizedKey(), p.getPeriod()),
                 p -> p,
-                (a, b) -> a // shouldn't happen due to unique constraint
+                (a, b) -> a // unique constraint prevents dupes
             ));
 
         Set<String> dismissedKeys = existing.entrySet().stream()
@@ -119,10 +83,9 @@ public class RecurringDetectionService {
             .map(Map.Entry::getKey)
             .collect(Collectors.toSet());
 
-        // Delete auto-detected patterns; keep user-confirmed and dismissed
+        // keep user-confirmed and dismissed; replace the rest
         patternRepository.deleteActiveNonConfirmedByUserId(userId);
 
-        // Detect from transaction history
         Map<String, MerchantGroup> groups = groupByNormalizedMerchant(txns);
         List<RecurringPattern> resultPatterns = new ArrayList<>();
 
@@ -137,7 +100,6 @@ public class RecurringDetectionService {
             }
 
             if (confirmedKeys.contains(ck)) {
-                // Refresh confirmed pattern's metadata
                 RecurringPattern confirmed = existing.get(ck);
                 confirmed.setMerchant(fresh.getMerchant());
                 confirmed.setEstimatedAmount(fresh.getEstimatedAmount());
@@ -153,8 +115,7 @@ public class RecurringDetectionService {
             resultPatterns.add(patternRepository.save(fresh));
         }
 
-        // Re-include user-confirmed patterns that weren't detected this round
-        // (they keep stale metadata until detected again — UI should show a hint)
+        // re-include confirmed patterns not detected this round (keep stale metadata)
         for (Map.Entry<String, RecurringPattern> entry : existing.entrySet()) {
             if (!entry.getValue().isUserConfirmed()) continue;
             if (entry.getValue().isDismissed())     continue;
@@ -174,7 +135,7 @@ public class RecurringDetectionService {
             .collect(Collectors.toList());
     }
 
-    /** Returns stored patterns without re-running detection. */
+    // stored patterns, no re-detection
     public List<RecurringPatternResponse> getStored(UUID userId) {
         return patternRepository
             .findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(userId)
@@ -215,8 +176,6 @@ public class RecurringDetectionService {
         return toResponse(patternRepository.save(p));
     }
 
-    // Detection algorithm
-
     private Map<String, MerchantGroup> groupByNormalizedMerchant(List<Transaction> txns) {
         Map<String, MerchantGroup> groups = new LinkedHashMap<>();
         for (Transaction tx : txns) {
@@ -238,7 +197,6 @@ public class RecurringDetectionService {
 
         txns.sort(Comparator.comparing(Transaction::getTransactionDate));
 
-        // Compute consecutive intervals (in days)
         List<Integer> intervals = new ArrayList<>();
         for (int i = 1; i < txns.size(); i++) {
             int days = (int) ChronoUnit.DAYS.between(
@@ -249,15 +207,14 @@ public class RecurringDetectionService {
         }
         if (intervals.isEmpty()) return null;
 
-        // Classify period by median interval
+        // classify by median interval
         List<Integer> sorted = new ArrayList<>(intervals);
         Collections.sort(sorted);
         int median = sorted.get(sorted.size() / 2);
         RecurringPeriod period = RecurringPeriod.fromDays(median);
         if (period == null) return null;
 
-        // Signal 1: interval consistency — full credit if within range,
-        // partial credit if within 2× max (tolerates one missed cycle)
+        // consistency: full within range, half within 2× max (tolerates one missed cycle)
         double consistencyScore = intervals.stream()
             .mapToDouble(d -> {
                 if (d >= period.getMinDays() && d <= period.getMaxDays()) return 1.0;
@@ -266,7 +223,7 @@ public class RecurringDetectionService {
             })
             .average().orElse(0);
 
-        // Signal 2: amount stability
+        // amount stability
         DoubleSummaryStatistics stats = txns.stream()
             .mapToDouble(tx -> tx.getAmount().doubleValue())
             .summaryStatistics();
@@ -274,15 +231,14 @@ public class RecurringDetectionService {
             ? Math.max(0.0, 1.0 - (stats.getMax() - stats.getMin()) / stats.getAverage())
             : 0.0;
 
-        // Signal 3: occurrence count (saturates at 6)
+        // occurrence count, saturates at 6
         double occurrenceScore = Math.min(txns.size(), 6) / 6.0;
 
-        // Signal 4: category match — does any txn belong to a known recurring category?
+        // category match
         TransactionCategory dominantCategory = mostCommonCategory(txns);
         double categoryScore = dominantCategory != null && RECURRING_CATEGORIES.contains(dominantCategory)
             ? 1.0 : 0.5;
 
-        // Weighted confidence
         double confidence =
               occurrenceScore  * W_OCCURRENCE
             + consistencyScore * W_CONSISTENCY
@@ -291,7 +247,7 @@ public class RecurringDetectionService {
 
         if (confidence < CONFIDENCE_FLOOR) return null;
 
-        // Display merchant: canonical name from alias map if available, else most-common raw
+        // canonical name if known, else the most-common raw name
         String merchantDisplay = group.normalized.getCanonicalName() != null
             ? group.normalized.getCanonicalName()
             : mostCommonMerchantName(txns);
@@ -321,8 +277,6 @@ public class RecurringDetectionService {
             .build();
     }
 
-    // Response mapping
-
     private RecurringPatternResponse toResponse(RecurringPattern p) {
         LocalDate today = LocalDate.now();
         int daysUntilNext = p.getNextExpectedDate() != null
@@ -349,7 +303,6 @@ public class RecurringDetectionService {
 
         BigDecimal monthly = annual.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
 
-        // Confidence tier for UI badge
         double conf = p.getConfidence() != null ? p.getConfidence().doubleValue() : 0.0;
         String confidenceTier =
               conf >= 0.70 ? "HIGH"
@@ -400,7 +353,6 @@ public class RecurringDetectionService {
         return normalizedKey + ":" + period.name();
     }
 
-    /** Internal carrier for a merchant group's transactions + its normalization. */
     private static class MerchantGroup {
         final Normalized normalized;
         final List<Transaction> txns = new ArrayList<>();
