@@ -30,7 +30,7 @@ type Insight = {
   delta: { value: string; direction: "up" | "down" | "flat" };
   context: string;
   tone: Tone;
-  /** Heights for the 24-point sparkline (0..1). Kept short, hand-tuned. */
+  // 24-point sparkline heights (0..1), hand-tuned
   sparkline: number[];
 };
 
@@ -132,7 +132,7 @@ export function Showcase({ variant = "desktop" }: { variant?: "desktop" | "mobil
   const mode: "login" | "signup" = pathname?.includes("register") ? "signup" : "login";
   const insights = mode === "signup" ? SIGNUP_INSIGHTS : LOGIN_INSIGHTS;
 
-  // Rotate the featured insight every 4.6s — slow enough to read, fast enough to feel alive.
+  // rotate the featured insight every 4.6s
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setIdx((i) => (i + 1) % insights.length), 4600);

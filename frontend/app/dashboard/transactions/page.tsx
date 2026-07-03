@@ -74,7 +74,7 @@ export default function TransactionsPage() {
       await transactionApi.delete(id);
       await load();
     } catch {
-      // swallow — could show toast in Phase 10
+      // swallow
     } finally {
       setDeletingId(null);
     }
@@ -364,12 +364,7 @@ function EmptyState() {
   );
 }
 
-/**
- * Success banner shown after a CSV import. Crucially, it surfaces the *date range*
- * the imported transactions cover and links straight to the analytics view for
- * that period — preventing the "imports landed in last month but I'm looking at
- * this month" confusion that the user reported.
- */
+// CSV import success banner: shows the imported date range and links to that analytics view
 function ImportResultBanner({
   result,
   onDismiss,

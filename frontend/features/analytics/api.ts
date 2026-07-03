@@ -14,8 +14,7 @@ export const analyticsApi = {
       { auth: true }
     ),
 
-  /** Surfaces what date range the user actually has data in. Used to guide the
-      UI when the current month is empty but data exists elsewhere. */
+  // date range the user has data in; guides the UI when the current view is empty
   getActivityBounds: () =>
     api.get<ActivityBounds>("/api/v1/analytics/activity-bounds", { auth: true }),
 };

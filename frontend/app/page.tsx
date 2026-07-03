@@ -234,7 +234,7 @@ export default function Home() {
   );
 }
 
-/* ─── Data ─────────────────────────────────────────────────── */
+// Data
 
 const stats = [
   { value: "94.6%", label: "Categorization accuracy" },
@@ -309,7 +309,7 @@ const trustPoints = [
   "You only ever see your own information",
 ];
 
-/* ─── Logo mark ─────────────────────────────────────────────── */
+// Logo mark
 
 function Logo() {
   return (

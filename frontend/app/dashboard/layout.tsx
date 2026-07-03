@@ -13,9 +13,7 @@ export default function DashboardLayout({
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
-  // Zustand persist rehydrates from localStorage asynchronously after first render.
-  // We must wait for hydration before checking auth state to avoid a flash-redirect
-  // on authenticated users whose token is stored in localStorage.
+  // wait for Zustand persist hydration before checking auth (avoids a flash-redirect)
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {

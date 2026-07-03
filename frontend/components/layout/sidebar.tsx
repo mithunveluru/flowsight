@@ -22,12 +22,7 @@ import {
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 
-/**
- * Each nav section carries an `accent` token name. The sidebar passes it
- * down as a CSS variable (`--section-accent`) so the active and hover
- * indicators within that area pick up the section's identity color.
- * Defined in globals.css under :root.
- */
+// each nav section carries an accent token, passed down as --section-accent (see globals.css)
 const navSections = [
   {
     section: "Overview",
@@ -77,8 +72,7 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
 
-  // Auto-close the mobile drawer on route change; on desktop the prop has no
-  // effect because the static layer ignores `open`/`onClose`.
+  // auto-close the mobile drawer on route change
   useEffect(() => {
     if (open && onClose) onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps

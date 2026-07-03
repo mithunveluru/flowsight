@@ -75,7 +75,7 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      {/* Phase 12 — premium AI-narrated PDF intelligence reports */}
+      {/* PDF intelligence reports */}
       <IntelligenceReportsCard />
 
       {/* CSV export */}
@@ -520,9 +520,7 @@ function IntelligenceReportsCard() {
   );
 }
 
-// Multi-step labels shown while the system "is understanding" the data.
-// Each step rotates every 1.5s during GENERATING — gives the user the sense
-// of intentional analysis rather than a spinner that says "loading".
+// rotating step labels shown during GENERATING
 const ANALYSIS_STEPS = [
   "Reviewing your transactions",
   "Tracing spending patterns",

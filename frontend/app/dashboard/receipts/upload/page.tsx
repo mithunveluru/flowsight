@@ -32,8 +32,7 @@ export default function ReceiptUploadPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [quota, setQuota] = useState<ReceiptQuotaInfo | null>(null);
 
-  // Fetch the user's quota on mount so we can show a non-intrusive indicator
-  // and block uploads client-side once exhausted (backend also enforces).
+  // fetch quota on mount for the indicator + client-side block (backend also enforces)
   useEffect(() => {
     accountApi.get().then((a) => setQuota(a.receiptQuota)).catch(() => {});
   }, []);
@@ -76,7 +75,7 @@ export default function ReceiptUploadPage() {
 
     try {
       const data = await receiptApi.upload(selectedFile);
-      // Always navigate to the review screen — user must confirm before a transaction is saved
+      // go to review; the user confirms before a transaction is saved
       router.push(`/dashboard/receipts/${data.id}/review`);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Upload failed");
@@ -240,11 +239,7 @@ function DropZone({
   );
 }
 
-/**
- * Small non-intrusive pill showing the user's receipt quota.
- * Shows "32 / 50" by default or an infinity badge for unlimited users.
- * Links to settings for full detail.
- */
+// small pill showing the user's receipt quota; links to settings
 function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
   if (quota.unlimited) {
     return (

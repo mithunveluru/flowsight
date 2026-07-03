@@ -22,7 +22,7 @@ function getStoredToken(): string | null {
 }
 
 export const reportsApi = {
-  /** Triggers a browser download of the transactions CSV. */
+  // triggers a browser download of the transactions CSV
   downloadCsv: async (from: string, to: string, category?: string): Promise<void> => {
     const params = new URLSearchParams({ from, to });
     if (category) params.set("category", category);
@@ -63,7 +63,6 @@ export const reportsApi = {
   getTaxSummary: () =>
     api.get<TaxSummary>("/api/v1/reports/tax-summary", { auth: true }),
 
-  // Phase 12: Intelligence Reports
 
   createIntelligenceReport: (req: GenerateReportRequest) =>
     api.post<ReportJob>("/api/v1/intelligence-reports", req, { auth: true }),
@@ -80,7 +79,7 @@ export const reportsApi = {
   deleteReportJob: (id: string) =>
     api.delete<void>(`/api/v1/intelligence-reports/${id}`, { auth: true }),
 
-  /** Streams the generated PDF and triggers a browser download. */
+  // streams the generated PDF and triggers a browser download
   downloadIntelligenceReport: async (id: string, suggestedFilename: string): Promise<void> => {
     const token = getStoredToken();
     const res = await fetch(

@@ -613,10 +613,7 @@ function DataElsewhereHint({ bounds }: { bounds: ActivityBounds }) {
   );
 }
 
-/**
- * Pill shown at the top when the page was opened with explicit ?from=&to= params.
- * Helps the user understand they're not on the default view.
- */
+// pill shown when the page was opened with explicit ?from=&to= params
 function CustomRangeBanner({ from, to }: { from: string; to: string }) {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
