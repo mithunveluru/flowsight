@@ -24,9 +24,7 @@ class ReceiptOcrClientServiceTest {
         mapper = new ObjectMapper();
     }
 
-    // -------------------------------------------------------------------------
     // Disabled when URL is blank
-    // -------------------------------------------------------------------------
 
     @Test
     void extract_returnsEmptyWhenUrlIsBlank() {
@@ -40,9 +38,7 @@ class ReceiptOcrClientServiceTest {
         assertThat(client.extract(Path.of("/any/path.jpg"))).isEmpty();
     }
 
-    // -------------------------------------------------------------------------
     // parseAndValidate
-    // -------------------------------------------------------------------------
 
     @Test
     void parseAndValidate_returnsResponseWhenMerchantPresent() {
@@ -150,9 +146,7 @@ class ReceiptOcrClientServiceTest {
         assertThat(client.parseAndValidate(json)).isPresent();
     }
 
-    // -------------------------------------------------------------------------
     // buildMultipartBody
-    // -------------------------------------------------------------------------
 
     @Test
     void buildMultipartBody_containsFileFieldHeader(@TempDir Path tempDir) throws Exception {

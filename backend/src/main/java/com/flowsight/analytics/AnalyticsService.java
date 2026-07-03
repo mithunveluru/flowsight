@@ -35,10 +35,8 @@ public class AnalyticsService {
 
     private final TransactionRepository transactionRepository;
 
-    // -------------------------------------------------------------------------
     // Activity bounds — surfaces "where the data is" so the UI can guide the
     // user away from an empty current-month view after a previous-month import.
-    // -------------------------------------------------------------------------
 
     public com.flowsight.dto.analytics.ActivityBoundsResponse getActivityBounds(UUID userId) {
         java.util.Optional<LocalDate> earliest = transactionRepository.findEarliestTransactionDate(userId);

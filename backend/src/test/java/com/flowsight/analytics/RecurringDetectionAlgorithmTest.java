@@ -39,9 +39,7 @@ class RecurringDetectionAlgorithmTest {
         normalizer = new MerchantNormalizationService();
     }
 
-    // -------------------------------------------------------------------------
     // The core failure case: merchant name variations group together
-    // -------------------------------------------------------------------------
 
     @Test
     void netflixVariations_allShareSameNormalizationKey() {
@@ -83,9 +81,7 @@ class RecurringDetectionAlgorithmTest {
         assertThat(a).isEqualTo(b).isEqualTo(c);
     }
 
-    // -------------------------------------------------------------------------
     // Period classification tests
-    // -------------------------------------------------------------------------
 
     @Test
     void weeklyInterval_classifiedAsWeekly() {
@@ -142,9 +138,7 @@ class RecurringDetectionAlgorithmTest {
         assertThat(com.flowsight.entity.RecurringPeriod.fromDays(1)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // OCR-normalized merchant variations
-    // -------------------------------------------------------------------------
 
     @Test
     void ocrMerchantWithExtraSpaces_normalizesCleanly() {
@@ -165,9 +159,7 @@ class RecurringDetectionAlgorithmTest {
             .isEqualTo("Netflix");
     }
 
-    // -------------------------------------------------------------------------
     // False positive prevention
-    // -------------------------------------------------------------------------
 
     @Test
     void differentMerchants_doNotShareKey() {

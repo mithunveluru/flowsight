@@ -30,9 +30,7 @@ class ReceiptParserServiceTest {
         parser = new ReceiptParserService(new MerchantExtractor(), NO_AI);
     }
 
-    // -------------------------------------------------------------------------
     // Amount extraction
-    // -------------------------------------------------------------------------
 
     @Test
     void extractTotal_grandTotalLabel() {
@@ -76,9 +74,7 @@ class ReceiptParserServiceTest {
         assertThat(parser.extractTotal(text)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Date extraction
-    // -------------------------------------------------------------------------
 
     @Test
     void extractDate_slashFormat_ddMMyyyy() {
@@ -111,9 +107,7 @@ class ReceiptParserServiceTest {
         assertThat(parser.extractDate(text)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Full parse — OcrDocument overload
-    // -------------------------------------------------------------------------
 
     @Test
     void parse_document_successfulWhenAmountPresent() {
@@ -153,9 +147,7 @@ class ReceiptParserServiceTest {
         assertThat(parser.parse("").isSuccessful()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Merchant extracted through structured document
-    // -------------------------------------------------------------------------
 
     @Test
     void parse_structuredDoc_extractsMerchantFromTopLine() {
@@ -173,9 +165,7 @@ class ReceiptParserServiceTest {
         assertThat(result.isSuccessful()).isTrue();
     }
 
-    // -------------------------------------------------------------------------
     // OcrService TSV parser (via package-access)
-    // -------------------------------------------------------------------------
 
     @Test
     void ocrService_parseTsv_extractsLinesFromSampleOutput() {
@@ -208,9 +198,7 @@ class ReceiptParserServiceTest {
         assertThat(ocrService.parseTsv(null)).isEmpty();
     }
 
-    // -------------------------------------------------------------------------
     // AI fallback integration
-    // -------------------------------------------------------------------------
 
     @Test
     void aiOverride_invokedWhenHeuristicIsLowConfidence() {
@@ -252,9 +240,7 @@ class ReceiptParserServiceTest {
         assertThat(result.getMerchant()).isEqualTo("ZOMATO");
     }
 
-    // -------------------------------------------------------------------------
     // OCR corruption detection
-    // -------------------------------------------------------------------------
 
     @Test
     void isOcrCorrupted_detectsHighNonAsciiRatio() {
@@ -292,9 +278,7 @@ class ReceiptParserServiceTest {
         assertThat(result.getMerchant()).isEqualTo("BESTBUY");
     }
 
-    // -------------------------------------------------------------------------
     // MerchantExtractor — extractWithScore + findCandidates
-    // -------------------------------------------------------------------------
 
     @Test
     void extractWithScore_returnsScoreAndAmbiguity() {

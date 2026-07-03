@@ -89,9 +89,7 @@ class CsvIngestionRegressionTest {
         });
     }
 
-    // -------------------------------------------------------------------------
     // Persistence path: every valid row is saved with the correct fields
-    // -------------------------------------------------------------------------
 
     @Test
     void importCsv_persistsEveryParsedRow_userScoped() throws Exception {
@@ -153,9 +151,7 @@ class CsvIngestionRegressionTest {
         assertThat(saved.get(0).getCurrency()).isEqualTo("INR");
     }
 
-    // -------------------------------------------------------------------------
     // Error handling: malformed rows are skipped but don't poison the batch
-    // -------------------------------------------------------------------------
 
     @Test
     void importCsv_skipsMalformedRows_butPersistsValidOnes() throws Exception {
@@ -211,9 +207,7 @@ class CsvIngestionRegressionTest {
         assertThat(result.getTotalAmountImported()).isEqualByComparingTo("15050");
     }
 
-    // -------------------------------------------------------------------------
     // Categorization runs on every imported row
-    // -------------------------------------------------------------------------
 
     @Test
     void importCsv_categorizesRowsAutomatically() throws Exception {
@@ -236,9 +230,7 @@ class CsvIngestionRegressionTest {
         assertThat(saved.get(0).getConfidenceScore()).isNotNull();
     }
 
-    // -------------------------------------------------------------------------
     // The reported bug class: imports in a different month from "today"
-    // -------------------------------------------------------------------------
 
     @Test
     void importCsv_pastMonthImports_areReportedWithTheirActualDateRange() throws Exception {

@@ -95,9 +95,7 @@ class ReceiptConfirmTest {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // ReceiptConfirmRequest validation
-    // -------------------------------------------------------------------------
 
     @Test
     void request_validWhenAllRequiredFieldsPresent() {
@@ -156,9 +154,7 @@ class ReceiptConfirmTest {
         assertThat(validator.validate(req)).isEmpty();
     }
 
-    // -------------------------------------------------------------------------
     // confirmReceipt — happy paths
-    // -------------------------------------------------------------------------
 
     @Test
     void confirmReceipt_createsTransactionWithUserValues() {
@@ -263,9 +259,7 @@ class ReceiptConfirmTest {
             .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    // -------------------------------------------------------------------------
     // Draft workflow — processReceipt should NOT auto-create transaction
-    // -------------------------------------------------------------------------
 
     @Test
     void noTransactionAutoCreated_afterOcrProcessing() {
@@ -294,9 +288,7 @@ class ReceiptConfirmTest {
         assertThat(response.getTransaction()).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Low-confidence extraction handling
-    // -------------------------------------------------------------------------
 
     @Test
     void confirmReceipt_worksRegardlessOfOcrConfidence() {
@@ -326,9 +318,7 @@ class ReceiptConfirmTest {
         ));
     }
 
-    // -------------------------------------------------------------------------
     // Helper
-    // -------------------------------------------------------------------------
 
     private ReceiptConfirmRequest validRequest() {
         ReceiptConfirmRequest req = new ReceiptConfirmRequest();

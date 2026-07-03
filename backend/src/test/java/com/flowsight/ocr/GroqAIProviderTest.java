@@ -18,9 +18,7 @@ class GroqAIProviderTest {
         mapper = new ObjectMapper();
     }
 
-    // -------------------------------------------------------------------------
     // Disabled when key is blank
-    // -------------------------------------------------------------------------
 
     @Test
     void interpret_returnsEmptyWhenApiKeyIsBlank() {
@@ -35,9 +33,7 @@ class GroqAIProviderTest {
         assertThat(provider.interpret("some text", List.of())).isEmpty();
     }
 
-    // -------------------------------------------------------------------------
     // Request building
-    // -------------------------------------------------------------------------
 
     @Test
     void buildUserMessage_includesOcrTextAndCandidates() throws Exception {
@@ -77,9 +73,7 @@ class GroqAIProviderTest {
         assertThat(node.get("max_tokens").asInt()).isEqualTo(150);
     }
 
-    // -------------------------------------------------------------------------
     // Response parsing
-    // -------------------------------------------------------------------------
 
     @Test
     void parseResponse_extractsMerchantFromValidJson() throws Exception {
@@ -181,9 +175,7 @@ class GroqAIProviderTest {
         assertThat(result.get().getCategoryHint()).isNull(); // "null" string → null
     }
 
-    // -------------------------------------------------------------------------
     // limitLines utility
-    // -------------------------------------------------------------------------
 
     @Test
     void limitLines_capsAt20NonBlankLines() {

@@ -57,10 +57,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     Optional<Transaction> findTopByReceiptId(UUID receiptId);
 
-    // -------------------------------------------------------------------------
     // Activity-bounds queries — used to direct the UI to non-empty date ranges
     // after an import lands in a month other than the current one.
-    // -------------------------------------------------------------------------
 
     @Query("SELECT MIN(t.transactionDate) FROM Transaction t WHERE t.user.id = :userId")
     Optional<LocalDate> findEarliestTransactionDate(@Param("userId") UUID userId);

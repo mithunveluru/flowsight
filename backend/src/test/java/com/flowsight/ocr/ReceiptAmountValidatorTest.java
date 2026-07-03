@@ -31,9 +31,7 @@ class ReceiptAmountValidatorTest {
         validator = new ReceiptAmountValidator();
     }
 
-    // -------------------------------------------------------------------------
     // VAT-heavy receipts
-    // -------------------------------------------------------------------------
 
     @Test
     void vatReceipt_correctsToGrandTotalWhenLLMPickedVAT() {
@@ -85,9 +83,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getConfidence()).isEqualTo(AmountConfidence.LOW);
     }
 
-    // -------------------------------------------------------------------------
     // GST receipts (Indian — CGST + SGST)
-    // -------------------------------------------------------------------------
 
     @Test
     void gstReceipt_correctsToTotalWhenLLMPickedCGST() {
@@ -138,9 +134,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getConfidence()).isIn(AmountConfidence.HIGH, AmountConfidence.MEDIUM);
     }
 
-    // -------------------------------------------------------------------------
     // Subtotal vs total ambiguity
-    // -------------------------------------------------------------------------
 
     @Test
     void subtotalAmbiguity_prefersGrandTotalLineItemOverSubtotal() {
@@ -188,9 +182,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getLabel()).isEqualTo("Total");
     }
 
-    // -------------------------------------------------------------------------
     // Restaurant bills
-    // -------------------------------------------------------------------------
 
     @Test
     void restaurantBill_serviceChargeAndGstScenario() {
@@ -224,9 +216,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getConfidence()).isEqualTo(AmountConfidence.HIGH);
     }
 
-    // -------------------------------------------------------------------------
     // Supermarket receipts
-    // -------------------------------------------------------------------------
 
     @Test
     void supermarketReceipt_cleanProductsNoTaxLines_highConfidence() {
@@ -263,9 +253,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getLabel()).isEqualTo("Total Due");
     }
 
-    // -------------------------------------------------------------------------
     // Multi-currency / large amounts
-    // -------------------------------------------------------------------------
 
     @Test
     void multiCurrency_largeAmountHandledCorrectly() {
@@ -298,9 +286,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getConfidence()).isEqualTo(AmountConfidence.HIGH);
     }
 
-    // -------------------------------------------------------------------------
     // Discount-heavy receipts
-    // -------------------------------------------------------------------------
 
     @Test
     void discountHeavy_discountLineNotPickedAsTotal() {
@@ -344,9 +330,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getAmount()).isEqualByComparingTo("90.00");
     }
 
-    // -------------------------------------------------------------------------
     // Edge cases
-    // -------------------------------------------------------------------------
 
     @Test
     void noLineItems_returnsOriginalAmountWithMediumConfidence() {
@@ -425,9 +409,7 @@ class ReceiptAmountValidatorTest {
         assertThat(result.getConfidence().getNumericValue()).isGreaterThanOrEqualTo(0.65);
     }
 
-    // -------------------------------------------------------------------------
     // sumRegularItems helper
-    // -------------------------------------------------------------------------
 
     @Test
     void sumRegularItems_excludesSummaryLines() {
@@ -458,9 +440,7 @@ class ReceiptAmountValidatorTest {
         assertThat(validator.sumRegularItems(List.of())).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Label classifiers
-    // -------------------------------------------------------------------------
 
     @Test
     void isSummaryLine_detectsPreferredLabels() {
@@ -489,9 +469,7 @@ class ReceiptAmountValidatorTest {
         assertThat(validator.isSummaryLine("laptop")).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Helper
-    // -------------------------------------------------------------------------
 
     private ReceiptLineItem item(String name, String price) {
         return ReceiptLineItem.builder()

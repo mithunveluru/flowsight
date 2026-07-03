@@ -36,9 +36,7 @@ class AmountResolutionIngestionTest {
         return parser.parse(new MockMultipartFile("file", "stmt.csv", "text/csv", csv.getBytes()));
     }
 
-    // -------------------------------------------------------------------------
     // The exact CSV from the bug report - debit column carries SIGNED values.
-    // -------------------------------------------------------------------------
     @Test
     void signedDebitInDebitColumn_resolvesToCorrectExpense_notZero() throws Exception {
         String csv = """
@@ -62,9 +60,7 @@ class AmountResolutionIngestionTest {
         assertThat(allowance.isDebit()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Traditional HDFC convention - debits exported as positive magnitudes
-    // -------------------------------------------------------------------------
     @Test
     void unsignedDebitInDebitColumn_stillResolvesAsDebit() throws Exception {
         String csv = """
@@ -81,9 +77,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getRows().get(1).isDebit()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Column-name aliases - same logical shape, different banks
-    // -------------------------------------------------------------------------
     @Test
     void withdrawalAndDepositAliases_areRecognized() throws Exception {
         String csv = """
@@ -114,9 +108,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getRows().get(1).isDebit()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Single-amount-column layouts
-    // -------------------------------------------------------------------------
     @Test
     void singleAmountColumn_signedValues_directionFromSign() throws Exception {
         // No type column - sign of the amount tells direction.
@@ -160,9 +152,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getRows().get(1).isDebit()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Empty / malformed rows
-    // -------------------------------------------------------------------------
     @Test
     void rowWithBothDebitAndCreditEmpty_isRejected_notSilentlyZero() throws Exception {
         String csv = """
@@ -207,9 +197,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getErrors()).anyMatch(e -> e.contains("Row 3") && e.contains("invalid debit"));
     }
 
-    // -------------------------------------------------------------------------
     // Number-formatting quirks
-    // -------------------------------------------------------------------------
     @Test
     void commasInNumbers_areStripped() throws Exception {
         String csv = """
@@ -242,9 +230,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getRows().get(0).getAmount()).isEqualByComparingTo("1499.99");
     }
 
-    // -------------------------------------------------------------------------
     // Unknown header layout
-    // -------------------------------------------------------------------------
     @Test
     void unrecognizedHeaders_yieldErrorMessage_notSilentZeros() throws Exception {
         String csv = """
@@ -257,9 +243,7 @@ class AmountResolutionIngestionTest {
         assertThat(result.getErrors()).anyMatch(e -> e.contains("Unrecognized CSV header layout"));
     }
 
-    // -------------------------------------------------------------------------
     // No-amount, no-debit, no-credit row inside a sea of valid rows
-    // -------------------------------------------------------------------------
     @Test
     void mixedFileWithSomeEmptyAmountRows_importsValidOnesAndReportsRest() throws Exception {
         String csv = """

@@ -36,9 +36,7 @@ class BalanceReconstructionIngestionTest {
             "file", "statement.csv", "text/csv", csv.getBytes()));
     }
 
-    // -------------------------------------------------------------------------
     // Spec example: balance-only statement reconstructs amounts
-    // -------------------------------------------------------------------------
     @Test
     void specExample_balanceOnlyStatement_reconstructsExpenseAndIncome() throws Exception {
         String csv = """

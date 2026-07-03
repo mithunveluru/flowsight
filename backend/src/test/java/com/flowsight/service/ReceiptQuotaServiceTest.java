@@ -50,9 +50,7 @@ class ReceiptQuotaServiceTest {
             .build();
     }
 
-    // -------------------------------------------------------------------------
     // requireQuotaAvailable
-    // -------------------------------------------------------------------------
 
     @Test
     void underLimit_allowsProcessing() {
@@ -103,9 +101,7 @@ class ReceiptQuotaServiceTest {
             .isInstanceOf(QuotaExceededException.class);
     }
 
-    // -------------------------------------------------------------------------
     // recordReceiptProcessed
-    // -------------------------------------------------------------------------
 
     @Test
     void recordProcessed_callsAtomicIncrement() {
@@ -117,9 +113,7 @@ class ReceiptQuotaServiceTest {
         verify(userRepository).incrementReceiptsProcessed(userId);
     }
 
-    // -------------------------------------------------------------------------
     // getQuota
-    // -------------------------------------------------------------------------
 
     @Test
     void getQuota_underLimit_returnsCorrectFields() {
@@ -161,9 +155,7 @@ class ReceiptQuotaServiceTest {
         assertThat(info.isCanProcess()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Admin: resetUsage
-    // -------------------------------------------------------------------------
 
     @Test
     void resetUsage_callsRepository_andReturnsFreshQuota() {
@@ -186,9 +178,7 @@ class ReceiptQuotaServiceTest {
             .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    // -------------------------------------------------------------------------
     // Admin: setLimit
-    // -------------------------------------------------------------------------
 
     @Test
     void setLimit_increasesLimit() {
@@ -226,9 +216,7 @@ class ReceiptQuotaServiceTest {
             .isInstanceOf(IllegalArgumentException.class);
     }
 
-    // -------------------------------------------------------------------------
     // Admin: setUnlimited
-    // -------------------------------------------------------------------------
 
     @Test
     void setUnlimited_grantsBypass() {
@@ -258,9 +246,7 @@ class ReceiptQuotaServiceTest {
         assertThat(info.isCanProcess()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Admin: bulkReset
-    // -------------------------------------------------------------------------
 
     @Test
     void bulkResetAll_callsRepository() {
@@ -270,9 +256,7 @@ class ReceiptQuotaServiceTest {
         verify(userRepository).bulkResetReceiptsProcessed();
     }
 
-    // -------------------------------------------------------------------------
     // OCR-blocking integration: quota check must run BEFORE any OCR invocation
-    // -------------------------------------------------------------------------
 
     @Test
     void quotaCheckHappensBeforeOcr_neverCallsRepositoryIncrementWhenBlocked() {

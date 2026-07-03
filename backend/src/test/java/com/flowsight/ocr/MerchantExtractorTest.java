@@ -18,9 +18,7 @@ class MerchantExtractorTest {
         extractor = new MerchantExtractor();
     }
 
-    // -------------------------------------------------------------------------
     // Helper
-    // -------------------------------------------------------------------------
 
     private static OcrLine line(String text, double conf, int topPx, int docH) {
         return OcrLine.builder().text(text).confidence(conf).topPx(topPx).documentHeightPx(docH).build();
@@ -30,9 +28,7 @@ class MerchantExtractorTest {
         return OcrDocument.builder().lines(List.of(lines)).build();
     }
 
-    // -------------------------------------------------------------------------
     // Walmart receipt — address-heavy header, merchant buried in noise
-    // -------------------------------------------------------------------------
 
     @Test
     void walmart_detectsMerchantDespiteAddressNoise() {
@@ -51,9 +47,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isEqualTo("WALMART SUPERCENTER");
     }
 
-    // -------------------------------------------------------------------------
     // Restaurant receipt — merchant in header, items in body
-    // -------------------------------------------------------------------------
 
     @Test
     void restaurant_detectsNameFromHeader() {
@@ -71,9 +65,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isEqualTo("THE GOLDEN SPOON");
     }
 
-    // -------------------------------------------------------------------------
     // WAL-MART alias normalisation
-    // -------------------------------------------------------------------------
 
     @Test
     void normalize_walMartHyphen() {
@@ -105,9 +97,7 @@ class MerchantExtractorTest {
         assertThat(extractor.normalize("-- ZOMATO --")).isEqualTo("ZOMATO");
     }
 
-    // -------------------------------------------------------------------------
     // Exclusion rules
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest(name = "excluded: {0}")
     @CsvSource({
@@ -141,9 +131,7 @@ class MerchantExtractorTest {
         assertThat(extractor.isExcluded(text)).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Scoring model
-    // -------------------------------------------------------------------------
 
     @Test
     void score_topPositionAllCapsHighConfidenceWinsHighScore() {
@@ -167,9 +155,7 @@ class MerchantExtractorTest {
         assertThat(extractor.scoreLine(totalLine)).isEqualTo(0.0);
     }
 
-    // -------------------------------------------------------------------------
     // Noisy / crumpled receipt — low overall confidence, garbled lines
-    // -------------------------------------------------------------------------
 
     @Test
     void noisy_stillExtractsMerchantWhenTopLineIsClear() {
@@ -183,9 +169,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isEqualTo("QUICKMART");
     }
 
-    // -------------------------------------------------------------------------
     // All candidates excluded — returns null
-    // -------------------------------------------------------------------------
 
     @Test
     void allExcluded_returnsNull() {
@@ -198,9 +182,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Multi-line merchant header — "WELCOME TO / STARBUCKS"
-    // -------------------------------------------------------------------------
 
     @Test
     void multiLine_picksBrandLineNotPrefixLine() {
@@ -216,9 +198,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isEqualTo("STARBUCKS");
     }
 
-    // -------------------------------------------------------------------------
     // Low-confidence OCR — all lines below 0.50
-    // -------------------------------------------------------------------------
 
     @Test
     void lowConfidence_stillPicksBestCandidate() {
@@ -232,9 +212,7 @@ class MerchantExtractorTest {
         assertThat(extractor.extract(d)).isEqualTo("SWIGGY");
     }
 
-    // -------------------------------------------------------------------------
     // Address-heavy receipt — first several lines are addresses
-    // -------------------------------------------------------------------------
 
     @Test
     void addressHeavy_skipsAddressLinesAndFindsName() {

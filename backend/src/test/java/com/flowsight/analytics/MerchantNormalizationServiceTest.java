@@ -34,9 +34,7 @@ class MerchantNormalizationServiceTest {
         normalizer = new MerchantNormalizationService();
     }
 
-    // -------------------------------------------------------------------------
     // The original failure case — Netflix variants
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -86,9 +84,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isEqualTo(expectedCanonical);
     }
 
-    // -------------------------------------------------------------------------
     // Indian fintech merchants
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest
     @CsvSource({
@@ -145,9 +141,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isEqualTo(expected);
     }
 
-    // -------------------------------------------------------------------------
     // Concept markers — rent, EMI, utility bills
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest
     @CsvSource({
@@ -168,9 +162,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isEqualTo(expected);
     }
 
-    // -------------------------------------------------------------------------
     // Transaction reference stripping
-    // -------------------------------------------------------------------------
 
     @Test
     void longDigitSequences_areStripped() {
@@ -196,9 +188,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isEqualTo("Netflix");
     }
 
-    // -------------------------------------------------------------------------
     // Fallback for unknown merchants
-    // -------------------------------------------------------------------------
 
     @Test
     void unknownMerchant_groupsByFirstWords() {
@@ -225,9 +215,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getKey()).doesNotContain("pvt");
     }
 
-    // -------------------------------------------------------------------------
     // False-positive prevention
-    // -------------------------------------------------------------------------
 
     @Test
     void differentMerchantsWithSimilarNames_remainDistinct() {
@@ -253,9 +241,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Edge cases
-    // -------------------------------------------------------------------------
 
     @Test
     void nullInput_returnsEmptyNormalized() {
@@ -287,9 +273,7 @@ class MerchantNormalizationServiceTest {
         assertThat(n.getCanonicalName()).isEqualTo("Netflix");
     }
 
-    // -------------------------------------------------------------------------
     // normalizeKey convenience
-    // -------------------------------------------------------------------------
 
     @Test
     void normalizeKey_returnsKeyDirectly() {

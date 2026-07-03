@@ -23,9 +23,7 @@ class ReceiptOcrMapperTest {
         mapper = new ReceiptOcrMapper(new ReceiptAmountValidator());
     }
 
-    // -------------------------------------------------------------------------
     // Happy path
-    // -------------------------------------------------------------------------
 
     @Test
     void map_extractsMerchantAndAmount() {
@@ -105,9 +103,7 @@ class ReceiptOcrMapperTest {
         assertThat(mapper.map(response).getMerchantAddress()).isEqualTo("123 Main St, Springfield");
     }
 
-    // -------------------------------------------------------------------------
     // Amount validation
-    // -------------------------------------------------------------------------
 
     @Test
     void map_rejectsZeroAmount() {
@@ -140,9 +136,7 @@ class ReceiptOcrMapperTest {
         assertThat(mapper.map(response).isSuccessful()).isFalse();
     }
 
-    // -------------------------------------------------------------------------
     // Date validation
-    // -------------------------------------------------------------------------
 
     @Test
     void map_rejectsFutureDate() {
@@ -164,9 +158,7 @@ class ReceiptOcrMapperTest {
         assertThat(mapper.map(response).getDate()).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Text sanitization
-    // -------------------------------------------------------------------------
 
     @Test
     void sanitizeText_stripsControlChars() {
@@ -188,9 +180,7 @@ class ReceiptOcrMapperTest {
         assertThat(mapper.sanitizeText(null, 200)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Confidence clamping
-    // -------------------------------------------------------------------------
 
     @ParameterizedTest
     @ValueSource(doubles = {1.5, 2.0, 99.9})
@@ -209,9 +199,7 @@ class ReceiptOcrMapperTest {
         assertThat(mapper.clampConfidence(null)).isNull();
     }
 
-    // -------------------------------------------------------------------------
     // Null safety
-    // -------------------------------------------------------------------------
 
     @Test
     void map_handlesAllNullFields() {
