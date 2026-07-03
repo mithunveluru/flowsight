@@ -8,10 +8,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Pin the contract for balance-delta reconstruction in isolation - no Spring,
- * no CSV, just BalanceRow inputs and ReconstructedTransaction outputs.
- */
+// Pin the contract for balance-delta reconstruction in isolation - no Spring,
 class BalanceDeltaCalculatorTest {
 
     private final BalanceDeltaCalculator calc = new BalanceDeltaCalculator();

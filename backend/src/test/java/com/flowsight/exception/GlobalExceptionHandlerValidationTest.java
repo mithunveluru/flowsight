@@ -24,11 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Verifies the validation / bad-input exception handlers map to HTTP 400
- * (previously these fell through to the catch-all handler and returned 500),
- * and that {@link ScenarioRequest}'s new bounds actually fire.
- */
+// Verifies the validation / bad-input exception handlers map to HTTP 400
 class GlobalExceptionHandlerValidationTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
@@ -115,7 +111,7 @@ class GlobalExceptionHandlerValidationTest {
         assertThat(resp.getBody().getMessage()).doesNotContain("secret payload detail");
     }
 
-    /** Reflection target for building a MethodParameter. */
+    // Reflection target for building a MethodParameter.
     @SuppressWarnings("unused")
     private static final class Target {
         void byId(UUID id) { }

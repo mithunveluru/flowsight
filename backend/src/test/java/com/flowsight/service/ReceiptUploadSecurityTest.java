@@ -26,14 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-/**
- * Security regression tests for the receipt upload boundary.
- *
- * <p>Upload validation runs before any storage or OCR work, so a rejected file
- * never touches disk, the OCR microservice, or the database. The key new
- * protection under test is magic-byte sniffing: a spoofed {@code Content-Type}
- * cannot smuggle a non-image payload past validation.
- */
+// Security regression tests for the receipt upload boundary.
 class ReceiptUploadSecurityTest {
 
     private ReceiptRepository      receiptRepository;

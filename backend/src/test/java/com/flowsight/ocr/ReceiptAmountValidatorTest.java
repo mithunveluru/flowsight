@@ -9,19 +9,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Regression tests for the receipt amount post-processing validator.
- *
- * Scenarios covered:
- *   - VAT-heavy receipts (VAT amount mistaken for total)
- *   - GST receipts (CGST/SGST line items, Indian format)
- *   - Subtotal vs grand total ambiguity
- *   - Restaurant bills (service charge + GST)
- *   - Supermarket receipts (clean product list, single total)
- *   - Multi-currency-scale amounts
- *   - Discount-heavy receipts (savings reducing total)
- *   - Edge cases: no line items, all summary lines, missing amount
- */
+// Regression tests for the receipt amount post-processing validator.
 class ReceiptAmountValidatorTest {
 
     private ReceiptAmountValidator validator;

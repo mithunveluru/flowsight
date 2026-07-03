@@ -13,23 +13,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Regression tests for the merchant grouping + detection logic.
- *
- * <p>Focuses on the integration between {@link MerchantNormalizationService} and
- * {@link RecurringDetectionService}. Verifies that:
- * <ul>
- *   <li>Merchant name variations (NETFLIX, Netflix.com, Netflix Subscription) all
- *       group into one pattern</li>
- *   <li>Monthly / weekly / quarterly / yearly intervals are correctly classified</li>
- *   <li>Slight amount variations don't break detection</li>
- *   <li>One missed billing cycle is tolerated</li>
- *   <li>False positives (one-off purchases) are not flagged</li>
- * </ul>
- *
- * <p>These tests exercise the {@code groupByNormalizedMerchant} and {@code analyze}
- * methods indirectly via the public detection contract.
- */
+// Regression tests for the merchant grouping + detection logic.
 class RecurringDetectionAlgorithmTest {
 
     private MerchantNormalizationService normalizer;

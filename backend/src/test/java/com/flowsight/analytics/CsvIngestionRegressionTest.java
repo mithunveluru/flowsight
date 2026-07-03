@@ -22,21 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-/**
- * Regression tests for the CSV import → persistence path.
- *
- * <p>These tests protect against the class of bug the user reported:
- * "imported transactions don't appear in analytics". The actual root cause was
- * that imports landed in a different month than the dashboard's default view —
- * the import path itself is correct. These tests pin the contract:
- * <ul>
- *   <li>All parsed rows are submitted to {@code saveAll}</li>
- *   <li>The result reports the imported date range and total</li>
- *   <li>Malformed rows are skipped (not silently lost in the count)</li>
- *   <li>Every saved transaction is user-scoped via {@code user} field</li>
- *   <li>{@code source} is always CSV for imported rows</li>
- * </ul>
- */
+// Regression tests for the CSV import → persistence path.
 @ExtendWith(MockitoExtension.class)
 class CsvIngestionRegressionTest {
 

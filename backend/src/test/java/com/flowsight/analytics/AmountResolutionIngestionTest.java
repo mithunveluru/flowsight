@@ -9,16 +9,7 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Regression suite for the "amounts silently parsed as zero" bug.
- *
- * <p>Cause: the legacy parsers assumed bank Debit columns are always positive.
- * Statements that exported debits as negative numbers (e.g. {@code -1500.0})
- * failed the {@code > 0} check and fell through to {@code amount = 0}.
- *
- * <p>These tests pin: never silently produce zero; row is either imported with
- * the correct amount + direction or rejected with a clear error.
- */
+// Regression suite for the "amounts silently parsed as zero" bug.
 class AmountResolutionIngestionTest {
 
     private CsvParserService parser;

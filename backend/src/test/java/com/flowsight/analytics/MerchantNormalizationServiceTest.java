@@ -9,22 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Regression tests for merchant normalization.
- *
- * <p>Test scenarios:
- * <ul>
- *   <li>Brand alias matching (the original failure case)</li>
- *   <li>URL / TLD stripping</li>
- *   <li>Transaction reference number removal</li>
- *   <li>UPI/IMPS/NEFT prefix handling</li>
- *   <li>Suffix stripping (subscription, monthly, etc.)</li>
- *   <li>Indian fintech merchants</li>
- *   <li>Fallback grouping for unknown merchants</li>
- *   <li>False-positive prevention</li>
- *   <li>Edge cases (null, blank, garbled)</li>
- * </ul>
- */
+// Regression tests for merchant normalization.
 class MerchantNormalizationServiceTest {
 
     private MerchantNormalizationService normalizer;

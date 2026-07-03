@@ -10,14 +10,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * End-to-end test for the BALANCE_ONLY ingestion path - drives the public
- * {@link CsvParserService#parse} entry point with CSV byte content and asserts
- * the resulting {@link CsvParserService.CsvRow} list is shape-compatible with
- * what the downstream pipeline already consumes (date / description / amount /
- * isDebit). The test confirms reconstructed rows look identical to natively
- * parsed ones.
- */
+// End-to-end test for the BALANCE_ONLY ingestion path - drives the public
 class BalanceReconstructionIngestionTest {
 
     private CsvParserService parser;
