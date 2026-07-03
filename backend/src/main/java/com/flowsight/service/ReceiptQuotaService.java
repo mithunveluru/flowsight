@@ -12,23 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/**
- * Central authority for the receipt OCR quota. Every receipt-processing path
- * goes through this service so the limit logic is never duplicated.
- *
- * <p>Quota model:
- * <ul>
- *   <li>Each user has a {@code receiptLimit} (default 50, configurable per user)</li>
- *   <li>Each successful OCR invocation increments {@code receiptsProcessed} atomically</li>
- *   <li>Admins can flip {@code unlimitedReceipts} to bypass the cap entirely</li>
- * </ul>
- *
- * <p>The check is intentionally cheap (a single DB row read). The increment is an
- * atomic JPQL UPDATE so concurrent uploads cannot overshoot the cap by more than
- * one request — and the {@link #requireQuotaAvailable} check is performed
- * <em>before</em> any OCR API call, never after, so we never consume external
- * resources on a quota-blocked request.
- */
+// Single authority for the receipt OCR quota. Check runs before any OCR;
+// the increment is an atomic UPDATE so concurrent uploads can't overshoot.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,12 +21,7 @@ public class ReceiptQuotaService {
 
     private final UserRepository userRepository;
 
-    // Quota checks
-
-    /**
-     * Throws {@link QuotaExceededException} when the user has no remaining quota.
-     * Call this <em>before</em> invoking any OCR resource.
-     */
+    // throws QuotaExceededException when out of quota; call before any OCR
     public void requireQuotaAvailable(User user) {
         if (user.isUnlimitedReceipts()) return;
         if (user.getReceiptsProcessed() < user.getReceiptLimit()) return;
@@ -53,10 +33,7 @@ public class ReceiptQuotaService {
         ));
     }
 
-    /**
-     * Atomic increment of the user's processed-receipts counter.
-     * Call only <em>after</em> the OCR has actually been invoked (success or failure).
-     */
+    // atomic increment; call after OCR ran (success or failure)
     @Transactional
     public void recordReceiptProcessed(UUID userId) {
         int updated = userRepository.incrementReceiptsProcessed(userId);
@@ -64,8 +41,6 @@ public class ReceiptQuotaService {
             log.warn("Receipt counter increment touched {} rows for user {}", updated, userId);
         }
     }
-
-    // Read API (for UI)
 
     public ReceiptQuotaInfo getQuota(User user) {
         boolean unlimited = user.isUnlimitedReceipts();
@@ -80,8 +55,6 @@ public class ReceiptQuotaService {
             .canProcess(unlimited || user.getReceiptsProcessed() < user.getReceiptLimit())
             .build();
     }
-
-    // Admin operations
 
     @Transactional
     public ReceiptQuotaInfo resetUsage(UUID userId) {
@@ -108,7 +81,7 @@ public class ReceiptQuotaService {
         return getQuota(user);
     }
 
-    /** Bulk reset of every user's counter — useful for periodic refresh jobs. */
+    // bulk reset (periodic refresh job)
     @Transactional
     public int bulkResetAll() {
         int affected = userRepository.bulkResetReceiptsProcessed();

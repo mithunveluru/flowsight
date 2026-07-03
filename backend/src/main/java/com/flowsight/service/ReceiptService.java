@@ -59,23 +59,21 @@ public class ReceiptService {
     private final AuditLogService       auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
 
-    // Primary: receipt-ocr LLM microservice
+    // primary: receipt-ocr LLM microservice
     private final ReceiptOcrClientService receiptOcrClient;
     private final ReceiptOcrMapper        ocrMapper;
 
-    // Fallback: Tesseract + heuristic pipeline (deprecated — retained for rollback safety)
+    // fallback: Tesseract heuristic pipeline (deprecated, kept for rollback)
     private final OcrService          ocrService;
     private final ReceiptParserService parser;
 
     @Transactional
     public ReceiptResponse processReceipt(MultipartFile file, User user) throws IOException {
-        // Quota check FIRST — must run before any OCR or storage so we never
-        // consume external resources when the user has hit their cap.
+        // quota before OCR/storage so a capped user consumes nothing
         quotaService.requireQuotaAvailable(user);
         rateLimiter.checkUploadAttempt(user.getId().toString());
         validateUpload(file);
 
-        // 1 — Persist receipt record (PENDING)
         Receipt receipt = Receipt.builder()
             .user(user)
             .fileName(sanitize(file.getOriginalFilename()))
@@ -86,7 +84,6 @@ public class ReceiptService {
         receipt = receiptRepository.save(receipt);
         auditLogService.log(user, AuditLogService.ACTION_RECEIPT_UPLOADED, "Receipt", receipt.getId().toString());
 
-        // 2 — Store file
         Path filePath;
         try {
             filePath = fileStorage.store(file, user.getId(), receipt.getId());
@@ -101,17 +98,15 @@ public class ReceiptService {
         receipt.setStatus(ReceiptStatus.PROCESSING);
         receiptRepository.save(receipt);
 
-        // 3 — Extract: primary = receipt-ocr LLM service; fallback = Tesseract
+        // extract: receipt-ocr primary, Tesseract fallback
         OcrExtractionResult extraction = extractWithFallback(filePath, receipt);
-        // Quota was checked at entry; the OCR call has now run so the resource was consumed.
-        // Increment the user's counter regardless of OCR success/failure.
+        // OCR ran; count it regardless of success
         quotaService.recordReceiptProcessed(user.getId());
         if (extraction == null) {
             return toResponse(receipt, null, null);
         }
 
-        // 4 — OCR complete; receipt is now a draft awaiting user review.
-        //     Transaction creation is deferred until the user confirms via POST /receipts/{id}/confirm.
+        // draft only; the transaction is created when the user confirms
         receipt.setStatus(ReceiptStatus.COMPLETED);
         if (!extraction.isSuccessful()) {
             receipt.setErrorMessage("Could not extract a total amount from the receipt image.");
@@ -120,21 +115,13 @@ public class ReceiptService {
         return toResponse(receipt, extraction, null);
     }
 
-    /**
-     * Converts a user-reviewed OCR draft into a persisted transaction.
-     *
-     * The user has had an opportunity to view, correct, and approve the OCR-extracted
-     * fields on the review screen before calling this endpoint. All values in the
-     * request are trusted as user-confirmed.
-     *
-     * <p>Idempotent: returns the existing transaction if the receipt was already confirmed.
-     */
+    // Persist a user-reviewed OCR draft as a transaction. Idempotent.
     @Transactional
     public ReceiptResponse confirmReceipt(UUID receiptId, ReceiptConfirmRequest request, User user) {
         Receipt receipt = receiptRepository.findByIdAndUserId(receiptId, user.getId())
             .orElseThrow(() -> new ResourceNotFoundException("Receipt", receiptId));
 
-        // Idempotency: if already confirmed, return current state without duplicating
+        // already confirmed: return existing, don't duplicate
         Transaction existing = transactionRepository.findTopByReceiptId(receiptId).orElse(null);
         if (existing != null) {
             log.debug("Receipt {} already confirmed, returning existing transaction {}", receiptId, existing.getId());
@@ -145,7 +132,7 @@ public class ReceiptService {
         Transaction tx = buildTransactionFromConfirm(request, receipt, user);
         transactionRepository.save(tx);
 
-        // Persist the user-confirmed values on the receipt for audit trail
+        // store the confirmed values on the receipt for audit
         receipt.setExtractedMerchant(request.getMerchant());
         receipt.setExtractedAmount(request.getAmount());
         receipt.setExtractedDate(request.getDate());
@@ -179,12 +166,7 @@ public class ReceiptService {
         receiptRepository.delete(receipt);
     }
 
-    // Extraction pipeline
-
-    /**
-     * Tries receipt-ocr LLM service first. Falls back to Tesseract on failure.
-     * Returns null (and marks receipt FAILED) only if both paths throw.
-     */
+    // receipt-ocr first, Tesseract fallback; null (FAILED) only if both throw
     private OcrExtractionResult extractWithFallback(Path filePath, Receipt receipt) {
         Optional<ReceiptOcrResponse> ocrResponse = receiptOcrClient.extract(filePath);
 
@@ -215,7 +197,7 @@ public class ReceiptService {
             return extraction;
         }
 
-        // Tesseract fallback (deprecated path)
+        // Tesseract fallback
         log.debug("receipt-ocr unavailable for receipt {}, falling back to Tesseract", receipt.getId());
         try {
             OcrDocument ocrDoc = ocrService.extractDocument(filePath);
@@ -235,10 +217,8 @@ public class ReceiptService {
         }
     }
 
-    // Detail-view reconstruction (avoids re-parsing for stored data)
-
     private OcrExtractionResult reconstructExtraction(Receipt receipt) {
-        // Structured data is available when either field is populated
+        // structured data present when either field is set
         if (receipt.getExtractedAmount() != null || receipt.getExtractedMerchant() != null) {
             List<ReceiptLineItem> items = deserializeLineItems(receipt.getLineItemsJson());
             Double conf = receipt.getOcrConfidence() != null
@@ -255,7 +235,7 @@ public class ReceiptService {
                 .requiresConfirmation(conf != null && conf < 0.45)
                 .build();
         }
-        // Legacy receipts processed before V4: re-parse stored OCR text
+        // legacy pre-V4: re-parse stored OCR text
         return receipt.getOcrText() != null ? parser.parse(receipt.getOcrText()) : null;
     }
 
@@ -271,14 +251,9 @@ public class ReceiptService {
         }
     }
 
-    // Transaction creation
-
-    /**
-     * Creates a transaction from user-confirmed values.
-     * The transaction is always marked reviewed=true because the user explicitly approved it.
-     */
+    // build a transaction from user-confirmed values (reviewed=true)
     private Transaction buildTransactionFromConfirm(ReceiptConfirmRequest req, Receipt receipt, User user) {
-        // User-supplied notes override the auto-normalized description
+        // notes override the normalized description
         String baseDescription = (req.getNotes() != null && !req.getNotes().isBlank())
             ? req.getNotes()
             : normalizationService.normalize(req.getMerchant());
@@ -310,11 +285,9 @@ public class ReceiptService {
             .notes(req.getNotes())
             .rawText(receipt.getOcrText())
             .receipt(receipt)
-            .reviewed(true) // user explicitly reviewed and confirmed this data
+            .reviewed(true) // user-confirmed
             .build();
     }
-
-    // Input validation
 
     private void validateUpload(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -333,10 +306,8 @@ public class ReceiptService {
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE
             );
         }
-        // Defense-in-depth: the Content-Type header is client-controlled and trivially
-        // spoofed, so confirm the bytes actually start with a known image signature.
-        // This blocks a polyglot/disguised payload (e.g. an HTML or script file sent
-        // with image/png) from ever reaching the OCR pipeline or disk.
+        // Content-Type is client-controlled and spoofable; sniff magic bytes so a
+        // disguised payload (script sent as image/png) never reaches OCR or disk.
         if (!hasAllowedImageSignature(file.getBytes())) {
             throw new FlowsightException(
                 "File content does not match a supported image format",
@@ -345,7 +316,7 @@ public class ReceiptService {
         }
     }
 
-    /** Magic-byte sniff for the formats in {@link #ALLOWED_MIME_TYPES}. */
+    // magic-byte sniff for the allowed formats
     private boolean hasAllowedImageSignature(byte[] b) {
         if (b == null || b.length < 12) return false;
         // JPEG: FF D8 FF
@@ -364,7 +335,7 @@ public class ReceiptService {
         return false;
     }
 
-    /** Unsigned byte value (0-255) for signature comparison. */
+    // unsigned byte value (0-255) for signature comparison
     private static int u(byte x) {
         return x & 0xFF;
     }
@@ -373,8 +344,6 @@ public class ReceiptService {
         if (filename == null) return "receipt.jpg";
         return filename.replaceAll("[^a-zA-Z0-9._\\-]", "_");
     }
-
-    // Response mapping
 
     private ReceiptResponse toResponse(Receipt receipt, OcrExtractionResult extraction, Transaction tx) {
         TransactionResponse txResponse = tx != null ? toTransactionResponse(tx) : null;

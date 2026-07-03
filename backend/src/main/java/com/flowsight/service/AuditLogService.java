@@ -16,13 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Append-only audit log for security and compliance.
- *
- * <p>All write methods use {@code Propagation.REQUIRES_NEW} so that audit-log
- * failures cannot roll back the parent business transaction — a failure to log
- * an action should not prevent the action itself.
- */
+// Append-only audit log. Writes use REQUIRES_NEW so logging failures don't roll back the parent.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -44,7 +38,7 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper       objectMapper;
 
-    /** Optional Spring request scope — only available inside an HTTP request thread. */
+    // only present inside an HTTP request thread
     @Autowired(required = false)
     private HttpServletRequest currentRequest;
 
@@ -81,25 +75,23 @@ public class AuditLogService {
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize audit metadata for action {}: {}", action, e.getMessage());
         } catch (Exception e) {
-            // Logging an audit event must never break the parent operation
+            // never break the parent operation
             log.warn("Audit log persist failed for action {}: {}", action, e.getMessage());
         }
     }
 
-    /** Logs a failed login attempt where we may have an email but not a user. */
+    // failed login: email known, user may not be
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logFailedLogin(String email) {
         log(null, ACTION_USER_LOGIN_FAILED, "User", null, Map.of("email", email));
     }
-
-    // Request context helpers — safe to call outside an HTTP request
 
     private String extractIpAddress() {
         if (currentRequest == null) return null;
         try {
             String forwarded = currentRequest.getHeader("X-Forwarded-For");
             if (forwarded != null && !forwarded.isBlank()) {
-                // The first IP in the chain is the original client
+                // first IP is the original client
                 return forwarded.split(",")[0].trim();
             }
             return currentRequest.getRemoteAddr();
@@ -118,8 +110,6 @@ public class AuditLogService {
             return null;
         }
     }
-
-    // Query helpers
 
     public org.springframework.data.domain.Page<AuditLog> list(
         UUID userId, org.springframework.data.domain.Pageable pageable
