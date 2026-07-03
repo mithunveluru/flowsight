@@ -13,22 +13,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * Runs Tesseract OCR as a subprocess and returns structured extraction results.
- *
- * Two extraction modes are offered:
- *
- *   extractDocument(Path) — preferred; preprocesses the image, runs Tesseract in TSV
- *     mode to obtain per-line confidence and y-position, then builds an OcrDocument.
- *     Falls back to plain-text mode if TSV parsing yields no lines.
- *
- *   extractText(Path) — backward-compatible single-string method; delegates to
- *     extractDocument() and returns OcrDocument.plainText().
- *
- * Why Tesseract CLI rather than tess4j / JNA:
- *   The JNA binding requires matching native .so versions across base images.
- *   The CLI is version-agnostic and works reliably with the apt-installed package.
- */
+// Runs Tesseract as a subprocess: TSV mode for per-line confidence/position, txt fallback.
+// CLI, not tess4j/JNA, to avoid matching native .so versions across base images.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,13 +24,7 @@ public class OcrService {
 
     private final OcrPreprocessor preprocessor;
 
-    // Public API
-
-    /**
-     * Preprocesses {@code imagePath}, runs Tesseract in TSV mode, and returns a
-     * structured {@link OcrDocument} with confidence and positional data.
-     * Falls back to plain-text mode if TSV parsing yields no usable lines.
-     */
+    // preprocess, run Tesseract TSV (falls back to plain text), return an OcrDocument
     public OcrDocument extractDocument(Path imagePath) {
         Path preprocessed = preprocessor.preprocess(imagePath);
         boolean usingTemp = !preprocessed.equals(imagePath);
@@ -58,15 +38,13 @@ public class OcrService {
         }
     }
 
-    /** Backward-compatible: returns plain text from {@link #extractDocument}. */
+    // plain text via extractDocument
     public String extractText(Path imagePath) {
         return extractDocument(imagePath).plainText();
     }
 
-    // Internals
-
     private OcrDocument doExtractDocument(Path imagePath) {
-        // First attempt: TSV extraction (gives confidence + position per line)
+        // TSV: confidence + position per line
         try {
             String tsv = runTesseract(imagePath, "tsv");
             List<OcrLine> lines = parseTsv(tsv);
@@ -79,7 +57,7 @@ public class OcrService {
             log.warn("TSV extraction failed ({}), falling back to txt", e.getMessage());
         }
 
-        // Fallback: plain text (no confidence / position data)
+        // fallback: plain text (no confidence/position)
         String plain = runTesseract(imagePath, "txt");
         return OcrDocument.fromPlainText(plain);
     }
@@ -100,7 +78,7 @@ public class OcrService {
         try {
             Process process = pb.start();
 
-            // Read both streams before waitFor() to prevent pipe-buffer deadlock
+            // read both streams before waitFor to avoid pipe-buffer deadlock
             byte[] stdout = process.getInputStream().readAllBytes();
             byte[] stderr = process.getErrorStream().readAllBytes();
 
@@ -124,20 +102,7 @@ public class OcrService {
         }
     }
 
-    // TSV parsing
-
-    /**
-     * Parses Tesseract TSV output into a list of {@link OcrLine}s sorted by top-y.
-     *
-     * TSV columns (tab-separated, header on line 1):
-     *   level | page_num | block_num | par_num | line_num | word_num |
-     *   left  | top      | width     | height  | conf     | text
-     *
-     * Only level-5 rows (individual words) with conf >= 0 are processed.
-     * Words sharing the same (block_num, par_num, line_num) are joined into one line.
-     * Average confidence and minimum top-y are computed per group.
-     * Document height is taken from the level-1 (page) row.
-     */
+    // parse Tesseract TSV into OcrLines sorted by top-y; level-5 word rows joined by block:par:line
     List<OcrLine> parseTsv(String tsv) {
         if (tsv == null || tsv.isBlank()) return List.of();
 
@@ -177,7 +142,7 @@ public class OcrService {
             lineWords.computeIfAbsent(key, k -> new ArrayList<>()).add(text);
         }
 
-        // If Tesseract didn't output a page row, infer height from the bottom-most word
+        // no page row: infer height from the bottom-most word
         final int docH = documentHeight > 0 ? documentHeight
             : lineStats.values().stream()
                 .mapToInt(s -> s[2])

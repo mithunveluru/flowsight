@@ -9,37 +9,21 @@ import java.awt.image.*;
 import java.io.IOException;
 import java.nio.file.*;
 
-/**
- * Prepares receipt images for Tesseract to improve extraction accuracy.
- *
- * Pipeline (applied in order):
- *   1. Grayscale conversion — eliminates colour noise; Tesseract works on intensity, not colour
- *   2. Contrast normalisation — stretches the histogram to [0, 255] for faded/overexposed scans
- *   3. Upscaling — if the shortest dimension is below 800 px, scale ×2 (Tesseract degrades on
- *      small images; 300 DPI equivalent is roughly 800–1000 px for a standard receipt)
- *
- * Result is written to a temporary PNG (lossless) so JPEG re-compression artefacts on fine
- * receipt text do not degrade OCR quality.
- *
- * If ImageIO cannot decode the source format (e.g. WebP, unsupported TIFF variant), or if any
- * step throws, the original path is returned unchanged so OCR can still proceed.
- */
+// Preprocesses receipt images for Tesseract: grayscale, contrast-normalize, upscale small ones,
+// write to a lossless temp PNG. On any failure returns the original path so OCR still proceeds.
 @Component
 @Slf4j
 public class OcrPreprocessor {
 
     static {
-        // Ensure AWT runs without a display server inside the Docker container
+        // headless: no display server in Docker
         System.setProperty("java.awt.headless", "true");
     }
 
     private static final int  MIN_DIMENSION_PX = 800;
     private static final double UPSCALE_FACTOR  = 2.0;
 
-    /**
-     * Returns a path to the preprocessed image. If the returned path differs from
-     * {@code inputPath} it is a temp file — the caller must delete it after use.
-     */
+    // returns a temp file when the result differs from inputPath; caller must delete it
     public Path preprocess(Path inputPath) {
         try {
             BufferedImage original = ImageIO.read(inputPath.toFile());
@@ -71,11 +55,7 @@ public class OcrPreprocessor {
         return gray;
     }
 
-    /**
-     * Stretches pixel intensities so the darkest pixel becomes 0 and the lightest 255.
-     * Skipped when the dynamic range is already wide (>= 200) or very narrow (< 30),
-     * where stretching would either be a no-op or produce extreme artefacts.
-     */
+    // stretch intensities to [0,255]; skip when range is already wide (>=200) or too narrow (<30)
     BufferedImage normalizeContrast(BufferedImage src) {
         Raster raster = src.getRaster();
         int width = src.getWidth(), height = src.getHeight();

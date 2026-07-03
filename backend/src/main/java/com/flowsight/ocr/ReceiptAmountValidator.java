@@ -10,63 +10,30 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Post-processing validation layer that sits between receipt-ocr extraction and the
- * internal OcrExtractionResult.
- *
- * <p>Problem: receipt-ocr's LLM occasionally selects VAT, CGST, SGST, subtotal, or
- * a discount amount as {@code total_amount} instead of the final payable total.
- *
- * <p>Strategy:
- * <ol>
- *   <li>Build an {@link AmountCandidate} from the raw {@code total_amount}.</li>
- *   <li>Scan {@code line_items} for entries whose name contains financial-summary
- *       keywords — these are additional candidates the LLM sometimes embeds there.</li>
- *   <li>Score each candidate with four independent signals:
- *       <ul>
- *         <li>Label classification (preferred/deprioritized keyword)</li>
- *         <li>Ratio against the sum of regular (non-summary) line items</li>
- *         <li>Magnitude check (total cannot be less than any single item)</li>
- *         <li>Consistency with the primary extracted total</li>
- *       </ul>
- *   </li>
- *   <li>Select the highest-scored candidate and derive an {@link AmountConfidence} tier.</li>
- * </ol>
- *
- * <p>The validator never throws; partial or missing data always produces a result with
- * an appropriate confidence level.
- */
+// Post-processes receipt-ocr totals: the LLM sometimes picks VAT/subtotal/discount as the total.
+// Scores the primary total plus summary line-items and picks the best. Never throws.
 @Component
 @Slf4j
 public class ReceiptAmountValidator {
 
-    // Labels that should be preferred as the final payable total
+    // labels preferred as the final payable total
     private static final Set<String> PREFERRED = Set.of(
         "grand total", "total due", "amount paid", "net total", "final total",
         "total payable", "amount payable", "net payable", "balance due",
         "amount due", "total amount", "net amount", "payable amount", "total"
     );
 
-    // Labels that are definitively NOT the final total
+    // labels that are never the final total
     private static final Set<String> DEPRIORITIZED = Set.of(
         "vat", "tax", "cgst", "sgst", "igst", "service tax", "gst",
         "subtotal", "sub total", "sub-total", "subtot", "discount", "savings",
         "round off", "rounding", "coupon", "cashback", "cash back"
     );
 
-    // Confidence thresholds
     private static final double HIGH_THRESHOLD   = 0.65;
     private static final double MEDIUM_THRESHOLD = 0.40;
 
-    // Public API
-
-    /**
-     * Validates and potentially corrects the receipt-ocr {@code total_amount}.
-     *
-     * @param totalAmount amount from receipt-ocr (may be null)
-     * @param lineItems   line items from receipt-ocr (may be null/empty)
-     * @return best {@link AmountCandidate} — never null
-     */
+    // validate and potentially correct the total; never null
     public AmountCandidate validate(BigDecimal totalAmount, List<ReceiptLineItem> lineItems) {
         List<ReceiptLineItem> items = lineItems != null ? lineItems : List.of();
 
@@ -95,8 +62,6 @@ public class ReceiptAmountValidator {
             best.getAmount(), f2(best.getScore()), best.getConfidence(), best.getReason());
         return best;
     }
-
-    // Candidate builders
 
     private AmountCandidate scorePrimary(
         BigDecimal total, BigDecimal regularSum, BigDecimal maxItemPrice
@@ -127,7 +92,7 @@ public class ReceiptAmountValidator {
             reason.append("; no regular items to cross-check");
         }
 
-        // A valid total must be >= any single item price
+        // total must be >= any single item price
         if (maxItemPrice != null && total.compareTo(maxItemPrice) < 0) {
             score -= 0.30;
             reason.append("; total < max item price (").append(maxItemPrice).append(") — suspect");
@@ -166,12 +131,12 @@ public class ReceiptAmountValidator {
                 reason.append(" [deprioritized label]");
             }
 
-            // Should be >= primary total if it's a better grand total
+            // prefer values >= the primary total (a better grand total)
             if (item.getItemPrice().compareTo(primaryTotal) >= 0) {
                 score += 0.05;
             }
 
-            // Cross-check against regular items sum
+            // cross-check against the item sum
             if (regularSum != null && regularSum.compareTo(BigDecimal.ZERO) > 0) {
                 double ratio = item.getItemPrice().doubleValue() / regularSum.doubleValue();
                 if (ratio >= 0.85 && ratio <= 1.35) {
@@ -192,12 +157,7 @@ public class ReceiptAmountValidator {
         return result;
     }
 
-    // Line item analysis helpers
-
-    /**
-     * Sum of item prices for non-summary line items (product lines only).
-     * Returns null when no qualifying items exist.
-     */
+    // sum of non-summary item prices (product lines); null when none
     BigDecimal sumRegularItems(List<ReceiptLineItem> items) {
         BigDecimal sum = BigDecimal.ZERO;
         int count = 0;
@@ -220,8 +180,6 @@ public class ReceiptAmountValidator {
             .max(BigDecimal::compareTo)
             .orElse(null);
     }
-
-    // Label classifiers
 
     boolean isSummaryLine(String label) {
         return containsPreferred(label) || containsDeprioritized(label);
