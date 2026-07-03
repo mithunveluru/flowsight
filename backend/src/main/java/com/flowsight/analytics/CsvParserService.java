@@ -21,25 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Parses CSV bank exports into a normalized {@link CsvRow} structure using
- * header-driven column mapping rather than hardcoded bank formats.
- *
- * <p>Two ingestion modes, both routed by {@link StatementFormatDetector}:
- * <ul>
- *   <li>{@link StatementFormatDetector.Format#EXPLICIT_AMOUNT} -
- *       resolves amount + direction from whatever combination of
- *       amount / debit / credit / type columns the file provides. Handles
- *       signed values (e.g. Debit column containing {@code -1500.0}) and the
- *       traditional unsigned-magnitude convention without conflating them.</li>
- *   <li>{@link StatementFormatDetector.Format#BALANCE_ONLY} -
- *       reconstructs amounts from running-balance deltas via
- *       {@link BalanceDeltaCalculator}.</li>
- * </ul>
- *
- * <p>A row that cannot have an amount resolved is reported in
- * {@link ParseResult#getErrors()} - never silently coerced to zero.
- */
+// Parses CSV bank exports via header-driven column mapping (no per-bank branches).
+// Rows whose amount can't be resolved are reported as errors, never coerced to zero.
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -89,10 +72,6 @@ public class CsvParserService {
         return new ParseResult(rows, errors);
     }
 
-    // -------------------------------------------------------------------------
-    // Explicit-amount path - drives amount/debit/credit/type from the
-    // DetectionResult column mapping. No bank-specific branches.
-    // -------------------------------------------------------------------------
     private void parseExplicitAmount(CSVParser parser,
                                      StatementFormatDetector.DetectionResult detection,
                                      List<CsvRow> rows,
@@ -141,24 +120,17 @@ public class CsvParserService {
             .build();
     }
 
-    /**
-     * Centralized amount + direction resolver. Encodes the rules described
-     * on the class doc. Throws {@link IllegalArgumentException} when no
-     * amount can be resolved (never returns a silent zero).
-     */
+    // resolve amount + direction; throws rather than returning a silent zero
     private Resolution resolveAmount(BigDecimal amount,
                                      BigDecimal debit,
                                      BigDecimal credit,
                                      String typeStr) {
-        // Rule 1: two-column debit/credit layout.
-        // A non-null, non-zero entry in either column wins; sign of the *column*
-        // (not the cell value) determines direction. Cell value is abs()'d so
-        // banks that export debits as negative or as positive both work.
+        // debit/credit columns: the column decides direction, the cell is abs()'d
+        // so banks exporting debits as negative or positive both work
         boolean debitFilled  = debit  != null && debit.signum()  != 0;
         boolean creditFilled = credit != null && credit.signum() != 0;
         if (debitFilled && creditFilled) {
-            // Defensive: real bank exports never fill both. Pick the larger
-            // absolute value, log a warning so we don't pretend it's clean.
+            // exports never fill both; pick the larger magnitude and warn
             log.warn("Row has both debit ({}) and credit ({}) populated; using larger magnitude", debit, credit);
             BigDecimal d = debit.abs();
             BigDecimal c = credit.abs();
@@ -169,14 +141,12 @@ public class CsvParserService {
         if (debitFilled)  return new Resolution(debit.abs(),  true);
         if (creditFilled) return new Resolution(credit.abs(), false);
 
-        // Rule 2: single amount column.
         if (amount != null) {
-            // Explicit type column wins over sign.
+            // explicit type column wins over sign
             if (typeStr != null) {
-                return new Resolution(amount.abs(), parseDirection(typeStr, /* default */ true));
+                return new Resolution(amount.abs(), parseDirection(typeStr, true));
             }
-            // No type column - sign of the cell determines direction.
-            // Convention: negative = debit, positive = credit.
+            // no type column: negative sign = debit
             return new Resolution(amount.abs(), amount.signum() < 0);
         }
 
@@ -184,7 +154,7 @@ public class CsvParserService {
             "No amount, debit, or credit value found - row produces zero, refusing to import");
     }
 
-    /** Returns true when the string indicates a debit. Defaults to {@code defaultDebit} when ambiguous. */
+    // true = debit; defaults to defaultDebit when ambiguous
     private boolean parseDirection(String typeStr, boolean defaultDebit) {
         String t = typeStr.trim().toLowerCase(Locale.ROOT);
         if (t.equals("debit") || t.equals("dr") || t.equals("d") || t.equals("withdrawal")
@@ -194,11 +164,7 @@ public class CsvParserService {
         return defaultDebit;
     }
 
-    /**
-     * Like {@link #parseMoney} but throws on non-blank, non-parseable values
-     * so the row is rejected with a clear error instead of silently dropping
-     * to zero.
-     */
+    // strict: throws on unparseable so the row is rejected, not silently zeroed
     private BigDecimal parseMoneyStrict(String raw, String columnName) {
         if (raw == null || raw.isBlank() || raw.equals("-")) return null;
         String cleaned = raw.replaceAll("[₹$€£,\\s]", "");
@@ -210,9 +176,6 @@ public class CsvParserService {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Balance-only path - delegates to BalanceDeltaCalculator. Unchanged.
-    // -------------------------------------------------------------------------
     private void parseBalanceOnly(CSVParser parser,
                                   StatementFormatDetector.DetectionResult detection,
                                   List<CsvRow> rows,
@@ -260,9 +223,6 @@ public class CsvParserService {
         errors.addAll(result.getWarnings());
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
     private String get(CSVRecord r, String header) {
         if (header == null) return null;
         try {
@@ -273,7 +233,7 @@ public class CsvParserService {
         }
     }
 
-    /** Case-insensitive header lookup - used for optional columns not surfaced by the detector. */
+    // case-insensitive lookup for optional columns not surfaced by the detector
     private String findHeader(CSVRecord r, String name) {
         return r.getParser().getHeaderNames().stream()
             .filter(h -> h != null && h.equalsIgnoreCase(name))
@@ -291,11 +251,7 @@ public class CsvParserService {
         throw new IllegalArgumentException("Unrecognized date format: " + raw);
     }
 
-    /**
-     * Lenient money parser - returns {@code null} on blank/unparseable input.
-     * Used by the balance-only path where each cell is validated separately
-     * before reaching this helper.
-     */
+    // lenient: null on blank/unparseable
     private BigDecimal parseMoney(String raw) {
         if (raw == null || raw.isBlank() || raw.equals("-")) return null;
         String cleaned = raw.replaceAll("[₹$€£,\\s]", "");
@@ -306,7 +262,6 @@ public class CsvParserService {
         }
     }
 
-    /** Internal carrier for the resolved (amount, direction) pair. */
     private record Resolution(BigDecimal amount, boolean isDebit) {}
 
     @Value
