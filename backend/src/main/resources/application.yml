@@ -102,12 +102,20 @@ application:
     # The value is read once at startup; per-user limits are stored in users.receipt_limit.
     default-limit: ${RECEIPT_DEFAULT_LIMIT:50}
   email:
-    # Which EmailService implementation is active: gmail (default) or resend.
+    # Which EmailService implementation is active: gmail, brevo, or resend.
     # Business logic is provider-agnostic; swap here without code changes.
+    # Use brevo on hosts that block outbound SMTP (e.g. Render free tier).
     provider: ${EMAIL_PROVIDER:gmail}
     # Gmail From header. Leave empty to send as the authenticated MAIL_USERNAME
     # (Gmail rejects a From that is not the account or an authorized alias).
     gmail-from: ${MAIL_FROM:}
+    # Brevo transactional email over HTTPS (used only when provider=brevo).
+    # sender-email must be verified in the Brevo dashboard. If api-key/sender are
+    # empty the service logs the reset link instead of dispatching.
+    brevo:
+      api-key: ${BREVO_API_KEY:}
+      sender-email: ${BREVO_SENDER_EMAIL:}
+      sender-name: ${BREVO_SENDER_NAME:FlowSight}
     # Resend transactional email (used only when provider=resend). If api-key is
     # empty the service logs the reset link instead of dispatching.
     resend:

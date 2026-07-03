@@ -51,13 +51,17 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3007,http://localhost:1420,tauri://localhost,http://tauri.localhost}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       RECEIPT_OCR_URL: ${RECEIPT_OCR_URL:-http://receipt-ocr:8000}
-      # Email delivery. Default provider is Gmail SMTP; set EMAIL_PROVIDER=resend to switch.
+      # Email delivery. gmail (SMTP, local dev), brevo (HTTPS, works where SMTP
+      # is blocked e.g. Render), or resend. Switch with EMAIL_PROVIDER.
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-gmail}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-FlowSight}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-FlowSight <noreply@flowsight.app>}
       RESEND_REPLY_TO: ${RESEND_REPLY_TO:-}

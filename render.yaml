@@ -42,19 +42,15 @@ services:
       - key: FRONTEND_URL
         sync: false          # e.g. https://your-app.vercel.app
 
-      # Gmail SMTP password-reset delivery (App Password).
+      # Password-reset email via Brevo HTTPS API. Render blocks outbound SMTP on
+      # free/entry tiers, so Gmail SMTP will time out here; Brevo uses port 443.
+      # Verify a single sender in the Brevo dashboard, then fill these below.
       - key: EMAIL_PROVIDER
-        value: gmail
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: "587"
-      - key: MAIL_USERNAME
+        value: brevo
+      - key: BREVO_API_KEY
         sync: false
-      - key: MAIL_PASSWORD
-        sync: false
-      - key: MAIL_FROM
-        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false          # the address verified in Brevo
 
       # Must stay false in production (leaking it enables account enumeration).
       - key: PASSWORD_RESET_DEV_EXPOSE_LINK

@@ -38,10 +38,14 @@ Postgres instance. Confirm the `plan` and `region` values before applying.
 | `DB_URL` | `jdbc:postgresql://<internal host>:<port>/flowsight` (host/port on the database Info page) |
 | `CORS_ALLOWED_ORIGINS` | The Vercel domain, e.g. `https://your-app.vercel.app` |
 | `FRONTEND_URL` | The Vercel domain (used to build password-reset links) |
-| `MAIL_USERNAME` | Gmail address |
-| `MAIL_PASSWORD` | Gmail App Password (16 chars, no spaces) |
-| `MAIL_FROM` | `FlowSight <your-gmail-address>` |
+| `BREVO_API_KEY` | Brevo API key (SMTP & API keys section) |
+| `BREVO_SENDER_EMAIL` | The sender address verified in Brevo |
 | `GROQ_API_KEY` | Optional; only used if the OCR microservice is deployed |
+
+Email uses Brevo's HTTPS API, not SMTP: Render blocks outbound SMTP ports on
+free/entry tiers, so Gmail SMTP times out there. In Brevo (free, no domain
+required), verify a single sender under Senders, generate an API key, and set
+the two variables above. Locally you can still use `EMAIL_PROVIDER=gmail`.
 
 Flyway runs the migrations automatically on the first boot against the managed
 database.
@@ -51,7 +55,7 @@ database.
 1. `GET https://<backend>/actuator/health` returns `{"status":"UP"}`.
 2. Open the Vercel URL, register a user, and confirm the dashboard loads (proves
    `NEXT_PUBLIC_API_URL` and CORS are correct).
-3. Trigger a password reset and confirm the email arrives (proves Gmail SMTP).
+3. Trigger a password reset and confirm the email arrives (proves Brevo delivery).
 
 ## Known limitations
 
