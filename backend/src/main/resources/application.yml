@@ -79,6 +79,11 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # Don't probe SMTP on the health endpoint: hosts that block outbound SMTP
+    # (e.g. Render) would otherwise report the whole service as DOWN.
+    mail:
+      enabled: false
 
 application:
   security:
