@@ -27,7 +27,7 @@ public class Budget {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /** null = overall budget across all categories */
+    // null = overall budget across all categories
     @Enumerated(EnumType.STRING)
     @Column(length = 100)
     private TransactionCategory category;

@@ -11,13 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * User-reviewed and potentially corrected values submitted to confirm a receipt draft.
- *
- * The user has reviewed (and may have edited) the OCR-extracted data on the review
- * screen before POSTing here. This is the source of truth for transaction creation
- * — not the raw OCR output.
- */
+// User-reviewed OCR values submitted to confirm a receipt draft; source of truth for the transaction.
 @Data
 @NoArgsConstructor
 public class ReceiptConfirmRequest {
@@ -33,7 +27,7 @@ public class ReceiptConfirmRequest {
     @NotNull(message = "Date is required")
     private LocalDate date;
 
-    /** null = auto-detect via CategorizationService */
+    // null = auto-detect via CategorizationService
     private TransactionCategory category;
 
     @Size(max = 500)

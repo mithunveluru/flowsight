@@ -6,14 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * One detected leak — a category of wasteful or recoverable spending.
- *
- * Severity tiers:
- *   HIGH   — monthlyImpact ≥ ₹2000 OR strongly recoverable
- *   MEDIUM — monthlyImpact ≥ ₹500
- *   LOW    — informational
- */
+// One detected leak: a category of recoverable spending.
 @Data
 @Builder
 public class LeakInsight {

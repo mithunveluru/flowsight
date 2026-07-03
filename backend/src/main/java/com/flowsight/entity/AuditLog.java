@@ -9,13 +9,7 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * One audit log entry — a security-relevant or compliance-relevant action taken by (or for) a user.
- *
- * <p>Records are append-only; no update/delete operations are exposed.
- * The {@code metadata} field uses JSONB to allow per-action structured context
- * (e.g. CSV row count, receipt ID, IP address) without schema growth.
- */
+// One append-only audit entry; metadata is JSONB for per-action structured context.
 @Entity
 @Table(name = "audit_logs")
 @Getter
@@ -30,7 +24,7 @@ public class AuditLog {
     @Column(updatable = false, nullable = false)
     private UUID id;
 
-    /** Null when the action is system-driven (e.g. unauthenticated login attempts). */
+    // Null when the action is system-driven (e.g. unauthenticated login attempts).
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

@@ -12,7 +12,7 @@ public class SimulationResult {
     private FinancialBaseline baseline;
     private ScenarioRequest   scenario;
 
-    /** Net change to monthly cash flow (negative = costs more, positive = saves more). */
+    // Net change to monthly cash flow (negative = costs more, positive = saves more).
     private BigDecimal monthlyImpact;
     private BigDecimal yearlyImpact;
     private BigDecimal fiveYearImpact;

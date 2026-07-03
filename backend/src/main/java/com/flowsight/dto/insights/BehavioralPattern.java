@@ -5,13 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-/**
- * One detected behavioral pattern in a user's spending.
- *
- * <p>Patterns are derived purely from transaction history (date, amount, category, merchant)
- * — no external personalization data. Each pattern is annotated with a severity
- * tier and the magnitude of the deviation from the user's own baseline.
- */
+// One detected behavioral spending pattern, derived only from transaction history.
 @Data
 @Builder
 public class BehavioralPattern {

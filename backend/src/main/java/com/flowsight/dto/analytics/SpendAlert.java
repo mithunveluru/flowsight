@@ -5,14 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-/**
- * A behavioral spending alert surfaced by the analytics engine.
- *
- * Severity tiers:
- *   HIGH   — spend > 2× the category's 3-month average
- *   MEDIUM — spend 30–100% above the 3-month average
- *   LOW    — informational, no corrective action needed
- */
+// A behavioral spending alert from the analytics engine.
 @Data
 @Builder
 public class SpendAlert {

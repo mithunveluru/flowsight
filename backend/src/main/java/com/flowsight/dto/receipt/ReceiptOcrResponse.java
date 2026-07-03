@@ -10,10 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Deserializes the JSON response from the receipt-ocr FastAPI microservice.
- * All fields are optional — the mapper applies null-safe validation before mapping to internal DTOs.
- */
+// Deserializes the receipt-ocr microservice JSON; all fields optional, validated null-safe by the mapper.
 @Data
 @Builder
 @NoArgsConstructor

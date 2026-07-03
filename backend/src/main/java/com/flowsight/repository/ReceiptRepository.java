@@ -18,7 +18,7 @@ public interface ReceiptRepository extends JpaRepository<Receipt, UUID> {
 
     Optional<Receipt> findByIdAndUserId(UUID id, UUID userId);
 
-    /** Receipt upload count for a specific calendar month — used for tier-limit checks. */
+    // Receipt upload count for a specific calendar month — used for tier-limit checks.
     @Query(value = """
         SELECT COUNT(*) FROM receipts
         WHERE user_id = :userId

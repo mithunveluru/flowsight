@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class BudgetRequest {
 
-    /** null = overall budget */
+    // null = overall budget
     private TransactionCategory category;
 
     @NotNull(message = "Monthly limit is required")

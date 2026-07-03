@@ -18,11 +18,11 @@ public class GoalResponse {
     private LocalDate  targetDate;
     private String     icon;
     private String     status;
-    /** Computed live: percent complete (0–100) */
+    // Computed live: percent complete (0–100)
     private double     percentComplete;
     private int        daysRemaining;
-    /** Daily contribution needed to hit the goal on time */
+    // Daily contribution needed to hit the goal on time
     private BigDecimal dailyPaceRequired;
-    /** ON_PACE | AHEAD | BEHIND | COMPLETED | OVERDUE */
+    // ON_PACE | AHEAD | BEHIND | COMPLETED | OVERDUE
     private String     paceStatus;
 }

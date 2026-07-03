@@ -12,7 +12,7 @@ public class InsightsResponse {
     private BehavioralProfile          profile;
     private List<Recommendation>       recommendations;
     private List<ConsequenceProjection> topConsequences;
-    /** Sum of all monthly savings if every recommendation is acted on. */
+    // Sum of all monthly savings if every recommendation is acted on.
     private BigDecimal totalPotentialMonthlySaving;
     private BigDecimal totalPotentialAnnualSaving;
 }

@@ -15,7 +15,7 @@ public class BulkImportResult {
     private int skipped;
     private List<String> errors;
 
-    /** Date range covered by successfully-imported transactions — helps the UI link to the right view. */
+    // Date range covered by successfully-imported transactions — helps the UI link to the right view.
     private LocalDate firstTransactionDate;
     private LocalDate lastTransactionDate;
     private BigDecimal totalAmountImported;

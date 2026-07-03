@@ -21,12 +21,12 @@ public class RecurringPatternResponse {
     private LocalDate nextExpectedDate;
     private int       occurrenceCount;
     private BigDecimal confidence;
-    /** Tier for UI badge: HIGH | MEDIUM | POSSIBLE */
+    // Tier for UI badge: HIGH | MEDIUM | POSSIBLE
     private String    confidenceTier;
     private boolean   isCancellationCandidate;
     private boolean   isDismissed;
     private boolean   isUserConfirmed;
-    /** Status for frontend badge: ACTIVE | DUE_SOON | OVERDUE | MISSED */
+    // Status for frontend badge: ACTIVE | DUE_SOON | OVERDUE | MISSED
     private String    status;
     private int       daysUntilNext;    // negative when overdue
 }

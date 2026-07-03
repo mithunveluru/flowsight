@@ -6,12 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * Request to generate a new Intelligence Report.
- *
- * <p>Either supply a {@link #preset} (server picks the dates) or
- * explicit {@link #from} and {@link #to} for a custom range.
- */
+// Request to generate a report: either a preset or an explicit from/to range.
 @Data
 @NoArgsConstructor
 public class GenerateReportRequest {

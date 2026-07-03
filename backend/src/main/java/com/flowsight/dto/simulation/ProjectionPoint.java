@@ -5,13 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-/**
- * One month of the projection timeline.
- *
- * <p>{@code cumulativeSavings} is the total net savings position at the end of month N,
- * compounding monthly net-savings. The frontend draws "Before" and "After" lines from
- * arrays of these points.
- */
+// One month of the projection timeline; cumulativeSavings is the net position at month end.
 @Data
 @Builder
 public class ProjectionPoint {

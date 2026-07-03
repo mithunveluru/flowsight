@@ -46,7 +46,7 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean active = true;
 
-    /* ─── Receipt OCR quota (V11) ─────────────────────────────── */
+    // Receipt OCR quota (V11)
     // All platform features are available to every user. Only OCR receipt
     // processing is gated. Admins can override per-user limits or grant unlimited.
 
@@ -70,7 +70,7 @@ public class User implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    /* ─── UserDetails ──────────────────────────────────────────── */
+    // UserDetails
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -107,7 +107,7 @@ public class User implements UserDetails {
         return active;
     }
 
-    /* ─── JPA-safe equals/hashCode ─────────────────────────────── */
+    // JPA-safe equals/hashCode
     // hashCode is constant to avoid issues when id is set post-construction
 
     @Override

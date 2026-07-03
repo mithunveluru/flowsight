@@ -17,17 +17,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
-    /** Atomic increment of receipts_processed — safe under concurrent uploads. */
+    // Atomic increment of receipts_processed — safe under concurrent uploads.
     @Modifying
     @Query("UPDATE User u SET u.receiptsProcessed = u.receiptsProcessed + 1 WHERE u.id = :userId")
     int incrementReceiptsProcessed(@Param("userId") UUID userId);
 
-    /** Reset a user's receipt counter to 0. */
+    // Reset a user's receipt counter to 0.
     @Modifying
     @Query("UPDATE User u SET u.receiptsProcessed = 0 WHERE u.id = :userId")
     int resetReceiptsProcessed(@Param("userId") UUID userId);
 
-    /** Bulk reset for periodic refresh — sets every user's counter to 0. */
+    // Bulk reset for periodic refresh — sets every user's counter to 0.
     @Modifying
     @Query("UPDATE User u SET u.receiptsProcessed = 0")
     int bulkResetReceiptsProcessed();

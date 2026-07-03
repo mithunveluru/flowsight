@@ -18,6 +18,6 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     Optional<Budget> findByUserIdAndCategory(UUID userId, TransactionCategory category);
 
-    /** The single overall budget per user (NULL category). */
+    // The single overall budget per user (NULL category).
     Optional<Budget> findByUserIdAndCategoryIsNull(UUID userId);
 }

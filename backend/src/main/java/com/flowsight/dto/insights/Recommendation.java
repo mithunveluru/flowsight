@@ -6,9 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * An actionable suggestion tied to detected leaks, recurring patterns, or behaviors.
- */
+// An actionable suggestion tied to leaks, recurring patterns, or behaviors.
 @Data
 @Builder
 public class Recommendation {
@@ -19,6 +17,6 @@ public class Recommendation {
     private BigDecimal potentialMonthlySaving;
     private BigDecimal potentialAnnualSaving;
     private String     confidence;              // HIGH | MEDIUM | LOW
-    /** Supporting facts shown as small footnotes on the card. */
+    // Supporting facts shown as small footnotes on the card.
     private List<String> evidence;
 }

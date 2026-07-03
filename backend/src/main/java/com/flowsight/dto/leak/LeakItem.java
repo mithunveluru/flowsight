@@ -5,10 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-/**
- * One specific merchant or transaction underlying a {@link LeakInsight}.
- * The UI renders these as table rows beneath each leak card.
- */
+// One merchant/transaction underlying a LeakInsight (rendered as a table row).
 @Data
 @Builder
 public class LeakItem {

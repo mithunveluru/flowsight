@@ -3,9 +3,7 @@ package com.flowsight.entity;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Detected payment period with day-range bounds used for interval classification.
- */
+// Detected payment period with day-range bounds for interval classification.
 @Getter
 @RequiredArgsConstructor
 public enum RecurringPeriod {
@@ -19,7 +17,7 @@ public enum RecurringPeriod {
     private final int    nominalDays;
     private final int    minDays;
     private final int    maxDays;
-    /** Occurrences per year — used to compute annual cost. */
+    // Occurrences per year — used to compute annual cost.
     private final int    annualFrequency;
 
     public static RecurringPeriod fromDays(int days) {

@@ -28,7 +28,7 @@ public interface RecurringPatternRepository extends JpaRepository<RecurringPatte
     @Query("DELETE FROM RecurringPattern r WHERE r.user.id = :userId AND r.isDismissed = false")
     void deleteActiveByUserId(@Param("userId") UUID userId);
 
-    /** Deletes auto-detected patterns, preserving user-confirmed and dismissed ones. */
+    // Deletes auto-detected patterns, preserving user-confirmed and dismissed ones.
     @Modifying
     @Query("""
         DELETE FROM RecurringPattern r

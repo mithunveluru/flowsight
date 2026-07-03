@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class BehavioralProfile {
-    /** Short one-line summary like "Weekend-driven spender" — used as a hero label. */
+    // Short one-line summary like "Weekend-driven spender" — used as a hero label.
     private String summary;
     private List<BehavioralPattern> patterns;
 }

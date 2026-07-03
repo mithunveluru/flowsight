@@ -68,7 +68,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT MAX(t.transactionDate) FROM Transaction t WHERE t.user.id = :userId")
     Optional<LocalDate> findLatestTransactionDate(@Param("userId") UUID userId);
 
-    /** Months with at least one transaction, newest first ("YYYY-MM"). */
+    // Months with at least one transaction, newest first ("YYYY-MM").
     @Query(value = """
         SELECT TO_CHAR(DATE_TRUNC('month', transaction_date), 'YYYY-MM') AS month
         FROM transactions
@@ -93,7 +93,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("to") LocalDate to
     );
 
-    /** Returns [TransactionCategory, BigDecimal sum, Long count] per category. */
+    // Returns [TransactionCategory, BigDecimal sum, Long count] per category.
     @Query("""
         SELECT t.category, SUM(t.amount), COUNT(t)
         FROM Transaction t
@@ -112,7 +112,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("to") LocalDate to
     );
 
-    /** Returns [String month "YYYY-MM", BigDecimal spend, BigDecimal income] per month. */
+    // Returns [String month "YYYY-MM", BigDecimal spend, BigDecimal income] per month.
     @Query(value = """
         SELECT
             TO_CHAR(DATE_TRUNC('month', transaction_date), 'YYYY-MM') AS month,
@@ -131,7 +131,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("to") LocalDate to
     );
 
-    /** Unpaged list for CSV export and tax detection — bounded by date range. */
+    // Unpaged list for CSV export and tax detection — bounded by date range.
     @Query("""
         SELECT t FROM Transaction t
         WHERE t.user.id = :userId
@@ -149,7 +149,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     // Recurring detection query
 
-    /** All DEBIT transactions with a non-blank merchant within a lookback window. */
+    // All DEBIT transactions with a non-blank merchant within a lookback window.
     @Query("""
         SELECT t FROM Transaction t
         WHERE t.user.id = :userId
@@ -163,7 +163,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
         @Param("from") LocalDate from
     );
 
-    /** Returns [String merchant, BigDecimal total, Long count], paged for top-N. */
+    // Returns [String merchant, BigDecimal total, Long count], paged for top-N.
     @Query(value = """
         SELECT merchant,
                SUM(amount) AS total,

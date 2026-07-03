@@ -15,6 +15,6 @@ public class AccountResponse {
     private String  role;
     private Instant createdAt;
 
-    /** Per-user OCR receipt quota — the only artificial limit in the product. */
+    // Per-user OCR receipt quota — the only artificial limit in the product.
     private ReceiptQuotaInfo receiptQuota;
 }
