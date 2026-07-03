@@ -14,21 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/**
- * Maps the external receipt-ocr API response to the internal {@link OcrExtractionResult}.
- *
- * <p>After basic field mapping and sanitization, the extracted {@code total_amount} is
- * passed through {@link ReceiptAmountValidator} to detect and correct common LLM errors
- * (VAT/CGST/SGST/subtotal returned as the final total).
- *
- * <p>Security contract:
- * <ul>
- *   <li>Merchant and address strings are stripped of control characters and truncated.</li>
- *   <li>Amounts are rejected if null, zero, or negative.</li>
- *   <li>Dates in the future are rejected.</li>
- *   <li>Confidence is clamped to [0.0, 1.0].</li>
- * </ul>
- */
+// Maps the receipt-ocr response to OcrExtractionResult: validates the total (VAT/subtotal
+// correction), strips control chars, rejects non-positive amounts and future dates.
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -54,10 +41,9 @@ public class ReceiptOcrMapper {
         List<ReceiptLineItem> items =
             response.getLineItems() != null ? response.getLineItems() : List.of();
 
-        // Raw sanitized amount before post-processing validation
         BigDecimal rawAmount = sanitizeAmount(response.getTotalAmount());
 
-        // Post-process: validate total against line items to catch VAT/subtotal misidentification
+        // correct VAT/subtotal misidentification against the line items
         AmountCandidate bestAmount = amountValidator.validate(rawAmount, items);
 
         if (bestAmount.getLabel() != null && !bestAmount.getLabel().isEmpty()) {
@@ -88,8 +74,6 @@ public class ReceiptOcrMapper {
             .requiresConfirmation(requiresConfirmation)
             .build();
     }
-
-    // Sanitizers — package-visible for testing
 
     BigDecimal sanitizeAmount(BigDecimal raw) {
         if (raw == null) return null;

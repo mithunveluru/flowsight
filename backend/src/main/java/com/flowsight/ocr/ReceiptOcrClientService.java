@@ -19,18 +19,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * HTTP client adapter for the receipt-ocr FastAPI microservice.
- *
- * POSTs the receipt image as multipart/form-data to {@code POST /ocr/} and
- * deserializes the structured JSON response.  Every failure path returns
- * {@link Optional#empty()} — callers must treat this as a best-effort step
- * and fall back to Tesseract when empty.
- *
- * The client is a no-op (always returns empty) when
- * {@code application.receipt-ocr.url} is not configured, so the system
- * works identically in environments that only have Tesseract available.
- */
+// HTTP client for the receipt-ocr microservice; returns empty on any failure so the
+// caller falls back to Tesseract. No-op when application.receipt-ocr.url is unconfigured.
 @Service
 @Slf4j
 public class ReceiptOcrClientService {
@@ -53,10 +43,7 @@ public class ReceiptOcrClientService {
             .build();
     }
 
-    /**
-     * Sends the receipt image to the receipt-ocr service and returns the parsed response.
-     * Never throws; returns empty on any connectivity or parsing failure.
-     */
+    // send the image to receipt-ocr; empty on any connectivity/parse failure
     public Optional<ReceiptOcrResponse> extract(Path imagePath) {
         if (receiptOcrUrl.isBlank()) {
             log.debug("receipt-ocr URL not configured, skipping LLM extraction");
@@ -94,8 +81,6 @@ public class ReceiptOcrClientService {
         }
     }
 
-    // Package-visible for testing
-
     byte[] buildMultipartBody(Path imagePath, String boundary) throws IOException {
         byte[] fileBytes = Files.readAllBytes(imagePath);
         String filename  = imagePath.getFileName().toString();
@@ -115,7 +100,7 @@ public class ReceiptOcrClientService {
             ReceiptOcrResponse response = objectMapper.readValue(json, ReceiptOcrResponse.class);
             if (response == null) return Optional.empty();
 
-            // Reject if the LLM returned no usable data (null or empty string for merchant, null/zero for amount)
+            // reject when the LLM returned no merchant and no amount
             boolean noMerchant = response.getMerchantName() == null || response.getMerchantName().isBlank();
             boolean noAmount   = response.getTotalAmount() == null
                 || response.getTotalAmount().compareTo(java.math.BigDecimal.ZERO) <= 0;

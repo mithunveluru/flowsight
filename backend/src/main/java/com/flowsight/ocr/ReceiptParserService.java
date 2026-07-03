@@ -16,21 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-/**
- * Parses an OcrDocument into structured receipt data.
- *
- * Extraction strategy:
- *   amount   — label patterns (TOTAL / GRAND TOTAL / …) then largest currency amount
- *   date     — try 9 date formats against recognisable date patterns
- *   merchant — {@link MerchantExtractor} (heuristic); if the heuristic result is
- *              low-confidence, ambiguous, or the OCR appears corrupted, the call is
- *              escalated to {@link AITransactionInterpreter}. The AI result overrides
- *              the heuristic merchant only — amounts and dates are always deterministic.
- *
- * Entry points:
- *   parse(OcrDocument) — preferred; uses real confidence + position from Tesseract TSV.
- *   parse(String)       — backward-compatible; wraps plain text in OcrDocument.fromPlainText().
- */
+// Parses an OcrDocument into structured receipt data (amount, date, merchant).
+// Merchant uses the heuristic extractor, escalating to AI on low-confidence/ambiguous/corrupt OCR.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -39,12 +26,11 @@ public class ReceiptParserService {
     private final MerchantExtractor       merchantExtractor;
     private final AITransactionInterpreter aiInterpreter;
 
-    // Pre-compiled for isOcrCorrupted — String.matches() doesn't cross \n with .*
+    // pre-compiled: String.matches() won't cross \n
     private static final Pattern REPEATED_CHAR_PATTERN =
         Pattern.compile("([A-Za-z0-9])\\1{4,}");
 
-    // Total amount patterns — priority-ordered
-
+    // total-amount patterns, priority-ordered
     private static final List<Pattern> TOTAL_PATTERNS = List.of(
         Pattern.compile(
             "(?:grand\\s*total|net\\s*payable|amount\\s*payable|total\\s*payable|bill\\s*total|final\\s*total)" +
@@ -57,8 +43,6 @@ public class ReceiptParserService {
             "[₹$]\\s*([0-9,]+\\.[0-9]{2})\\s*$",
             Pattern.MULTILINE)
     );
-
-    // Date patterns
 
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
         DateTimeFormatter.ofPattern("dd/MM/yyyy"),
@@ -80,9 +64,7 @@ public class ReceiptParserService {
             Pattern.CASE_INSENSITIVE)
     );
 
-    // Public entry points
-
-    /** Preferred: uses structured per-line data for position/confidence scoring. */
+    // preferred: uses per-line position/confidence
     public OcrExtractionResult parse(OcrDocument document) {
         String text = document.plainText();
         if (text.isBlank()) {
@@ -105,7 +87,7 @@ public class ReceiptParserService {
             .build();
     }
 
-    /** Backward-compatible: wraps plain text in a synthetic OcrDocument. */
+    // wraps plain text in a synthetic OcrDocument
     public OcrExtractionResult parse(String ocrText) {
         if (ocrText == null || ocrText.isBlank()) {
             return OcrExtractionResult.builder().successful(false).rawText("").build();
@@ -113,8 +95,7 @@ public class ReceiptParserService {
         return parse(OcrDocument.fromPlainText(ocrText));
     }
 
-    // Merchant resolution — heuristic first, AI on ambiguity/low-confidence/corruption
-
+    // merchant: heuristic first, AI on ambiguity/low-confidence/corruption
     private String resolveMerchant(OcrDocument document, String text) {
         MerchantCandidate candidate = merchantExtractor.extractWithScore(document);
         String merchant = candidate != null ? candidate.getName() : null;
@@ -135,14 +116,7 @@ public class ReceiptParserService {
         return merchant;
     }
 
-    /**
-     * Detects obviously garbled OCR output that signals preprocessing degradation.
-     *
-     * Triggers:
-     *   - > 15% non-printable / non-ASCII characters (encoding artefacts)
-     *   - Any run of the same character repeated ≥ 5 times (scanner line noise)
-     *   - Mean word length < 2 characters (severe fragmentation)
-     */
+    // garbled-OCR check: >15% non-printable, a char repeated 5+ times, or mean word length < 2
     static boolean isOcrCorrupted(String text) {
         if (text == null || text.isBlank()) return false;
 
@@ -160,8 +134,6 @@ public class ReceiptParserService {
             .orElse(5.0);
         return avgLen < 2.0;
     }
-
-    // Amount extraction
 
     BigDecimal extractTotal(String text) {
         for (Pattern pattern : TOTAL_PATTERNS) {
@@ -186,8 +158,6 @@ public class ReceiptParserService {
         }
         return largest;
     }
-
-    // Date extraction
 
     LocalDate extractDate(String text) {
         for (Pattern datePattern : DATE_PATTERNS) {

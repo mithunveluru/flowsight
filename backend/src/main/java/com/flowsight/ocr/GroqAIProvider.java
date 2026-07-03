@@ -15,20 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * AI fallback interpreter backed by Groq's inference API (OpenAI-compatible endpoint).
- *
- * Invocation contract:
- *   - Only called when heuristic confidence is low or extraction is ambiguous.
- *   - Uses llama3-8b-8192 — fast, low-cost, adequate for single-field extraction.
- *   - OCR text is capped at {@value #MAX_OCR_LINES} lines to minimise token usage.
- *   - Temperature = 0, max_tokens = 150 — deterministic short responses.
- *   - Any failure (network, rate-limit, malformed JSON) returns Optional.empty()
- *     so the heuristic result is always preserved as the safe fallback.
- *
- * Enabled only when {@code application.groq.api-key} is set. If the key is blank
- * the bean is still registered but every call returns Optional.empty() immediately.
- */
+// AI fallback (Groq, OpenAI-compatible) for low-confidence/ambiguous merchant extraction.
+// Returns empty on any failure; disabled when application.groq.api-key is blank.
 @Service
 @Slf4j
 public class GroqAIProvider implements AITransactionInterpreter {
@@ -82,8 +70,6 @@ public class GroqAIProvider implements AITransactionInterpreter {
         }
     }
 
-    // Request building
-
     String buildUserMessage(String rawOcrText, List<String> candidates) {
         String limitedText = limitLines(rawOcrText);
 
@@ -113,8 +99,6 @@ public class GroqAIProvider implements AITransactionInterpreter {
         return mapper.writeValueAsString(body);
     }
 
-    // HTTP call
-
     private String post(String body) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(GROQ_URL))
@@ -134,8 +118,6 @@ public class GroqAIProvider implements AITransactionInterpreter {
 
         return response.body();
     }
-
-    // Response parsing
 
     Optional<AIInterpretation> parseResponse(String responseBody) {
         try {

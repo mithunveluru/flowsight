@@ -7,17 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Structured result of a single Tesseract OCR run.
- *
- * Contains the full list of text lines (sorted by top-y position) together with
- * per-line confidence and positional data. The {@link #plainText()} convenience
- * method reconstructs the flat text that legacy callers expect.
- *
- * {@link #fromPlainText(String)} creates a synthetic document when only stored
- * plain text is available (e.g. for re-parsing receipts whose original image is
- * gone). Positions are synthesised from line order; confidence is set to 0.80.
- */
+// Structured OCR result: text lines sorted by top-y with per-line confidence/position.
+// fromPlainText synthesises a document (position by line order, confidence 0.80).
 @Value
 @Builder
 public class OcrDocument {

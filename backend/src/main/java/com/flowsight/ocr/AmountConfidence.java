@@ -1,9 +1,6 @@
 package com.flowsight.ocr;
 
-/**
- * Confidence tier for an extracted receipt total amount.
- * The numeric value is used as the {@code OcrExtractionResult.confidence} score.
- */
+// Confidence tier for an extracted total; numericValue feeds OcrExtractionResult.confidence.
 public enum AmountConfidence {
     HIGH(0.85),
     MEDIUM(0.60),
