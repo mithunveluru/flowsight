@@ -14,24 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Computes the long-term cost of recurring expenses — FlowSight's "decision consequence".
- *
- * <p>The opportunity cost calculation uses the future-value-of-annuity formula:
- * <pre>
- *   FV = P × ((1+r)^n − 1) / r
- * </pre>
- * where:
- * <ul>
- *   <li>P = monthly payment amount</li>
- *   <li>r = monthly rate = annualRate / 12</li>
- *   <li>n = number of months (120 for 10 years)</li>
- * </ul>
- *
- * <p>The assumed annual return ({@link #ASSUMED_ANNUAL_RETURN}) is 8% — a conservative
- * long-run equity index assumption. The projection answers: "If you cancelled this and
- * invested the same amount each month instead, what would you have in 10 years?"
- */
+// Long-term cost of recurring expenses via FV-of-annuity at an assumed 8% return.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,10 +25,7 @@ public class ConsequenceCalculator {
 
     private final RecurringPatternRepository patternRepository;
 
-    /**
-     * Returns projections for the user's top recurring expenses, sorted by monthly impact.
-     * Only includes non-dismissed patterns with an estimated amount.
-     */
+    // top recurring expenses by monthly impact; non-dismissed, amount > 0
     public List<ConsequenceProjection> topProjections(UUID userId) {
         List<RecurringPattern> patterns = patternRepository
             .findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(userId);
@@ -59,10 +39,7 @@ public class ConsequenceCalculator {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Computes a projection for an arbitrary recurring monthly amount.
-     * Useful for the UI to model hypothetical changes.
-     */
+    // projection for an arbitrary monthly amount (UI what-ifs)
     public ConsequenceProjection project(String label, BigDecimal monthlyAmount, String category) {
         return ConsequenceProjection.builder()
             .label(label)
@@ -77,7 +54,7 @@ public class ConsequenceCalculator {
     }
 
     private ConsequenceProjection projectFromPattern(RecurringPattern p) {
-        // Convert to monthly equivalent based on period
+        // normalize to a monthly equivalent
         BigDecimal monthly = p.getEstimatedAmount()
             .multiply(BigDecimal.valueOf(p.getPeriod().getAnnualFrequency()))
             .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
@@ -89,11 +66,7 @@ public class ConsequenceCalculator {
         return monthly.multiply(BigDecimal.valueOf(months)).setScale(2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Computes FV of a monthly annuity at the assumed annual return.
-     * Returns the rupee value if you invested {@code monthly} every month for {@code months} months
-     * at {@code annualRate} compounded monthly.
-     */
+    // FV of a monthly annuity, compounded monthly
     private BigDecimal futureValueOfAnnuity(BigDecimal monthly, double annualRate, int months) {
         double r = annualRate / 12.0;
         double fv = monthly.doubleValue() * (Math.pow(1 + r, months) - 1) / r;

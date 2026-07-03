@@ -15,40 +15,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Reconstructs transaction amounts from a sequence of running balances.
- *
- * <p>Given an ordered list of {@link BalanceRow} entries (date, description,
- * balance), this calculator emits a {@link ReconstructedTransaction} for every
- * pair of consecutive rows where the balance changes. Opening / closing
- * balance markers seed the running anchor but do not produce transactions.
- *
- * <p>Each reconstructed transaction carries:
- * <ul>
- *   <li>{@code amount} = |currentBalance - previousBalance|</li>
- *   <li>{@code isDebit} = true when the delta is negative (balance decreased)</li>
- *   <li>{@code confidence} in [0,1] reflecting jump size relative to the
- *       observed median, presence of warnings, and whether the row was
- *       skipped.</li>
- * </ul>
- *
- * <p>The calculator is stateless across invocations - all state lives in
- * the parameter list.
- */
+// Reconstructs transaction amounts from a sequence of running balances. Stateless.
 @Service
 @Slf4j
 public class BalanceDeltaCalculator {
 
-    /** Multiplier above the median absolute delta after which we flag a jump as suspicious. */
+    // median-multiple above which a jump is flagged suspicious
     private static final BigDecimal SUSPICIOUS_JUMP_MULTIPLIER = new BigDecimal("100");
 
-    /** Minimum absolute delta in INR below which the jump check is skipped (tiny txns are always fine). */
+    // skip the jump check below this magnitude
     private static final BigDecimal MIN_DELTA_FOR_JUMP_CHECK = new BigDecimal("1000");
 
-    /** Confidence applied to a normally reconstructed row with no warnings. */
+    // normal row confidence
     private static final BigDecimal CONFIDENCE_FULL = new BigDecimal("1.0000");
 
-    /** Confidence applied to a row flagged as a suspicious jump. */
+    // suspicious-jump confidence
     private static final BigDecimal CONFIDENCE_SUSPICIOUS = new BigDecimal("0.5000");
 
     private static final Set<String> OPENING_MARKERS = Set.of(
@@ -65,7 +46,7 @@ public class BalanceDeltaCalculator {
             return new Result(List.of(), warnings);
         }
 
-        // 1. Drop rows with no balance, then deduplicate, then order.
+        // drop null-balance rows, dedupe, order
         List<BalanceRow> rows = new ArrayList<>(rawRows.size());
         Set<String> seen = new HashSet<>();
         for (BalanceRow r : rawRows) {
@@ -85,21 +66,20 @@ public class BalanceDeltaCalculator {
             .comparing(BalanceRow::getDate)
             .thenComparingInt(BalanceRow::getSourceRowNumber));
 
-        // 2. Pre-compute median absolute delta for the suspicious-jump heuristic.
+        // median delta for the suspicious-jump heuristic
         BigDecimal medianDelta = computeMedianAbsoluteDelta(rows);
 
-        // 3. Walk rows, anchoring on opening balance markers and skipping closing markers.
         List<ReconstructedTransaction> txns = new ArrayList<>();
         BigDecimal previous = null;
         for (BalanceRow row : rows) {
             String descLower = nullSafe(row.getDescription()).toLowerCase(Locale.ROOT);
 
-            // Opening / closing markers seed the anchor without emitting a transaction.
+            // opening/closing markers seed the anchor, emit nothing
             if (matchesAny(descLower, OPENING_MARKERS) || matchesAny(descLower, CLOSING_MARKERS)) {
                 previous = row.getBalance();
                 continue;
             }
-            // The first real row anchors silently when no explicit opening marker is present.
+            // first real row anchors silently when no opening marker is present
             if (previous == null) {
                 previous = row.getBalance();
                 continue;
@@ -107,8 +87,7 @@ public class BalanceDeltaCalculator {
 
             BigDecimal delta = row.getBalance().subtract(previous);
             if (delta.signum() == 0) {
-                // Zero-value rows (fee reversals, info markers) are ignored - existing
-                // pipelines treat zero-amount rows as noise.
+                // ignore zero-delta rows (fee reversals, info markers) as noise
                 previous = row.getBalance();
                 continue;
             }
