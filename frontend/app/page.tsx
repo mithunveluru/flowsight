@@ -217,8 +217,12 @@ export default function Home() {
               <span className="text-sm font-semibold text-slate-900">FlowSight</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-400">
-              <span>Privacy Policy</span>
-              <span>Terms of Service</span>
+              <Link href="/privacy" className="transition-colors hover:text-slate-900">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="transition-colors hover:text-slate-900">
+                Terms of Service
+              </Link>
               <span>© 2026 FlowSight</span>
             </div>
           </div>
