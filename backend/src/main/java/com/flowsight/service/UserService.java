@@ -17,7 +17,7 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    // Replaces the @ConditionalOnMissingBean placeholder in UserDetailsConfig
+    // replaces the UserDetailsConfig placeholder bean
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)

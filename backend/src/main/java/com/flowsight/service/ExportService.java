@@ -12,10 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Generates downloadable exports of user data.
- * Currently produces RFC 4180-compliant CSV.
- */
+// Downloadable exports; RFC 4180 CSV.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -23,17 +20,13 @@ public class ExportService {
 
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
 
-    /** CSV column header — keep in sync with row format below. */
+    // keep in sync with the row format below
     private static final String CSV_HEADER =
         "Date,Description,Merchant,Category,Type,Amount,Currency,Source,Reviewed,Notes";
 
     private final TransactionRepository transactionRepository;
 
-    /**
-     * Generates a transactions CSV for the user, filtered by date range and optional category.
-     * The output is RFC 4180-compliant: fields containing commas, quotes, or newlines are
-     * wrapped in double quotes and embedded quotes are doubled.
-     */
+    // transactions CSV filtered by date range + optional category (RFC 4180)
     public String exportTransactionsCsv(
         UUID userId,
         LocalDate from,
@@ -65,13 +58,10 @@ public class ExportService {
         return sb.toString();
     }
 
-    /** Suggested filename for the CSV based on the date range. */
     public String csvFilename(LocalDate from, LocalDate to) {
         return String.format("flowsight-transactions-%s-%s.csv",
             from.format(ISO_DATE), to.format(ISO_DATE));
     }
-
-    // CSV escaping
 
     private static void appendCsvRow(StringBuilder sb, String... fields) {
         for (int i = 0; i < fields.length; i++) {

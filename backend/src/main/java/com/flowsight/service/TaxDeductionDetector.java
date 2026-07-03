@@ -17,20 +17,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Detects transactions eligible for Indian tax deductions under common sections.
- *
- * <p>Detection is keyword-based on merchant + description fields. This is a
- * "first-pass suggestion" — the user must confirm with their tax advisor.
- * It does not replace formal tax computation.
- *
- * <p>Sections covered:
- * <ul>
- *   <li><b>80C</b> — Tax-saving investments (limit ₹1.5L): LIC, PPF, ELSS, NPS, ULIP, NSC, EPF, school tuition</li>
- *   <li><b>80D</b> — Health insurance premium (limit ₹25k self / ₹50k senior): Star Health, HDFC Ergo, etc.</li>
- *   <li><b>80E</b> — Education loan interest (no limit): education loan EMI payments</li>
- * </ul>
- */
+// Keyword-detects Indian tax-deductible transactions (80C/80D/80E). Suggestion only.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -67,25 +54,21 @@ public class TaxDeductionDetector {
 
     private final TransactionRepository transactionRepository;
 
-    /**
-     * Detects deductions for the Indian financial year containing {@code referenceDate}.
-     * FY runs April 1 to March 31. If today is May 2026, FY = 2026 (April 2026 – March 2027).
-     */
+    // deductions for the Indian FY (Apr 1 - Mar 31) containing referenceDate
     public TaxSummaryResponse detectForFinancialYear(UUID userId, LocalDate referenceDate) {
-        // Compute FY bounds
         int fyStart = referenceDate.getMonthValue() >= 4
             ? referenceDate.getYear()
             : referenceDate.getYear() - 1;
         LocalDate periodStart = LocalDate.of(fyStart, 4, 1);
         LocalDate periodEnd   = LocalDate.of(fyStart + 1, 3, 31);
 
-        // Cap end at today (don't include future)
+        // cap at today
         LocalDate effectiveEnd = referenceDate.isBefore(periodEnd) ? referenceDate : periodEnd;
 
         List<Transaction> txns = transactionRepository.findForExport(
             userId, null, periodStart, effectiveEnd);
 
-        // Only DEBIT transactions are deductible
+        // only DEBIT transactions are deductible
         List<Transaction> debits = txns.stream()
             .filter(t -> t.getType() == TransactionType.DEBIT)
             .collect(Collectors.toList());
@@ -114,8 +97,6 @@ public class TaxDeductionDetector {
             .sections(List.of(section80C, section80D, section80E))
             .build();
     }
-
-    // Section builder
 
     private TaxSection buildSection(
         List<Transaction> debits, String code, String name, String description,

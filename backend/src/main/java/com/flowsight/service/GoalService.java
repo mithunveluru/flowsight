@@ -22,18 +22,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Financial goal CRUD + progress tracking.
- *
- * <p>Pace status logic:
- * <ul>
- *   <li>COMPLETED — currentAmount ≥ targetAmount (auto-completed)</li>
- *   <li>OVERDUE   — past targetDate without completion</li>
- *   <li>AHEAD     — percentComplete > percentElapsed + 5</li>
- *   <li>BEHIND    — percentComplete < percentElapsed - 5</li>
- *   <li>ON_PACE   — within ±5% band of expected progress</li>
- * </ul>
- */
+// Financial goal CRUD + progress/pace tracking.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -44,8 +33,6 @@ public class GoalService {
     private final FinancialGoalRepository goalRepository;
     private final UserRepository          userRepository;
     private final AuditLogService         auditLogService;
-
-    // CRUD
 
     @Transactional
     public GoalResponse create(GoalRequest request, UUID userId) {
@@ -84,7 +71,7 @@ public class GoalService {
         return toResponse(goalRepository.save(goal));
     }
 
-    /** Adds an amount to the current progress (a "contribution"). */
+    // add to the current progress
     @Transactional
     public GoalResponse contribute(UUID goalId, GoalContributionRequest request, UUID userId) {
         FinancialGoal goal = goalRepository.findByIdAndUserId(goalId, userId)
@@ -94,7 +81,7 @@ public class GoalService {
             .setScale(2, RoundingMode.HALF_UP);
         goal.setCurrentAmount(newAmount);
 
-        // Auto-mark COMPLETED if target reached
+        // auto-complete when target reached
         if (newAmount.compareTo(goal.getTargetAmount()) >= 0 && goal.getStatus() == GoalStatus.ACTIVE) {
             goal.setStatus(GoalStatus.COMPLETED);
         }
@@ -137,8 +124,6 @@ public class GoalService {
         return toResponse(goal);
     }
 
-    // Progress computation
-
     private GoalResponse toResponse(FinancialGoal goal) {
         LocalDate today = LocalDate.now();
         BigDecimal target = goal.getTargetAmount();
@@ -152,7 +137,7 @@ public class GoalService {
 
         int daysRemaining = (int) ChronoUnit.DAYS.between(today, goal.getTargetDate());
 
-        // Daily pace required to hit the goal on time
+        // daily pace to hit the goal on time
         BigDecimal dailyPace = daysRemaining > 0
             ? remaining.divide(BigDecimal.valueOf(daysRemaining), 2, RoundingMode.HALF_UP)
             : remaining;
@@ -182,8 +167,7 @@ public class GoalService {
         if (goal.getStatus() == GoalStatus.ABANDONED)                          return "ABANDONED";
         if (daysRemaining < 0)                                                 return "OVERDUE";
 
-        // createdAt is null when the goal was just created in this same transaction
-        // (@CreationTimestamp fires on commit, not save). Treat today as the start.
+        // createdAt is null in the same txn (@CreationTimestamp fires on commit); use today
         LocalDate startDate = goal.getCreatedAt() != null
             ? goal.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
             : today;

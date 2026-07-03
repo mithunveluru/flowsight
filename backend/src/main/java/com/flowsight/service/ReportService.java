@@ -12,10 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-/**
- * Composes monthly summary reports (HTML-printable) for the user.
- * Reuses Phase 5 analytics and the Phase 9 tax-deduction detector — no new persistence.
- */
+// Composes monthly summary reports; reuses analytics + the tax detector.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,11 +23,7 @@ public class ReportService {
     private final AnalyticsService     analyticsService;
     private final TaxDeductionDetector taxDeductionDetector;
 
-    /**
-     * Composes the monthly report for the given date range.
-     * Tax summary is always for the *current* financial year (orthogonal to the range
-     * since FY accumulates across the year).
-     */
+    // tax summary is always the current FY (accumulates across the year), regardless of range
     public MonthlyReportResponse buildMonthlyReport(UUID userId, LocalDate from, LocalDate to) {
         AnalyticsOverviewResponse overview = analyticsService.getOverview(userId, from, to);
         TaxSummaryResponse        taxSummary = taxDeductionDetector.detectForFinancialYear(userId, LocalDate.now());

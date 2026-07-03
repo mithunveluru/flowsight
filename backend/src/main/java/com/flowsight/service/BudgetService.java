@@ -22,22 +22,7 @@ import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Budget CRUD + live tracking against the current calendar month.
- *
- * <p>A budget can be either category-scoped or overall (NULL category).
- * Each call to {@link #list(UUID)} or {@link #getSummary(UUID)} computes
- * fresh spend totals from the transactions table — there is no separate
- * "budget snapshot" persistence.
- *
- * <p>Status tiers:
- * <ul>
- *   <li>OVER — currentSpend ≥ limit</li>
- *   <li>NEAR_LIMIT — currentSpend ≥ 80% limit</li>
- *   <li>PROJECTED_OVER — projected month-end total > limit</li>
- *   <li>ON_TRACK — otherwise</li>
- * </ul>
- */
+// Budget CRUD + live tracking; spend is computed fresh from transactions each call.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -50,13 +35,11 @@ public class BudgetService {
     private final UserRepository        userRepository;
     private final AuditLogService       auditLogService;
 
-    // CRUD
-
     @Transactional
     public BudgetResponse create(BudgetRequest request, UUID userId) {
         User user = userRepository.findById(userId).orElseThrow();
 
-        // Enforce one budget per (user, category)
+        // one budget per (user, category)
         Optional<Budget> existing = request.getCategory() != null
             ? budgetRepository.findByUserIdAndCategory(userId, request.getCategory())
             : budgetRepository.findByUserIdAndCategoryIsNull(userId);
@@ -90,7 +73,7 @@ public class BudgetService {
 
         budget.setMonthlyLimit(request.getMonthlyLimit().setScale(2, RoundingMode.HALF_UP));
         budget.setRollover(request.isRollover());
-        // Category changes are not allowed — they'd violate the unique constraint
+        // category is immutable (unique constraint)
 
         Budget saved = budgetRepository.save(budget);
         return toResponse(saved, computeMonthlyContext(userId));
@@ -143,15 +126,13 @@ public class BudgetService {
             .build();
     }
 
-    // Live spend computation
-
     private MonthlyContext computeMonthlyContext(UUID userId) {
         YearMonth thisMonth = YearMonth.now();
         LocalDate today     = LocalDate.now();
         LocalDate monthStart = thisMonth.atDay(1);
         LocalDate monthEnd   = thisMonth.atEndOfMonth();
 
-        // Per-category spend for this month (DEBIT only)
+        // this month's per-category spend (DEBIT)
         List<Object[]> rows = transactionRepository.categoryBreakdown(
             userId, TransactionType.DEBIT, monthStart, today);
 
@@ -182,7 +163,7 @@ public class BudgetService {
             ? round1(currentSpend.doubleValue() / limit.doubleValue() * 100)
             : 0.0;
 
-        // Project month-end total at current pace
+        // project month-end at current pace
         BigDecimal projectedTotal = ctx.daysElapsed > 0
             ? currentSpend.multiply(BigDecimal.valueOf(ctx.totalDays))
                 .divide(BigDecimal.valueOf(ctx.daysElapsed), 2, RoundingMode.HALF_UP)
@@ -226,7 +207,7 @@ public class BudgetService {
         return Math.round(v * 10.0) / 10.0;
     }
 
-    /** Carries pre-computed monthly spend state to avoid repeated queries. */
+    // pre-computed monthly spend state
     private record MonthlyContext(
         Map<TransactionCategory, BigDecimal> spendByCategory,
         BigDecimal totalSpend,

@@ -37,13 +37,9 @@ public class TransactionService {
     private final AuditLogService    auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
 
-    /** Explicit CSV ceiling, independent of (and below) the global multipart limit. */
+    // explicit CSV ceiling, below the global multipart limit
     private static final long MAX_CSV_BYTES = 5L * 1024 * 1024; // 5 MB
-    /**
-     * Content types browsers and OSes commonly attach to .csv files. We treat a
-     * missing content type as acceptable (some clients omit it) but always require
-     * a .csv extension, so the extension check is the real gate.
-     */
+    // content types clients attach to .csv; the extension check is the real gate
     private static final Set<String> ALLOWED_CSV_CONTENT_TYPES = Set.of(
         "text/csv", "application/csv", "text/plain",
         "application/vnd.ms-excel", "application/octet-stream");
@@ -84,7 +80,7 @@ public class TransactionService {
         if (request.getNotes() != null)             tx.setNotes(request.getNotes());
         if (request.getReviewed() != null)          tx.setReviewed(request.getReviewed());
 
-        // Category update always marks as reviewed (user is explicitly overriding)
+        // category override marks reviewed
         if (request.getCategory() != null) {
             tx.setCategory(request.getCategory());
             tx.setConfidenceScore(BigDecimal.ONE);
@@ -125,10 +121,7 @@ public class TransactionService {
 
         List<Transaction> saved = transactionRepository.saveAll(toSave);
 
-        // Compute the imported date range and total amount.
-        // The UI uses these to tell the user exactly when imported transactions land
-        // and to link directly to the right analytics view — avoids the common confusion
-        // of importing last month's bank statement and not seeing it on "this month"'s dashboard.
+        // imported range + total: UI links the user to the right analytics view
         LocalDate firstDate = null;
         LocalDate lastDate  = null;
         BigDecimal totalImported = BigDecimal.ZERO;
@@ -157,13 +150,7 @@ public class TransactionService {
             .build();
     }
 
-    /**
-     * Validates a CSV upload before parsing: non-empty, within the explicit size
-     * ceiling, with a .csv extension and a recognizable (or absent) content type.
-     * Rejects masqueraded payloads (e.g. a 50 MB binary renamed to .csv is blocked
-     * by both the multipart limit and this size check; a .exe is blocked by the
-     * extension check) before any parsing work is done.
-     */
+    // validate before parsing: non-empty, size cap, .csv extension, known content type
     private void validateCsvUpload(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new FlowsightException("CSV file is empty", HttpStatus.BAD_REQUEST);
