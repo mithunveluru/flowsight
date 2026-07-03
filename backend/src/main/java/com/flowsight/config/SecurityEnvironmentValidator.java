@@ -11,23 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.Set;
 
-/**
- * Fails the application fast at startup when security-critical configuration is
- * missing or weak, rather than discovering it lazily on the first request (or,
- * worse, in production).
- *
- * <p>Validations:
- * <ul>
- *   <li><b>JWT secret</b> - must be present, Base64-decodable, and at least
- *       256 bits (32 bytes) so {@code HMAC-SHA256} signing is cryptographically
- *       sound. Enforced in every profile.</li>
- *   <li><b>CORS origins</b> - in non-development profiles, must be set
- *       explicitly and must not contain a wildcard. Localhost in a non-dev
- *       profile is allowed but logged as a warning.</li>
- * </ul>
- *
- * <p>Error messages never echo the secret value.
- */
+// Fails fast at startup on missing/weak security config (JWT secret, prod CORS). Never echoes the secret.
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -93,12 +77,7 @@ public class SecurityEnvironmentValidator {
         }
     }
 
-    /**
-     * Treats explicit dev/test/local profiles as development. When no profile is
-     * active (the default local/Docker run), we also treat it as development so
-     * the strict CORS checks do not block existing single-host deployments.
-     * The JWT secret check is unconditional regardless of profile.
-     */
+    // no active profile counts as dev, so strict CORS doesn't block single-host runs (JWT check is unconditional)
     private boolean isDevelopmentProfile() {
         String[] active = environment.getActiveProfiles();
         if (active.length == 0) {

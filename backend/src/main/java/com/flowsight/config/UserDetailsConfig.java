@@ -9,9 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 @Configuration
 public class UserDetailsConfig {
 
-    // Phase 2's UserService will implement UserDetailsService, automatically replacing this.
-    // @ConditionalOnMissingBean ensures this placeholder is not registered when a real
-    // implementation exists, avoiding the circular dependency:
+    // placeholder; replaced by UserService. Breaks the cycle
     // SecurityConfig -> JwtAuthFilter -> UserDetailsService -> SecurityConfig
     @Bean
     @ConditionalOnMissingBean(UserDetailsService.class)

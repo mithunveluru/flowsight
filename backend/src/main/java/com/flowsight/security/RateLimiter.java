@@ -9,45 +9,32 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * In-memory token bucket rate limiter, keyed by client identifier + bucket name.
- *
- * <p>Buckets refill at a fixed rate up to a configured capacity. A request consumes
- * one token; when the bucket is empty, the request is rejected with HTTP 429.
- *
- * <p>This implementation is intentionally simple — it works per-instance and is
- * not distributed. Adequate for the current single-instance deployment; a future
- * SaaS rollout would swap in Redis-backed Bucket4j with the same interface.
- */
+// In-memory token-bucket rate limiter, keyed by client + bucket. Per-instance, not distributed.
 @Component
 @Slf4j
 public class RateLimiter {
 
     private final Map<String, TokenBucket> buckets = new ConcurrentHashMap<>();
 
-    // Tuned per endpoint
-
-    /** Auth endpoints: 5 requests per minute per IP. Reasonable for honest users, painful for brute-force. */
+    // auth: 5/min/IP
     public void checkAuthAttempt(String clientId) {
         check("auth:" + clientId, 5, 60_000);
     }
 
-    /** CSV / receipt uploads: 30 per hour per user. */
+    // uploads: 30/hour/user
     public void checkUploadAttempt(String clientId) {
         check("upload:" + clientId, 30, 60 * 60_000);
     }
 
-    /** Password reset requests: 5 per hour per IP. Bounded but humane for honest retries. */
+    // reset requests: 5/hour/IP
     public void checkPasswordResetRequest(String clientId) {
         check("pwreset-req:" + clientId, 5, 60 * 60_000);
     }
 
-    /** Password reset confirmations: 10 per hour per IP. Slows token brute force. */
+    // reset confirms: 10/hour/IP, slows token brute force
     public void checkPasswordResetConfirm(String clientId) {
         check("pwreset-confirm:" + clientId, 10, 60 * 60_000);
     }
-
-    // Core token bucket
 
     private void check(String key, int capacity, long refillIntervalMillis) {
         TokenBucket bucket = buckets.computeIfAbsent(key,
@@ -61,10 +48,7 @@ public class RateLimiter {
         }
     }
 
-    /**
-     * Simple token bucket — fills to {@code capacity} over {@code refillIntervalMillis}.
-     * Each {@link #tryConsume} call rebuilds elapsed-time-proportionate tokens.
-     */
+    // token bucket; refills proportional to elapsed time
     private static final class TokenBucket {
         private final int  capacity;
         private final long refillIntervalMillis;

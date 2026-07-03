@@ -40,8 +40,7 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-    // Constraint violations on @Validated method params (@RequestParam / @PathVariable bounds).
-    // Without this, a param-level violation would fall through to the generic 500 handler.
+    // @Validated param violations; without this they'd hit the generic 500
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraintViolation(ConstraintViolationException ex) {
         List<String> violations = ex.getConstraintViolations()
@@ -63,8 +62,7 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-    // Type mismatch on a path/query param (e.g. malformed UUID, unknown enum value, bad date).
-    // Previously these reached the catch-all handler and returned 500 instead of 400.
+    // bad path/query param (malformed UUID, enum, date) -> 400 not 500
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String required = ex.getRequiredType() != null
@@ -90,7 +88,7 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-    // Malformed / unparseable JSON request body. Kept generic so we never echo body content.
+    // malformed JSON body; generic so we never echo content
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleUnreadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -113,7 +111,7 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-    // Intentionally generic message — do not reveal whether email exists or not
+    // generic: don't reveal whether the email exists
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiError> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -136,7 +134,7 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-    // Handles race-condition duplicate email that bypasses the existsByEmail pre-check
+    // duplicate email that raced past the existsByEmail check
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrity(DataIntegrityViolationException ex) {
         String cause = ex.getMostSpecificCause().getMessage();

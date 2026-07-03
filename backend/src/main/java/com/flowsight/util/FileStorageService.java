@@ -11,13 +11,7 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Handles local file storage for receipt images.
- *
- * Phase 4 uses the local filesystem under UPLOAD_DIR (default: /tmp/flowsight-receipts).
- * /tmp is writable in Docker without volume permission issues. When Phase 11 wires up
- * S3, this service gains an S3StorageProvider implementation behind the same interface.
- */
+// Local file storage for receipt images under UPLOAD_DIR (default /tmp/flowsight-receipts).
 @Service
 @Slf4j
 public class FileStorageService {
