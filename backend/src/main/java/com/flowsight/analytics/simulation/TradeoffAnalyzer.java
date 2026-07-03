@@ -15,17 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Computes the concrete tradeoffs of a scenario:
- * <ul>
- *   <li>Months to save up (for one-time purchases)</li>
- *   <li>Annual + 5-year + 10-year cumulative cost</li>
- *   <li>10-year opportunity cost via future-value-of-annuity at 8% return</li>
- *   <li>Equivalent in days of current spending</li>
- *   <li>Loan: total interest + total payment</li>
- *   <li>Impact on the user's nearest active financial goal</li>
- * </ul>
- */
+// Concrete tradeoffs of a scenario: save-up time, cumulative/opportunity cost, loan, goal impact.
 @Service
 @RequiredArgsConstructor
 public class TradeoffAnalyzer {
@@ -48,7 +38,7 @@ public class TradeoffAnalyzer {
         return tradeoffs;
     }
 
-    /** Returns the goal impact for the user's nearest active goal, or null if none. */
+    // goal impact for the user's nearest active goal, or null
     public GoalImpact computeGoalImpact(UUID userId, BigDecimal monthlyImpact, FinancialBaseline baseline) {
         if (monthlyImpact.compareTo(BigDecimal.ZERO) >= 0) return null; // boost or neutral — no delay
 
@@ -64,12 +54,11 @@ public class TradeoffAnalyzer {
         BigDecimal remaining = goal.getTargetAmount().subtract(goal.getCurrentAmount());
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) return null;
 
-        // Original monthly contribution needed to hit the goal on time
+        // monthly contribution needed to hit the goal on time
         double monthsToTarget = daysToTarget / 30.0;
         double originalMonthly = remaining.doubleValue() / monthsToTarget;
 
-        // After scenario, the user has less to contribute
-        // monthlyImpact is negative (a cost); flipping gives the reduction in available savings
+        // monthlyImpact is negative (a cost); flip to get the reduction in available savings
         double reduction = -monthlyImpact.doubleValue();
         double newMonthly = Math.max(1, originalMonthly - reduction);
 
@@ -87,12 +76,10 @@ public class TradeoffAnalyzer {
             .build();
     }
 
-    // Per-scenario tradeoff builders
-
     private void addOneTimeTradeoffs(List<Tradeoff> out, FinancialBaseline baseline, ScenarioRequest scenario) {
         BigDecimal amount = scenario.getAmount();
 
-        // Months to save up (uses current monthly net savings)
+        // months to save up at current net savings
         if (baseline.getMonthlyNetSavings().compareTo(BigDecimal.ZERO) > 0) {
             int months = (int) Math.ceil(amount.doubleValue() / baseline.getMonthlyNetSavings().doubleValue());
             out.add(t("Months to save up",
@@ -100,7 +87,6 @@ public class TradeoffAnalyzer {
                 "At your current pace of ₹" + fmtINR(baseline.getMonthlyNetSavings()) + "/month saved."));
         }
 
-        // Equivalent in days of typical spending
         if (baseline.getMonthlySpend().compareTo(BigDecimal.ZERO) > 0) {
             double dailySpend = baseline.getMonthlySpend().doubleValue() / 30.0;
             int days = (int) Math.round(amount.doubleValue() / dailySpend);
@@ -109,7 +95,6 @@ public class TradeoffAnalyzer {
                 "Based on your current daily spending pattern."));
         }
 
-        // 10-year opportunity cost if invested
         out.add(t("10-year opportunity cost",
             "₹" + fmtINR(futureValueLumpSum(amount, ASSUMED_ANNUAL_RETURN, 10)),
             "If this amount were invested today at 8% annual return."));
@@ -128,7 +113,6 @@ public class TradeoffAnalyzer {
             "₹" + fmtINR(annual),
             "Total spend per year if kept active."));
 
-        // 10-year opportunity cost via future value of annuity
         out.add(t("10-year opportunity cost",
             "₹" + fmtINR(futureValueAnnuity(monthly, ASSUMED_ANNUAL_RETURN, 120)),
             "If you invested the same monthly amount at 8% annual return."));
@@ -168,15 +152,13 @@ public class TradeoffAnalyzer {
             "Principal + interest combined."));
     }
 
-    // Math helpers
-
-    /** FV of a lump sum invested today: FV = P × (1+r)^n. */
+    // FV of a lump sum: P × (1+r)^n
     public BigDecimal futureValueLumpSum(BigDecimal principal, double annualRate, int years) {
         double fv = principal.doubleValue() * Math.pow(1 + annualRate, years);
         return BigDecimal.valueOf(fv).setScale(2, RoundingMode.HALF_UP);
     }
 
-    /** FV of monthly annuity: FV = P × ((1+r)^n − 1) / r. */
+    // FV of a monthly annuity: P × ((1+r)^n − 1) / r
     public BigDecimal futureValueAnnuity(BigDecimal monthly, double annualRate, int months) {
         double r = annualRate / 12.0;
         double fv = monthly.doubleValue() * (Math.pow(1 + r, months) - 1) / r;

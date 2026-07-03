@@ -15,13 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Computes the user's current monthly financial baseline from their actual data.
- *
- * <p>Income, spend, and category mix are averaged over the last 3 months of transactions.
- * Recurring commitments come from Phase 6 detected patterns. The result feeds every
- * simulation engine — no hardcoded assumptions when the data is sufficient.
- */
+// Current monthly financial baseline from the last 3 months of transactions.
 @Service
 @RequiredArgsConstructor
 public class BaselineCalculator {
@@ -45,7 +39,7 @@ public class BaselineCalculator {
         BigDecimal monthlySpend  = totalSpend.divide(
             BigDecimal.valueOf(LOOKBACK_MONTHS), 2, RoundingMode.HALF_UP);
 
-        // Recurring commitments — sum of monthly equivalents from active patterns
+        // recurring: sum of monthly equivalents from active patterns
         List<RecurringPattern> patterns = recurringPatternRepository
             .findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(userId);
         BigDecimal monthlyRecurring = patterns.stream()
@@ -66,7 +60,6 @@ public class BaselineCalculator {
             ? monthlyNetSavings.doubleValue() / monthlyIncome.doubleValue()
             : 0.0;
 
-        // Top category by spend
         List<Object[]> categoryRows = transactionRepository.categoryBreakdown(
             userId, TransactionType.DEBIT, from, today);
         String topCategoryName = null;

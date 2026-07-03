@@ -10,13 +10,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Orchestrates a simulation by composing the four specialist engines:
- * baseline → impact math → flexibility → projection → tradeoffs → insights.
- *
- * <p>The orchestration is fully on-demand; the request is stateless and
- * idempotent. No persistence — simulations are model-only.
- */
+// Orchestrates a simulation: baseline, impact, flexibility, projection, tradeoffs, insights. Stateless.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,12 +24,7 @@ public class SimulationService {
     private final TradeoffAnalyzer            tradeoffAnalyzer;
     private final ConsequenceInsightGenerator insightGenerator;
 
-    /**
-     * Read-only current flexibility score with no scenario applied. Reuses the
-     * same baseline + scoring engines as {@link #simulate}; passing the current
-     * baseline as its own projection yields a zero delta and the current tier.
-     * Backs the desktop companion's at-a-glance financial-health gauge.
-     */
+    // Current flexibility with no scenario (baseline as its own projection). Backs the desktop gauge.
     public FlexibilityScore currentFlexibility(UUID userId) {
         FinancialBaseline current = baselineCalculator.compute(userId);
         return flexibilityCalculator.compute(current, current);
@@ -44,7 +33,7 @@ public class SimulationService {
     public SimulationResult simulate(UUID userId, ScenarioRequest scenario) {
         FinancialBaseline current = baselineCalculator.compute(userId);
 
-        // Translate the scenario into monthly cash-flow and recurring deltas
+        // scenario -> monthly + recurring deltas
         Deltas deltas = computeDeltas(scenario);
         FinancialBaseline projected = applyDeltasToBaseline(current, deltas);
 
@@ -55,14 +44,13 @@ public class SimulationService {
         List<ConsequenceInsight> insights = insightGenerator.generate(
             current, scenario, deltas.monthlyImpact(), deltas.recurringDelta(), flexibility, goalImpact);
 
-        // Long-horizon impact summary (separate from short-term monthly impact)
         BigDecimal yearly      = deltas.monthlyImpact().multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal fiveYear    = deltas.monthlyImpact().multiply(BigDecimal.valueOf(60)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal tenYearCost = deltas.monthlyImpact().multiply(BigDecimal.valueOf(120)).setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal tenYearOpportunityCost = computeOpportunityCost(scenario, deltas);
 
-        // For one-time purchases, the yearly/5yr/10yr summary is the upfront amount, not 0
+        // one-time: the yearly/5yr/10yr summary is the upfront amount, not 0
         if (scenario.getType() == ScenarioType.ONE_TIME_PURCHASE) {
             yearly      = scenario.getAmount().negate();
             fiveYear    = scenario.getAmount().negate();
@@ -85,13 +73,11 @@ public class SimulationService {
             .build();
     }
 
-    // Delta computation per scenario type
-
     private Deltas computeDeltas(ScenarioRequest scenario) {
         return switch (scenario.getType()) {
             case ONE_TIME_PURCHASE -> new Deltas(
-                BigDecimal.ZERO,                    // no recurring monthly impact
-                BigDecimal.ZERO                     // and no recurring delta
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
             );
             case RECURRING_EXPENSE -> new Deltas(
                 scenario.getAmount().negate(),
@@ -108,7 +94,7 @@ public class SimulationService {
         };
     }
 
-    /** Returns a projected baseline with deltas applied for flexibility recomputation. */
+    // projected baseline with deltas applied, for flexibility recomputation
     private FinancialBaseline applyDeltasToBaseline(FinancialBaseline current, Deltas deltas) {
         BigDecimal newRecurring   = current.getMonthlyRecurring().add(deltas.recurringDelta());
         BigDecimal newSpend       = current.getMonthlySpend()
@@ -146,6 +132,6 @@ public class SimulationService {
         };
     }
 
-    /** Signed monthly impact (negative = costs more) + signed recurring delta (positive = grows). */
+    // signed monthly impact (negative = costs more) + signed recurring delta (positive = grows)
     private record Deltas(BigDecimal monthlyImpact, BigDecimal recurringDelta) {}
 }

@@ -8,14 +8,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Generates 12-month before/after projections of cumulative savings.
- *
- * <p>The "before" line represents the user's current trajectory assuming current
- * income and spend hold steady. The "after" line applies the scenario's monthly
- * impact and any time-bounded effects (e.g. EMI only for the loan tenure, recurring
- * only for the chosen duration).
- */
+// 12-month before/after projection of cumulative savings for a scenario.
 @Service
 public class ProjectionEngine {
 
@@ -30,7 +23,7 @@ public class ProjectionEngine {
         return Projection.builder().before(before).after(after).build();
     }
 
-    /** Baseline (no scenario) — straight line at {@code monthly} per period. */
+    // baseline: straight line at the monthly pace
     private List<ProjectionPoint> buildLinearLine(BigDecimal monthly, BigDecimal startingBalance) {
         List<ProjectionPoint> points = new ArrayList<>();
         BigDecimal running = startingBalance;
@@ -45,15 +38,7 @@ public class ProjectionEngine {
         return points;
     }
 
-    /**
-     * Scenario-adjusted line. The shape depends on scenario type:
-     * <ul>
-     *   <li>ONE_TIME_PURCHASE: month 1 absorbs the full amount, then baseline pace</li>
-     *   <li>RECURRING_EXPENSE: monthly amount subtracted for {@code durationMonths} or until projection end</li>
-     *   <li>SAVINGS_ADJUSTMENT: monthly amount added/subtracted for {@code durationMonths} or full window</li>
-     *   <li>LOAN_EMI: computed EMI subtracted for {@code tenureMonths} or until projection end</li>
-     * </ul>
-     */
+    // scenario-adjusted line; shape depends on scenario type
     private List<ProjectionPoint> buildScenarioLine(
         BigDecimal baselineMonthly, ScenarioRequest scenario, BigDecimal monthlyImpactSign
     ) {
@@ -77,7 +62,7 @@ public class ProjectionEngine {
                 case SAVINGS_ADJUSTMENT -> {
                     int duration = scenario.getDurationMonths() != null ? scenario.getDurationMonths() : PROJECTION_MONTHS;
                     if (m <= duration) {
-                        // Positive amount = increase savings = add to monthly net
+                        // positive amount increases savings
                         effectiveMonthly = effectiveMonthly.add(scenario.getAmount());
                     }
                 }
@@ -100,7 +85,7 @@ public class ProjectionEngine {
         return points;
     }
 
-    /** EMI = P × r × (1+r)^n / ((1+r)^n − 1). Returns 0 for ill-defined inputs. */
+    // EMI = P × r × (1+r)^n / ((1+r)^n − 1); 0 for ill-defined inputs
     public BigDecimal computeEmi(ScenarioRequest scenario) {
         if (scenario.getAmount() == null
          || scenario.getAnnualInterestRate() == null
@@ -113,7 +98,7 @@ public class ProjectionEngine {
         int    n = scenario.getTenureMonths();
 
         if (r <= 0) {
-            // Interest-free loan — equal principal split
+            // interest-free loan: equal principal split
             return BigDecimal.valueOf(p / n).setScale(2, RoundingMode.HALF_UP);
         }
         double emi = p * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);

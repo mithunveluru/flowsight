@@ -7,13 +7,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Produces 3–5 plain-language consequence insights grounded in the user's actual
- * baseline numbers — no generic advice, no platitudes.
- *
- * <p>Each insight has a code (used by the UI for icon selection) and a severity
- * (POSITIVE / NEUTRAL / CAUTION / WARNING) used for color coding.
- */
+// Plain-language consequence insights grounded in the user's baseline numbers.
+// Each carries a code (UI icon) and severity (POSITIVE/NEUTRAL/CAUTION/WARNING).
 @Service
 public class ConsequenceInsightGenerator {
 
@@ -27,18 +22,14 @@ public class ConsequenceInsightGenerator {
     ) {
         List<ConsequenceInsight> out = new ArrayList<>();
 
-        // 1) Cash flow impact
         out.add(buildCashFlowInsight(baseline, scenario, monthlyImpact));
 
-        // 2) Recurring obligation shift
         ConsequenceInsight recurring = buildRecurringInsight(baseline, recurringDelta);
         if (recurring != null) out.add(recurring);
 
-        // 3) Category concentration shift
         ConsequenceInsight category = buildCategoryInsight(baseline, scenario);
         if (category != null) out.add(category);
 
-        // 4) Goal delay
         if (goalImpact != null) {
             out.add(ConsequenceInsight.builder()
                 .code("GOAL_DELAY")
@@ -48,7 +39,6 @@ public class ConsequenceInsightGenerator {
                 .build());
         }
 
-        // 5) Flexibility tier change
         if (!flexibility.getCurrentTier().equals(flexibility.getProjectedTier())) {
             out.add(buildFlexibilityShiftInsight(flexibility));
         }
@@ -56,13 +46,10 @@ public class ConsequenceInsightGenerator {
         return out;
     }
 
-    // Individual insight builders
-
     private ConsequenceInsight buildCashFlowInsight(
         FinancialBaseline baseline, ScenarioRequest scenario, BigDecimal monthlyImpact
     ) {
-        // For one-time purchases the monthly cash-flow delta is zero, but the
-        // user still wants to understand the cash-buffer drawdown.
+        // one-time: no monthly delta, but show the cash-buffer drawdown
         if (scenario.getType() == ScenarioType.ONE_TIME_PURCHASE) {
             return ConsequenceInsight.builder()
                 .code("CASH_FLOW")
@@ -145,12 +132,12 @@ public class ConsequenceInsightGenerator {
         if (scenario.getCategory() == null) return null;
         if (baseline.getTopCategoryName() == null) return null;
 
-        // If the scenario hits the existing top category, it intensifies concentration
+        // hitting the existing top category intensifies concentration
         String scenarioCategoryName = scenario.getCategory().getDisplayName();
         boolean hitsTopCategory = scenarioCategoryName.equals(baseline.getTopCategoryName());
 
         if (!hitsTopCategory) {
-            // Could the scenario amount displace the top category?
+            // would the scenario amount displace the top category?
             BigDecimal monthlyEquivalent = scenarioToMonthly(scenario);
             if (monthlyEquivalent.compareTo(baseline.getTopCategoryMonthlySpend()) > 0) {
                 return ConsequenceInsight.builder()
@@ -200,7 +187,7 @@ public class ConsequenceInsightGenerator {
         };
     }
 
-    /** Best-effort conversion of any scenario into a monthly equivalent for category comparisons. */
+    // best-effort monthly equivalent for category comparison
     private static BigDecimal scenarioToMonthly(ScenarioRequest scenario) {
         return switch (scenario.getType()) {
             case ONE_TIME_PURCHASE   -> scenario.getAmount().divide(java.math.BigDecimal.valueOf(12), 2, java.math.RoundingMode.HALF_UP);

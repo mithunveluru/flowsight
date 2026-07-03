@@ -6,19 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-/**
- * Computes a 0–100 financial flexibility score from current and projected baselines.
- *
- * <p>The score combines three independent signals (each clamped to [0, 1]):
- * <ul>
- *   <li><b>A. Recurring health</b> (35%) — penalty when recurring commitments exceed
- *       50% of income. Captures "locked-in cash" risk.</li>
- *   <li><b>B. Savings rate</b> (35%) — full credit at 30% savings rate. Captures
- *       wealth-building velocity.</li>
- *   <li><b>C. Cash flow buffer</b> (30%) — uncommitted monthly cash as a share of
- *       income. Full credit at 20%. Captures absorption capacity for surprises.</li>
- * </ul>
- */
+// 0–100 flexibility score from recurring health (35%), savings rate (35%), cash buffer (30%).
 @Service
 public class FlexibilityCalculator {
 
@@ -44,11 +32,10 @@ public class FlexibilityCalculator {
             .build();
     }
 
-    /** Computes a score for a single baseline — useful for non-scenario contexts. */
+    // score for a single baseline
     public int scoreFrom(FinancialBaseline b) {
         if (!b.isHasEnoughData() || b.getMonthlyIncome().compareTo(BigDecimal.ZERO) <= 0) {
-            // Without income data we can't compute a meaningful flexibility score.
-            // Use a conservative neutral default.
+            // no income data: conservative neutral default
             return 50;
         }
 
@@ -57,13 +44,13 @@ public class FlexibilityCalculator {
         double netSavings = b.getMonthlyNetSavings().doubleValue();
         double buffer     = b.getMonthlyDiscretionary().doubleValue();
 
-        // Component A: recurring health — 1.0 when 0% locked in, 0.0 when 50%+ locked in
+        // recurring health: 1.0 at 0% locked in, 0.0 at 50%+
         double a = clamp(1.0 - (recurring / income) / 0.5);
 
-        // Component B: savings rate — 1.0 at 30%+ savings rate
+        // savings rate: 1.0 at 30%+
         double b1 = clamp((netSavings / income) / 0.3);
 
-        // Component C: cash flow buffer — 1.0 at 20%+ uncommitted income
+        // cash buffer: 1.0 at 20%+ uncommitted income
         double c = clamp((buffer / income) / 0.2);
 
         double total = a * W_RECURRING + b1 * W_SAVINGS + c * W_BUFFER;
