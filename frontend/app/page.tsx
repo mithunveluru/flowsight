@@ -61,12 +61,6 @@ export default function Home() {
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-6 pb-20 pt-16">
         <div className="max-w-2xl">
-          <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-            <span className="text-xs font-medium text-blue-700">
-              Your money, made clear
-            </span>
-          </div>
           <h1 className="mb-5 text-[2.75rem] font-semibold leading-[1.15] tracking-tight text-slate-900">
             Understand the decisions
             <br />
