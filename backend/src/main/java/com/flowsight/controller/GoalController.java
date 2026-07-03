@@ -53,7 +53,6 @@ public class GoalController {
         return ResponseEntity.ok(goalService.update(id, request, user.getId()));
     }
 
-    /** Adds a contribution amount to the goal's current progress. */
     @PostMapping("/{id}/contribute")
     public ResponseEntity<GoalResponse> contribute(
         @PathVariable UUID id,

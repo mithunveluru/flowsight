@@ -17,11 +17,7 @@ public class LeakController {
 
     private final LeakDetectionService leakDetectionService;
 
-    /**
-     * Returns all detected leaks for the user, computed on-demand from existing
-     * transactions and Phase 6 recurring patterns. No persistence — every call
-     * runs fresh detection so newly added transactions immediately reflect.
-     */
+    // leaks computed fresh each call; no persistence
     @GetMapping
     public ResponseEntity<LeakDetectionResponse> detect(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(leakDetectionService.detectLeaks(user.getId()));

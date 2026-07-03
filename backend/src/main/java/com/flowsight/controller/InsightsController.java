@@ -17,10 +17,7 @@ public class InsightsController {
 
     private final InsightsService insightsService;
 
-    /**
-     * Returns behavioral profile, ranked recommendations, and top consequence projections.
-     * Always computed on demand from current transaction history.
-     */
+    // behavioral profile, recommendations, consequences; computed on demand
     @GetMapping
     public ResponseEntity<InsightsResponse> getInsights(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(insightsService.getInsights(user.getId()));

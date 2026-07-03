@@ -26,7 +26,7 @@ public class IntelligenceReportController {
 
     private final IntelligenceReportService reportService;
 
-    /** Creates a new generation job. Returns immediately with PENDING status; client polls for READY. */
+    // async job; returns PENDING, client polls for READY
     @PostMapping
     public ResponseEntity<ReportJobResponse> create(
         @Valid @RequestBody GenerateReportRequest request,
@@ -36,7 +36,6 @@ public class IntelligenceReportController {
             .body(reportService.createJob(request, user));
     }
 
-    /** Returns current status of a single job (PENDING / GENERATING / READY / FAILED). */
     @GetMapping("/{id}")
     public ResponseEntity<ReportJobResponse> getStatus(
         @PathVariable UUID id,
@@ -45,7 +44,6 @@ public class IntelligenceReportController {
         return ResponseEntity.ok(reportService.getStatus(id, user.getId()));
     }
 
-    /** Lists the user's report history. */
     @GetMapping
     public ResponseEntity<Page<ReportJobResponse>> list(
         @AuthenticationPrincipal User user,
@@ -54,7 +52,6 @@ public class IntelligenceReportController {
         return ResponseEntity.ok(reportService.list(user.getId(), pageable));
     }
 
-    /** Downloads the generated PDF. */
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(
         @PathVariable UUID id,

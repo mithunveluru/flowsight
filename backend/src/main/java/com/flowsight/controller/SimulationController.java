@@ -22,10 +22,7 @@ public class SimulationController {
 
     private final SimulationService simulationService;
 
-    /**
-     * Runs a scenario against the authenticated user's actual financial baseline.
-     * Stateless: no persistence, idempotent on identical inputs.
-     */
+    // run a scenario against the user's baseline; stateless, idempotent
     @PostMapping
     public ResponseEntity<SimulationResult> simulate(
         @Valid @RequestBody ScenarioRequest scenario,
@@ -34,11 +31,7 @@ public class SimulationController {
         return ResponseEntity.ok(simulationService.simulate(user.getId(), scenario));
     }
 
-    /**
-     * Returns the authenticated user's current financial flexibility score with
-     * no scenario applied. Read-only and stateless; used by the desktop
-     * companion's overview gauge. Reuses the same engines as {@link #simulate}.
-     */
+    // current flexibility, no scenario; backs the desktop companion's gauge
     @GetMapping("/flexibility")
     public ResponseEntity<FlexibilityScore> currentFlexibility(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(simulationService.currentFlexibility(user.getId()));

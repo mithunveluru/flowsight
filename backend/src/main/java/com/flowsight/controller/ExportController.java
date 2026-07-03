@@ -27,10 +27,7 @@ public class ExportController {
     private final ReportService        reportService;
     private final TaxDeductionDetector taxDeductionDetector;
 
-    /**
-     * Streams a CSV of transactions, filtered by date range and optional category.
-     * Defaults to the current calendar month when from/to are omitted.
-     */
+    // CSV of transactions by date range + optional category; default current month
     @GetMapping(value = "/transactions.csv", produces = "text/csv")
     public ResponseEntity<byte[]> exportCsv(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -55,7 +52,7 @@ public class ExportController {
         return new ResponseEntity<>(bytes, headers, 200);
     }
 
-    /** Monthly report data for the printable view. */
+    // monthly report for the printable view
     @GetMapping("/monthly")
     public ResponseEntity<MonthlyReportResponse> monthlyReport(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -69,7 +66,7 @@ public class ExportController {
             reportService.buildMonthlyReport(user.getId(), effectiveFrom, effectiveTo));
     }
 
-    /** Standalone tax summary for the current financial year. */
+    // tax summary for the current financial year
     @GetMapping("/tax-summary")
     public ResponseEntity<TaxSummaryResponse> taxSummary(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(

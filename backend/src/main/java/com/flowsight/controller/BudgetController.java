@@ -21,7 +21,6 @@ public class BudgetController {
 
     private final BudgetService budgetService;
 
-    /** Full budget summary with totals and per-budget breakdown. */
     @GetMapping
     public ResponseEntity<BudgetSummaryResponse> summary(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(budgetService.getSummary(user.getId()));

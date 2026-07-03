@@ -23,10 +23,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    /**
-     * Overview for a date range: totals, category breakdown, top merchants, behavioral alerts.
-     * Defaults to the current calendar month when from/to are omitted.
-     */
+    // overview for a date range; defaults to the current calendar month
     @GetMapping("/overview")
     public ResponseEntity<AnalyticsOverviewResponse> overview(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -40,10 +37,7 @@ public class AnalyticsController {
             analyticsService.getOverview(user.getId(), effectiveFrom, effectiveTo));
     }
 
-    /**
-     * Monthly spend / income trend for the last N months plus a 3-month projection.
-     * Defaults to 12 months when months is omitted.
-     */
+    // monthly trend for N months plus a 3-month projection; default 12
     @GetMapping("/trend")
     public ResponseEntity<AnalyticsTrendResponse> trend(
         @RequestParam(defaultValue = "12") @Min(1) @Max(60) int months,
@@ -52,10 +46,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getTrend(user.getId(), months));
     }
 
-    /**
-     * Returns the date range and months where the user has transaction data.
-     * Used by the UI to detect imports landing outside the current view.
-     */
+    // date range where the user has data; UI uses it to catch out-of-view imports
     @GetMapping("/activity-bounds")
     public ResponseEntity<com.flowsight.dto.analytics.ActivityBoundsResponse> activityBounds(
         @AuthenticationPrincipal User user
