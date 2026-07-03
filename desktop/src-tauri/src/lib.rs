@@ -132,7 +132,7 @@ pub fn run() {
             start_resize
         ])
         .setup(|app| {
-            // ---- Global show/hide shortcut --------------------------------
+            // global show/hide shortcut
             #[cfg(desktop)]
             {
                 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
@@ -149,7 +149,7 @@ pub fn run() {
                 }
             }
 
-            // ---- System tray ----------------------------------------------
+            // system tray
             let open_i = MenuItem::with_id(app, "open", "Open FlowSight", true, None::<&str>)?;
             let capture_i =
                 MenuItem::with_id(app, "capture", "Quick Capture", true, None::<&str>)?;
