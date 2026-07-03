@@ -13,14 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Intermediate aggregation model — bundles every data point the PDF needs from
- * the existing analytics services. The analytics aggregator populates this; the
- * insight generator reads from it; the PDF builder renders from it.
- *
- * <p>No raw transactions go in this model. The report is insights-only, never
- * a spreadsheet export.
- */
+// Aggregation model: everything the PDF needs from analytics. Insights-only, no raw transactions.
 @Data
 @Builder
 public class ReportData {
@@ -28,24 +21,23 @@ public class ReportData {
     private LocalDate periodEnd;
     private String    periodLabel;          // "1 May 2026 – 30 May 2026"
 
-    // Phase 5 — totals + category breakdown + top merchants + alerts
+    // totals, categories, merchants, alerts
     private AnalyticsOverviewResponse currentPeriod;
-    private AnalyticsOverviewResponse priorPeriod;        // same-length window ending one period before — for deltas
+    private AnalyticsOverviewResponse priorPeriod;        // same-length prior window, for deltas
 
-    // Phase 6 — active recurring patterns
+    // active recurring patterns
     private List<RecurringPatternResponse> recurringPatterns;
     private BigDecimal                    monthlyRecurringTotal;
     private BigDecimal                    annualRecurringTotal;
 
-    // Phase 7 — leaks
     private LeakDetectionResponse leaks;
 
-    // Phase 10 — behavioural patterns + recommendations + consequence projections
+    // behaviour + recommendations + consequences
     private BehavioralProfile         behavioralProfile;
     private List<Recommendation>      recommendations;
     private List<ConsequenceProjection> topConsequences;
 
-    // Period-over-period spend delta (current vs prior window)
+    // spend delta vs prior window
     private BigDecimal spendChange;
     private double    spendChangePercent;
 }

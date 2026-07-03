@@ -27,10 +27,7 @@ import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
 
-/**
- * Orchestrates intelligence-report generation: resolves the date range, persists
- * a job, kicks off async generation, and serves the resulting PDF.
- */
+// Orchestrates intelligence-report generation: resolve range, persist job, async-generate, serve PDF.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -58,8 +55,6 @@ public class IntelligenceReportService {
         }
     }
 
-    // Request handling
-
     @Transactional
     public ReportJobResponse createJob(GenerateReportRequest request, User user) {
         DateRange range = resolveRange(request);
@@ -72,7 +67,7 @@ public class IntelligenceReportService {
             .build();
         ReportJob saved = reportJobRepository.save(job);
 
-        // Kick off async generation (self-injection through Spring proxy by re-fetching)
+        // kick off async generation
         generateAsync(saved.getId());
 
         return toResponse(saved);
@@ -89,7 +84,7 @@ public class IntelligenceReportService {
             .map(this::toResponse);
     }
 
-    /** Reads the PDF bytes for download. Increments the download counter. */
+    // read PDF bytes; increments the download counter
     @Transactional
     public DownloadHandle download(UUID jobId, UUID userId) {
         ReportJob job = reportJobRepository.findByIdAndUserId(jobId, userId)
@@ -120,8 +115,6 @@ public class IntelligenceReportService {
         reportJobRepository.delete(job);
     }
 
-    // Background generation
-
     @Async
     public void generateAsync(UUID jobId) {
         try {
@@ -145,7 +138,6 @@ public class IntelligenceReportService {
         ReportInsightGenerator.ReportNarrative narrative = insightGenerator.generate(data);
         byte[] pdf = pdfGenerationService.generate(data, narrative);
 
-        // Persist PDF to disk
         Path userDir = reportsRoot.resolve(userId.toString());
         Files.createDirectories(userDir);
         Path pdfPath = userDir.resolve(jobId + ".pdf");
@@ -171,8 +163,6 @@ public class IntelligenceReportService {
             reportJobRepository.save(job);
         });
     }
-
-    // Date range resolution
 
     private DateRange resolveRange(GenerateReportRequest request) {
         LocalDate today = LocalDate.now();

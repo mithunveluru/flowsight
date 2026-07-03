@@ -15,30 +15,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/**
- * Builds a premium PDF using OpenPDF. The visual language echoes the web UI:
- * generous whitespace, restrained palette (slate + single blue accent), clean
- * Helvetica typography, no spreadsheet-ish gridlines.
- *
- * <p>Layout:
- * <ol>
- *   <li>Cover page — brand mark, title, period, generation date</li>
- *   <li>Executive summary</li>
- *   <li>Spending behavior analysis</li>
- *   <li>Recurring commitments</li>
- *   <li>Financial leak analysis</li>
- *   <li>Category breakdown</li>
- *   <li>Top merchants</li>
- *   <li>Consequence analysis</li>
- *   <li>Recommendations</li>
- *   <li>Footer with page numbers on every page</li>
- * </ol>
- */
+// Builds the report PDF with OpenPDF; the visual language mirrors the web UI.
 @Service
 @Slf4j
 public class PdfGenerationService {
 
-    // Design tokens — mirror the web UI palette
+    // design tokens (web UI palette)
     private static final Color INK         = new Color(0x1B, 0x1F, 0x26); // near-black foreground
     private static final Color INK_SOFT    = new Color(0x6B, 0x72, 0x80); // muted secondary
     private static final Color INK_FAINT   = new Color(0x9C, 0xA3, 0xAF); // captions
@@ -48,7 +30,7 @@ public class PdfGenerationService {
     private static final Color SEVERITY_MD = new Color(0xD9, 0x77, 0x06);
     private static final Color SEVERITY_LO = new Color(0x16, 0xA3, 0x4A);
 
-    // Fonts (Helvetica is built into OpenPDF — no embedding needed)
+    // Helvetica is built into OpenPDF (no embedding needed)
     private static final Font  TITLE_FONT     = new Font(Font.HELVETICA, 32, Font.BOLD,   INK);
     private static final Font  COVER_LABEL    = new Font(Font.HELVETICA, 10, Font.BOLD,   INK_FAINT);
     private static final Font  COVER_META     = new Font(Font.HELVETICA, 11, Font.NORMAL, INK_SOFT);
@@ -62,14 +44,11 @@ public class PdfGenerationService {
     private static final Font  TABLE_HEADER   = new Font(Font.HELVETICA,  8, Font.BOLD,   INK_FAINT);
     private static final Font  TABLE_BODY     = new Font(Font.HELVETICA, 10, Font.NORMAL, INK);
 
-    // Page geometry
     private static final float MARGIN     = 56f;   // ~2cm
     private static final float SECTION_GAP = 18f;
 
     private static final DateTimeFormatter GEN_DATE_FMT =
         DateTimeFormatter.ofPattern("d MMMM yyyy");
-
-    // Public API
 
     public byte[] generate(ReportData data, ReportInsightGenerator.ReportNarrative narrative) throws IOException {
         Document doc = new Document(PageSize.A4, MARGIN, MARGIN, MARGIN, MARGIN);
@@ -80,22 +59,18 @@ public class PdfGenerationService {
             writer.setPageEvent(new PageDecorator());
             doc.open();
 
-            // 1) Cover
             renderCover(doc, data);
 
-            // 2) Executive summary
             doc.newPage();
             renderSectionHeader(doc, "01", "Executive Summary");
             renderHeroStats(doc, data);
             renderParagraphs(doc, narrative.getExecutiveSummary());
             addSpace(doc, SECTION_GAP);
 
-            // 3) Spending behavior
             renderSectionHeader(doc, "02", "Spending Behavior");
             renderParagraphs(doc, narrative.getBehaviorAnalysis());
             addSpace(doc, SECTION_GAP);
 
-            // 4) Recurring commitments
             renderSectionHeader(doc, "03", "Recurring Commitments");
             renderParagraphs(doc, narrative.getRecurringSummary());
             if (data.getRecurringPatterns() != null && !data.getRecurringPatterns().isEmpty()) {
@@ -103,18 +78,15 @@ public class PdfGenerationService {
             }
             addSpace(doc, SECTION_GAP);
 
-            // 5) Leak analysis — new page for visual separation
-            doc.newPage();
+            doc.newPage(); // new page for visual separation
             renderSectionHeader(doc, "04", "Financial Leak Analysis");
             renderLeaks(doc, narrative.getLeakLines());
             addSpace(doc, SECTION_GAP);
 
-            // 6) Category breakdown
             renderSectionHeader(doc, "05", "Category Breakdown");
             renderCategoryBars(doc, data.getCurrentPeriod().getCategoryBreakdown(), data.getCurrentPeriod().getTotalSpend().doubleValue());
             addSpace(doc, SECTION_GAP);
 
-            // 7) Top merchants
             if (data.getCurrentPeriod().getTopMerchants() != null
                 && !data.getCurrentPeriod().getTopMerchants().isEmpty()) {
                 renderSectionHeader(doc, "06", "Top Merchants");
@@ -122,13 +94,11 @@ public class PdfGenerationService {
                 addSpace(doc, SECTION_GAP);
             }
 
-            // 8) Consequence
             doc.newPage();
             renderSectionHeader(doc, "07", "Consequence Analysis");
             renderParagraphs(doc, narrative.getConsequenceParagraph());
             addSpace(doc, SECTION_GAP);
 
-            // 9) Recommendations
             renderSectionHeader(doc, "08", "Recommendations");
             renderRecommendations(doc, narrative.getRecommendations());
 
@@ -141,25 +111,22 @@ public class PdfGenerationService {
         return out.toByteArray();
     }
 
-    // Page decorator — header strip and footer with page numbers
-
+    // header strip + footer page numbers
     private static class PageDecorator extends PdfPageEventHelper {
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
             PdfContentByte cb = writer.getDirectContent();
             int pageNumber = writer.getPageNumber();
 
-            // Skip header strip on cover page
+            // skip on cover page
             if (pageNumber > 1) {
                 cb.saveState();
-                // Thin top hairline
                 cb.setColorStroke(DIVIDER);
                 cb.setLineWidth(0.4f);
                 cb.moveTo(MARGIN, document.getPageSize().getHeight() - 32);
                 cb.lineTo(document.getPageSize().getWidth() - MARGIN, document.getPageSize().getHeight() - 32);
                 cb.stroke();
 
-                // Header text — small left mark, right report title
                 ColumnText.showTextAligned(cb, Element.ALIGN_LEFT,
                     new Phrase("FlowSight", CAPTION_FONT),
                     MARGIN, document.getPageSize().getHeight() - 24, 0);
@@ -167,7 +134,6 @@ public class PdfGenerationService {
                     new Phrase("Financial Intelligence Report", CAPTION_FONT),
                     document.getPageSize().getWidth() - MARGIN, document.getPageSize().getHeight() - 24, 0);
 
-                // Footer page number
                 ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
                     new Phrase(String.valueOf(pageNumber), CAPTION_FONT),
                     document.getPageSize().getWidth() / 2f, 26, 0);
@@ -176,13 +142,9 @@ public class PdfGenerationService {
         }
     }
 
-    // Section primitives
-
     private void renderCover(Document doc, ReportData data) throws DocumentException {
-        // Vertical breathing room at top
         addSpace(doc, 80);
 
-        // Brand mark — a small dark square with a stylized check
         PdfPTable logoTable = new PdfPTable(1);
         logoTable.setWidthPercentage(100);
         PdfPCell logoCell = new PdfPCell(new Phrase("Flowsight", new Font(Font.HELVETICA, 11, Font.BOLD, INK)));
@@ -191,22 +153,18 @@ public class PdfGenerationService {
         logoTable.addCell(logoCell);
         doc.add(logoTable);
 
-        // Section eyebrow
         Paragraph eyebrow = new Paragraph("FINANCIAL INTELLIGENCE REPORT", COVER_LABEL);
         eyebrow.setSpacingAfter(14);
         doc.add(eyebrow);
 
-        // Title
         Paragraph title = new Paragraph("Your money, decoded.", TITLE_FONT);
         title.setSpacingAfter(8);
         doc.add(title);
 
-        // Period
         Paragraph period = new Paragraph(data.getPeriodLabel(), COVER_META);
         period.setSpacingAfter(60);
         doc.add(period);
 
-        // Cover summary — single-paragraph framing
         String coverSummary = String.format(
             "An insights-only summary of your spending behavior, recurring commitments, " +
             "and financial leaks across this window. Numbers come from your actual " +
@@ -217,7 +175,6 @@ public class PdfGenerationService {
         summary.setSpacingAfter(80);
         doc.add(summary);
 
-        // Generation metadata at bottom
         addDivider(doc);
         addSpace(doc, 12);
         PdfPTable meta = new PdfPTable(2);
@@ -312,7 +269,6 @@ public class PdfGenerationService {
         }
 
         for (var leak : lines) {
-            // Severity tag + title row
             PdfPTable headerRow = new PdfPTable(new float[]{4, 1});
             headerRow.setWidthPercentage(100);
             Paragraph titleP = new Paragraph(leak.getTitle(), SUBHEAD_FONT);
@@ -340,7 +296,6 @@ public class PdfGenerationService {
             desc.setSpacingBefore(4);
             doc.add(desc);
 
-            // Impact pills row
             Paragraph impact = new Paragraph(
                 leak.getMonthlyImpact() + "  ·  " + leak.getAnnualImpact(),
                 new Font(Font.HELVETICA, 10, Font.BOLD, BRAND));
@@ -390,7 +345,6 @@ public class PdfGenerationService {
         for (int i = 0; i < rows; i++) {
             CategoryBreakdownItem c = items.get(i);
 
-            // Row 1: name + amount
             PdfPTable nameRow = new PdfPTable(new float[]{6, 2});
             nameRow.setWidthPercentage(100);
             PdfPCell name = new PdfPCell(new Phrase(c.getDisplayName(), BODY_FONT));
@@ -406,10 +360,8 @@ public class PdfGenerationService {
             nameRow.addCell(amtCell);
             doc.add(nameRow);
 
-            // Row 2: bar
             renderProgressBar(doc, c.getPercentage());
 
-            // Row 3: caption
             Paragraph caption = new Paragraph(
                 String.format("%.0f%% of spend · %d transactions", c.getPercentage(), c.getTransactionCount()),
                 CAPTION_FONT);
@@ -419,7 +371,7 @@ public class PdfGenerationService {
     }
 
     private void renderProgressBar(Document doc, double percent) throws DocumentException {
-        // Render via a 1-row PdfPTable with a colored cell of proportional width
+        // colored cell of proportional width
         double pct = Math.max(1.0, Math.min(100.0, percent));
         PdfPTable bar = new PdfPTable(new float[]{(float) pct, (float)(100 - pct)});
         bar.setWidthPercentage(100);
@@ -508,8 +460,6 @@ public class PdfGenerationService {
         }
     }
 
-    // Table cell primitives
-
     private PdfPCell tableHeader(String text) {
         PdfPCell c = new PdfPCell(new Phrase(text, TABLE_HEADER));
         c.setBorder(Rectangle.BOTTOM); c.setBorderColor(DIVIDER); c.setBorderWidth(0.4f);
@@ -537,8 +487,6 @@ public class PdfGenerationService {
         c.setPaddingRight(0);
         return c;
     }
-
-    // Drawing helpers
 
     private void addDivider(Document doc) throws DocumentException {
         PdfPTable t = new PdfPTable(1);

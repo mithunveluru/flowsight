@@ -13,17 +13,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Builds the narrative sections of the report.
- *
- * <p>Every sentence is data-grounded — no generic AI-generated platitudes.
- * Numbers always come from {@link ReportData}; this class only generates
- * the prose that explains them.
- *
- * <p>Future enhancement: a Groq-powered polish pass that rewrites each
- * paragraph in a chosen tone. The current deterministic templates are
- * intentionally written to read naturally without needing AI rewriting.
- */
+// Builds the report's narrative prose; every sentence is grounded in ReportData numbers.
 @Service
 @Slf4j
 public class ReportInsightGenerator {
@@ -39,13 +29,10 @@ public class ReportInsightGenerator {
         );
     }
 
-    // 1. Executive summary — front page
-
     private List<String> buildExecutiveSummary(ReportData d) {
         List<String> lines = new ArrayList<>();
         var current = d.getCurrentPeriod();
 
-        // Opening line — sets the period
         String opening;
         if (current.getTransactionCount() == 0) {
             opening = String.format(
@@ -61,7 +48,6 @@ public class ReportInsightGenerator {
         }
         lines.add(opening);
 
-        // Period-over-period delta
         if (d.getPriorPeriod().getTotalSpend().compareTo(BigDecimal.ZERO) > 0) {
             double pct = d.getSpendChangePercent();
             String direction = pct >= 0 ? "rose by" : "fell by";
@@ -70,7 +56,6 @@ public class ReportInsightGenerator {
                 direction, Math.abs(pct), Math.abs(d.getSpendChange().doubleValue())));
         }
 
-        // Net cashflow tone
         BigDecimal net = current.getNetCashflow();
         if (net.compareTo(BigDecimal.ZERO) > 0) {
             lines.add(String.format(
@@ -82,7 +67,6 @@ public class ReportInsightGenerator {
                 Math.abs(net.doubleValue())));
         }
 
-        // Top categories
         if (!current.getCategoryBreakdown().isEmpty()) {
             var top = current.getCategoryBreakdown().get(0);
             lines.add(String.format(
@@ -92,14 +76,12 @@ public class ReportInsightGenerator {
                 top.getPercentage()));
         }
 
-        // Behavioural one-liner
         String profileSummary = d.getBehavioralProfile().getSummary();
         if (profileSummary != null && !profileSummary.isBlank()
                 && !"Steady spender".equalsIgnoreCase(profileSummary)) {
             lines.add("Behaviourally, you're best described as: " + profileSummary.toLowerCase() + ".");
         }
 
-        // Leak headline
         if (d.getLeaks() != null && d.getLeaks().getTotalMonthlyImpact() != null
                 && d.getLeaks().getTotalMonthlyImpact().compareTo(new BigDecimal("100")) > 0) {
             lines.add(String.format(
@@ -111,17 +93,13 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // 2. Spending behavior analysis
-
     private List<String> buildBehaviorAnalysis(ReportData d) {
         List<String> lines = new ArrayList<>();
 
-        // Behavioral patterns from Phase 10
         for (BehavioralPattern pattern : d.getBehavioralProfile().getPatterns()) {
             lines.add(pattern.getDescription() + " " + pattern.getContext() + ".");
         }
 
-        // Period delta narrative when there's enough spend to compare
         if (d.getPriorPeriod().getTotalSpend().compareTo(new BigDecimal("100")) > 0) {
             double pct = d.getSpendChangePercent();
             if (Math.abs(pct) >= 10) {
@@ -133,7 +111,6 @@ public class ReportInsightGenerator {
             }
         }
 
-        // Category concentration check
         var current = d.getCurrentPeriod();
         if (!current.getCategoryBreakdown().isEmpty()) {
             CategoryBreakdownItem top = current.getCategoryBreakdown().get(0);
@@ -149,8 +126,6 @@ public class ReportInsightGenerator {
         }
         return lines;
     }
-
-    // 3. Leak analysis
 
     private List<LeakLine> buildLeakAnalysis(ReportData d) {
         List<LeakLine> lines = new ArrayList<>();
@@ -169,8 +144,6 @@ public class ReportInsightGenerator {
         return lines;
     }
 
-    // 4. Recurring summary
-
     private List<String> buildRecurringSummary(ReportData d) {
         List<String> lines = new ArrayList<>();
         if (d.getRecurringPatterns() == null || d.getRecurringPatterns().isEmpty()) {
@@ -184,7 +157,6 @@ public class ReportInsightGenerator {
             "Your active recurring commitments total ₹%,.0f/month (₹%,.0f/year) across %d distinct subscriptions or bills.",
             monthly.doubleValue(), annual.doubleValue(), d.getRecurringPatterns().size()));
 
-        // Top recurring obligation
         RecurringPatternResponse top = d.getRecurringPatterns().get(0);
         if (top.getEstimatedAmount() != null) {
             lines.add(String.format(
@@ -194,7 +166,6 @@ public class ReportInsightGenerator {
                 top.getPeriodLabel().toLowerCase()));
         }
 
-        // Cancellation candidates
         long cancellable = d.getRecurringPatterns().stream()
             .filter(RecurringPatternResponse::isCancellationCandidate).count();
         if (cancellable > 0) {
@@ -205,8 +176,6 @@ public class ReportInsightGenerator {
 
         return lines;
     }
-
-    // 5. Consequence paragraph
 
     private List<String> buildConsequenceParagraph(ReportData d) {
         List<String> lines = new ArrayList<>();
@@ -228,7 +197,6 @@ public class ReportInsightGenerator {
             "the opportunity cost is approximately ₹%,.0f.",
             totalAnnual.doubleValue(), totalTenYrOpportunity.doubleValue()));
 
-        // Highlight one specific commitment
         var top = d.getTopConsequences().get(0);
         if (top.getTenYearOpportunityCost() != null) {
             lines.add(String.format(
@@ -239,8 +207,6 @@ public class ReportInsightGenerator {
         }
         return lines;
     }
-
-    // 6. Recommendation lines
 
     private List<RecommendationLine> buildRecommendationLines(ReportData d) {
         List<RecommendationLine> lines = new ArrayList<>();
@@ -262,8 +228,6 @@ public class ReportInsightGenerator {
         }
         return lines;
     }
-
-    // Output structures
 
     @Value
     public static class ReportNarrative {
