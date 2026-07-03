@@ -8,22 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Inspects a CSV header row and decides whether the file carries explicit
- * transaction amounts or only a running balance column.
- *
- * <p>Resolution rules:
- * <ul>
- *   <li>If any of {@code amount} / {@code debit} / {@code credit} is present
- *       the file is treated as {@link Format#EXPLICIT_AMOUNT}. This preserves
- *       the existing HDFC/SBI/NATIVE behaviour.</li>
- *   <li>If no amount columns are present but a balance-like column exists
- *       alongside a date and description column, the file is
- *       {@link Format#BALANCE_ONLY} and qualifies for delta reconstruction.</li>
- *   <li>Otherwise {@link Format#UNKNOWN} - the caller should fall through to
- *       the legacy NATIVE parser which will reject the row.</li>
- * </ul>
- */
+// Decides from the CSV header whether the file has explicit amounts or only a running balance.
 @Service
 public class StatementFormatDetector {
 

@@ -7,19 +7,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 
-/**
- * Probabilistic categorization engine.
- *
- * Uses keyword-to-category mappings to classify transaction descriptions.
- * Returns a (category, confidenceScore) pair where confidence reflects
- * how many and how specific the keyword matches were.
- *
- * Confidence bands:
- *   0.90–0.95  — high-specificity exact match (brand name, known app)
- *   0.65–0.89  — multiple keyword matches
- *   0.45–0.64  — single generic keyword match
- *   0.25–0.44  — weak signal, likely fallback
- */
+// Keyword-to-category classifier; returns (category, confidence).
 @Service
 public class CategorizationService {
 
@@ -110,7 +98,7 @@ public class CategorizationService {
                 .count();
 
             if (matchCount > 0) {
-                // Each match adds confidence; brand-specific matches (longer keywords) score higher
+                // longer (brand-specific) keywords score higher
                 double base = 0.45;
                 double perMatch = 0.12;
                 double bonus = keywords.stream()

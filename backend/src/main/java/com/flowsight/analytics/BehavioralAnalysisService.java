@@ -17,18 +17,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Detects behavioral spending patterns from transaction history.
- *
- * <p>All analysis uses 6 months of DEBIT transactions. Patterns surfaced:
- * <ul>
- *   <li><b>WEEKEND_OVERSPEND</b> — weekend daily spend > weekday daily spend × 1.4</li>
- *   <li><b>LIFESTYLE_INFLATION</b> — recent 3-month avg > previous 3-month avg by ≥15%</li>
- *   <li><b>CATEGORY_CONCENTRATION</b> — top category > 40% of total spend</li>
- *   <li><b>INCREASING_FREQUENCY</b> — transactions/week growing month over month</li>
- *   <li><b>LARGE_TICKET_TREND</b> — avg transaction size growing 20%+ over the period</li>
- * </ul>
- */
+// Detects behavioral spending patterns from 6 months of debit transactions.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,7 +25,7 @@ public class BehavioralAnalysisService {
 
     private static final int LOOKBACK_MONTHS = 6;
 
-    // Pattern thresholds
+    // thresholds
     private static final double WEEKEND_OVERSPEND_RATIO   = 1.40;
     private static final double LIFESTYLE_INFLATION_RATIO = 1.15;
     private static final double CATEGORY_DOMINANCE_PCT    = 40.0;
@@ -59,7 +48,7 @@ public class BehavioralAnalysisService {
         addIfPresent(patterns, detectIncreasingFrequency(txns));
         addIfPresent(patterns, detectLargeTicketTrend(txns));
 
-        // Sort patterns by severity (HIGH first)
+        // HIGH first
         patterns.sort(Comparator.comparingInt(BehavioralAnalysisService::severityOrder));
 
         String summary = buildSummary(patterns);
@@ -69,8 +58,6 @@ public class BehavioralAnalysisService {
             .patterns(patterns)
             .build();
     }
-
-    // 1) Weekend overspend
 
     private BehavioralPattern detectWeekendOverspend(List<Transaction> txns) {
         BigDecimal weekendTotal = BigDecimal.ZERO;
@@ -114,8 +101,6 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // 2) Lifestyle inflation
-
     private BehavioralPattern detectLifestyleInflation(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
         LocalDate midpoint = today.minusMonths(3);
@@ -149,8 +134,6 @@ public class BehavioralAnalysisService {
             .context(String.format("₹%,.0f recent vs ₹%,.0f earlier", recent, earlier))
             .build();
     }
-
-    // 3) Category concentration
 
     private BehavioralPattern detectCategoryConcentration(List<Transaction> txns) {
         Map<TransactionCategory, BigDecimal> byCategory = txns.stream()
@@ -186,8 +169,6 @@ public class BehavioralAnalysisService {
             .build();
     }
 
-    // 4) Increasing transaction frequency
-
     private BehavioralPattern detectIncreasingFrequency(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
         LocalDate midpoint = today.minusMonths(3);
@@ -214,8 +195,6 @@ public class BehavioralAnalysisService {
             .context(recentCount + " transactions recent vs " + earlierCount + " earlier")
             .build();
     }
-
-    // 5) Average ticket size growth
 
     private BehavioralPattern detectLargeTicketTrend(List<Transaction> txns) {
         LocalDate today = LocalDate.now();
@@ -250,8 +229,6 @@ public class BehavioralAnalysisService {
                 recent.getAverage(), earlier.getAverage()))
             .build();
     }
-
-    // Summary
 
     private String buildSummary(List<BehavioralPattern> patterns) {
         if (patterns.isEmpty()) {

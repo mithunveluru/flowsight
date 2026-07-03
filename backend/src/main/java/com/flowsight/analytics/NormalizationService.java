@@ -4,15 +4,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.regex.Pattern;
 
-/**
- * Cleans raw bank transaction text into structured, human-readable form.
- * Bank descriptions carry reference IDs, UPI handles, and formatting noise
- * that obscures the actual merchant. This service strips that noise.
- */
+// Strips reference IDs, UPI handles, and noise from bank descriptions.
 @Service
 public class NormalizationService {
 
-    // Common noise patterns in Indian bank descriptions
+    // noise patterns in Indian bank descriptions
     private static final Pattern UPI_REF = Pattern.compile(
         "[0-9]{9,20}|UPI/[A-Z0-9]+|REF[A-Z0-9]+|NEFT/[A-Z0-9]+|IMPS/[A-Z0-9]+",
         Pattern.CASE_INSENSITIVE
@@ -21,7 +17,7 @@ public class NormalizationService {
     private static final Pattern EXTRA_WHITESPACE = Pattern.compile("\\s{2,}");
     private static final Pattern TRAILING_NOISE = Pattern.compile("[/@\\-_]+$");
 
-    // Prefixes to strip when extracting merchant name
+    // prefixes stripped when extracting merchant
     private static final Pattern MERCHANT_PREFIX = Pattern.compile(
         "^(UPI-|NEFT-|IMPS-|VPA-|POS-|ATM-|ACH-|SI-|ECS-|DD-|NACH-)",
         Pattern.CASE_INSENSITIVE
@@ -42,15 +38,13 @@ public class NormalizationService {
 
         String text = description.trim();
 
-        // Strip known prefixes
         text = MERCHANT_PREFIX.matcher(text).replaceFirst("");
 
-        // Take the first meaningful token (before any / or - separator)
-        // Many bank descriptions follow "MERCHANT NAME/CITY/DATE" pattern
+        // first token; bank descriptions are "MERCHANT/CITY/DATE"
         String[] parts = text.split("[/|\\-]", 3);
         String candidate = parts[0].trim();
 
-        // Discard pure numeric candidates (these are reference IDs, not merchants)
+        // numeric candidates are reference IDs, not merchants
         if (candidate.matches("[0-9\\s]+")) {
             return parts.length > 1 ? parts[1].trim() : null;
         }

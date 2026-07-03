@@ -9,10 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
-/**
- * Orchestrates the ingestion pipeline: normalize → categorize → build entity.
- * Keeps service and analytics layers decoupled.
- */
+// Ingestion pipeline: normalize, categorize, build entity.
 @Component
 @RequiredArgsConstructor
 public class TransactionIngestionPipeline {

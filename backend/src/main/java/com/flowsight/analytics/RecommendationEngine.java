@@ -16,16 +16,7 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Generates actionable, personalized recommendations by fusing three signals:
- * <ol>
- *   <li>Behavioral patterns (Phase 10 — {@link BehavioralAnalysisService})</li>
- *   <li>Detected leaks (Phase 7 — {@link LeakDetectionService})</li>
- *   <li>Active financial goals (Phase 8)</li>
- * </ol>
- *
- * <p>Up to 5 recommendations are returned, ranked by potential monthly saving.
- */
+// Fuses leaks, behaviors, and active goals into ranked recommendations (top 5 by monthly saving).
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -40,21 +31,20 @@ public class RecommendationEngine {
     public List<Recommendation> generate(UUID userId, List<BehavioralPattern> behaviors) {
         List<Recommendation> candidates = new ArrayList<>();
 
-        // Source 1: leaks become "cancel/reduce" recommendations
+        // leaks -> cancel/reduce
         LeakDetectionResponse leaks = leakDetectionService.detectLeaks(userId);
         for (LeakInsight leak : leaks.getLeaks()) {
             Recommendation rec = fromLeak(leak);
             if (rec != null) candidates.add(rec);
         }
 
-        // Source 2: behavioral patterns → habit-shift recommendations
+        // behaviors -> habit shifts
         for (BehavioralPattern pattern : behaviors) {
             Recommendation rec = fromBehavior(pattern);
             if (rec != null) candidates.add(rec);
         }
 
-        // Source 3: goal-redirect — if user has an active goal AND leaks exist,
-        //           suggest redirecting recovered savings toward the goal.
+        // active goal + leaks -> suggest redirecting recovered savings
         List<FinancialGoal> activeGoals = goalRepository
             .findByUserIdAndStatusOrderByTargetDateAsc(userId, GoalStatus.ACTIVE);
         if (!activeGoals.isEmpty() && leaks.getTotalMonthlyImpact().compareTo(NOISE_FLOOR) > 0) {
@@ -62,7 +52,7 @@ public class RecommendationEngine {
             candidates.add(buildRedirectRecommendation(nearestGoal, leaks.getTotalMonthlyImpact()));
         }
 
-        // Rank by potential monthly saving and cap
+        // rank by saving, cap
         return candidates.stream()
             .filter(r -> r.getPotentialMonthlySaving() != null
                       && r.getPotentialMonthlySaving().compareTo(NOISE_FLOOR) >= 0)
@@ -70,8 +60,6 @@ public class RecommendationEngine {
             .limit(MAX_RECOMMENDATIONS)
             .collect(Collectors.toList());
     }
-
-    // Source converters
 
     private Recommendation fromLeak(LeakInsight leak) {
         if (leak.getMonthlyImpact() == null
@@ -103,7 +91,7 @@ public class RecommendationEngine {
                 .title("Reduce a high-frequency habit")
                 .description(leak.getDescription())
                 .suggestedAction(leak.getRecommendation())
-                // Recommend a 50% reduction as the realistic target
+                // realistic target: 50% reduction
                 .potentialMonthlySaving(half(leak.getMonthlyImpact()))
                 .potentialAnnualSaving(half(leak.getAnnualImpact()))
                 .confidence(mapSeverity(leak.getSeverity()))
@@ -124,7 +112,6 @@ public class RecommendationEngine {
     }
 
     private Recommendation fromBehavior(BehavioralPattern p) {
-        // Behaviors with material savings potential have a tangible amount value
         return switch (p.getCode()) {
             case "WEEKEND_OVERSPEND" -> Recommendation.builder()
                 .type("SHIFT_HABIT")

@@ -10,16 +10,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Top-level orchestrator for the insights endpoint. Composes:
- * <ul>
- *   <li>{@link BehavioralAnalysisService} — pattern detection</li>
- *   <li>{@link RecommendationEngine}      — actionable suggestions</li>
- *   <li>{@link ConsequenceCalculator}     — long-term cost projections</li>
- * </ul>
- *
- * <p>All three are computed on demand; there is no separate insights persistence.
- */
+// Composes behavioral profile, recommendations, and consequence projections. On demand.
 @Service
 @RequiredArgsConstructor
 @Slf4j
