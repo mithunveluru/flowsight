@@ -63,9 +63,7 @@ export const reportsApi = {
   getTaxSummary: () =>
     api.get<TaxSummary>("/api/v1/reports/tax-summary", { auth: true }),
 
-  // -------------------------------------------------------------------------
   // Phase 12: Intelligence Reports
-  // -------------------------------------------------------------------------
 
   createIntelligenceReport: (req: GenerateReportRequest) =>
     api.post<ReportJob>("/api/v1/intelligence-reports", req, { auth: true }),

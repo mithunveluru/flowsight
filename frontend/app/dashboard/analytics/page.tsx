@@ -45,9 +45,7 @@ import {
 } from "@/components/motion/primitives";
 import { cn } from "@/lib/utils";
 
-// Category palette — pastel family lifted from CSS chart tokens.
-// Single coherent set; categories distinct but never compete with each other
-// or with the brand colours used on hero metrics.
+// category palette from CSS chart tokens
 const CATEGORY_COLORS: Record<string, string> = {
   FOOD_DINING:    "hsl(var(--chart-1))",   // soft coral
   GROCERIES:      "hsl(var(--chart-2))",   // sage mint
@@ -66,8 +64,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   UNCATEGORIZED:  "hsl(var(--chart-15))",  // faint
 };
 
-// Spend/income lines on time-series charts. Pulled from CSS tokens so theme
-// changes propagate automatically (light → dark, light → pastel, etc).
+// time-series line colors from CSS tokens (theme-adaptive)
 const SPEND_COLOR  = "hsl(var(--chart-spend))";   // soft lavender (brand family)
 const INCOME_COLOR = "hsl(var(--chart-income))";  // pastel teal
 const GRID_COLOR   = "hsl(var(--chart-grid))";
@@ -99,8 +96,7 @@ function dateRange(preset: DateRangePreset): { from: string; to: string } {
 
 export default function AnalyticsPage() {
   const searchParams = useSearchParams();
-  // Support deep links like /analytics?from=2026-04-01&to=2026-04-30
-  // (used by the CSV import success banner to land users on the right view).
+  // deep links like ?from=&to= (from the CSV import banner)
   const customFrom = searchParams.get("from");
   const customTo   = searchParams.get("to");
   const hasCustomRange = !!(customFrom && customTo);
@@ -146,10 +142,7 @@ export default function AnalyticsPage() {
 
   const isEmpty = !loading && !error && overview && overview.transactionCount === 0;
 
-  // If the current view is empty but the user has data in other months,
-  // surface a one-click jump to the most recent month with activity.
-  // This is the *core fix* for the reported issue: users uploading last-month CSVs
-  // and not seeing them on the default "this month" dashboard.
+  // empty view but data in other months: offer a jump to the latest active month
   const dataElsewhere =
     isEmpty &&
     bounds &&
@@ -269,8 +262,7 @@ function SummaryCards({
   overview: AnalyticsOverview | null;
   loading: boolean;
 }) {
-  // Each card carries its raw numeric value for the animated counter.
-  // The "Net cashflow" card preserves negative sign via the formatter.
+  // each card carries its raw value for the animated counter
   const cards = overview
     ? [
         { label: "Total spend",  value: overview.totalSpend,        format: (v: number) => `₹${v.toLocaleString("en-IN")}` },
@@ -577,12 +569,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-/**
- * Shown when the *current* default view is empty but the user has data in other
- * months. This is the core fix for the reported issue: after a CSV import lands
- * in a past month, the user lands on "this month" and sees nothing — we now hand
- * them a one-click jump to where their data actually is.
- */
+// jump to the latest active month when the default view is empty
 function DataElsewhereHint({ bounds }: { bounds: ActivityBounds }) {
   // monthsWithActivity is "YYYY-MM" newest first
   const mostRecent = bounds.monthsWithActivity[0];

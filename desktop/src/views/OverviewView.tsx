@@ -123,10 +123,8 @@ export function OverviewView({ onNavigate, onCapture }: OverviewProps) {
   return <MediumOverview data={data} signals={signals} onNavigate={onNavigate} onCapture={onCapture} />;
 }
 
-// -----------------------------------------------------------------------------
 // COMPACT — widget. Score, today's spend, quick actions, top 2 signals. Nothing
 // else: understand state in 3s, act in <5s.
-// -----------------------------------------------------------------------------
 function CompactOverview({
   data,
   signals,
@@ -192,9 +190,7 @@ function CompactOverview({
   );
 }
 
-// -----------------------------------------------------------------------------
 // MEDIUM — companion. Score, snapshot, quick actions, 3 signals, 3 recent.
-// -----------------------------------------------------------------------------
 function MediumOverview({
   data,
   signals,
@@ -212,9 +208,7 @@ function MediumOverview({
   );
 }
 
-// -----------------------------------------------------------------------------
 // LARGE — desktop window. Two columns; more signals + recent.
-// -----------------------------------------------------------------------------
 function LargeOverview({
   data,
   signals,
@@ -236,9 +230,7 @@ function LargeOverview({
   );
 }
 
-// -----------------------------------------------------------------------------
 // Shared building blocks
-// -----------------------------------------------------------------------------
 function ScoreHero({ flexibility }: { flexibility: FlexibilityScore | null }) {
   return (
     <FadeIn>

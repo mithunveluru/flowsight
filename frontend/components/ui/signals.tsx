@@ -1,19 +1,6 @@
 "use client";
 
-// =============================================================================
-// AI SIGNALS — the design language for FlowSight's intelligence layer.
-//
-// One vocabulary for everything the platform *infers* rather than records:
-// behavioral signals, recommendations, predictions, detected anomalies, and
-// long-range forecasts. Every page that surfaces an inference should compose
-// these primitives instead of hand-rolling severity dots and card markup, so
-// the "intelligence" reads as one coherent system.
-//
-// All color flows through the token system (--signal, --severity-*); nothing
-// here hardcodes a Tailwind palette color, so dark mode and palette changes
-// propagate automatically.
-// =============================================================================
-
+// Shared primitives for the intelligence layer. Colors flow through --signal/--severity tokens.
 import * as React from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,27 +8,21 @@ import { PulseDot } from "@/components/motion/primitives";
 
 export type Severity = "HIGH" | "MEDIUM" | "LOW";
 
-// Severity → token mapping. `var` channels resolve lazily, so each adapts to
-// dark mode through the underlying base token it aliases.
+// severity -> token; var() resolves lazily so dark mode adapts automatically
 const SEVERITY_TOKEN: Record<Severity, { fg: string; soft: string; label: string }> = {
   HIGH:   { fg: "var(--severity-high)",   soft: "var(--severity-high-soft)",   label: "High signal" },
   MEDIUM: { fg: "var(--severity-medium)", soft: "var(--severity-medium-soft)", label: "Moderate signal" },
   LOW:    { fg: "var(--severity-low)",    soft: "var(--severity-low-soft)",    label: "Low signal" },
 };
 
-// -----------------------------------------------------------------------------
-// SignalDot — the canonical severity indicator. Static by default: severity is
-// carried by color (and surrounding rail/badge), not motion. Pulsing is opt-in
-// via `pulse` and intentionally rare — we avoid attention-seeking animation so
-// the intelligence layer reads calm and premium. Replaces ad-hoc dot maps.
-// -----------------------------------------------------------------------------
+// SignalDot: canonical severity indicator. Static by default; pulse is opt-in and rare.
 export function SignalDot({
   severity,
   pulse,
   className,
 }: {
   severity: Severity;
-  /** Opt into the pulsing ring. Off by default; use sparingly. */
+  // opt into the pulsing ring; use sparingly
   pulse?: boolean;
   className?: string;
 }) {
@@ -59,9 +40,7 @@ export function SignalDot({
   );
 }
 
-// -----------------------------------------------------------------------------
 // ConfidenceBadge — small pill stating how strongly a signal is held.
-// -----------------------------------------------------------------------------
 export function ConfidenceBadge({
   severity,
   label,
@@ -86,13 +65,7 @@ export function ConfidenceBadge({
   );
 }
 
-// -----------------------------------------------------------------------------
-// StatusMarker — the calm alternative to a status pill. A small dot (inheriting
-// the current text color) plus a compact uppercase label. Communicates status
-// through color + typography instead of a boxed badge, so tables and cards stay
-// quiet and premium. Pass a Tailwind text-color via `className`, or an explicit
-// CSS `color` (e.g. a design token) for the signals palette.
-// -----------------------------------------------------------------------------
+// StatusMarker: calm alternative to a status pill (dot + uppercase label).
 export function StatusMarker({
   label,
   color,
@@ -116,12 +89,7 @@ export function StatusMarker({
   );
 }
 
-// -----------------------------------------------------------------------------
-// SignalCard — the premium container for a single inferred finding. A hairline
-// severity rail on the left gives the intelligence layer its identity without
-// painting whole surfaces. Compose the children freely; `metric` floats to the
-// top-right for impact figures.
-// -----------------------------------------------------------------------------
+// SignalCard: container for a single inferred finding, with a left severity rail.
 export function SignalCard({
   severity = "LOW",
   icon,
@@ -134,11 +102,11 @@ export function SignalCard({
   severity?: Severity;
   icon?: React.ReactNode;
   title: React.ReactNode;
-  /** Right-aligned impact figure (e.g. ₹420/mo). */
+  // right-aligned impact figure
   metric?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
-  /** Adds the tactile hover lift for clickable cards. */
+  // tactile hover lift for clickable cards
   interactive?: boolean;
 }) {
   const { fg, soft } = SEVERITY_TOKEN[severity];
@@ -180,10 +148,7 @@ export function SignalCard({
   );
 }
 
-// -----------------------------------------------------------------------------
-// InsightCallout — the "here's what to do" box. Quiet by default; pass
-// `tone="signal"` to tint it with the intelligence accent.
-// -----------------------------------------------------------------------------
+// InsightCallout: the "what to do" box; tone="signal" tints it with the accent.
 export function InsightCallout({
   children,
   icon,
@@ -216,10 +181,7 @@ export function InsightCallout({
   );
 }
 
-// -----------------------------------------------------------------------------
-// EvidenceChips — the supporting "why we think this" trail, rendered as a
-// dotted inline list. Keeps reasoning visible and trustworthy.
-// -----------------------------------------------------------------------------
+// EvidenceChips: dotted inline list of the supporting reasons.
 export function EvidenceChips({ items, className }: { items: string[]; className?: string }) {
   if (!items.length) return null;
   return (
@@ -234,11 +196,7 @@ export function EvidenceChips({ items, className }: { items: string[]; className
   );
 }
 
-// -----------------------------------------------------------------------------
-// ForecastPanel / ForecastCell — the projection timeline. Generalizes the
-// consequence-projection grid: a row of labelled future values with one
-// optional accented "headline" cell.
-// -----------------------------------------------------------------------------
+// ForecastPanel/ForecastCell: a row of labelled future values with one optional accent cell.
 export function ForecastPanel({
   children,
   columns = 4,
@@ -268,7 +226,7 @@ export function ForecastCell({
   label: string;
   value: React.ReactNode;
   hint?: string;
-  /** Render in the intelligence accent — use for the single headline figure. */
+  // accent for the single headline figure
   accent?: boolean;
 }) {
   return (
@@ -285,10 +243,7 @@ export function ForecastCell({
   );
 }
 
-// -----------------------------------------------------------------------------
-// SignalSectionHeader — consistent eyebrow + title + subtitle across every
-// intelligence section.
-// -----------------------------------------------------------------------------
+// SignalSectionHeader: eyebrow + title + subtitle for intelligence sections.
 export function SignalSectionHeader({
   icon,
   title,

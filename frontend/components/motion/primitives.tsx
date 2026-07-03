@@ -1,8 +1,6 @@
 "use client";
 
-// Shared motion primitives. One ease curve (EASE_OUT) and one duration
-// scale (DURATION); every primitive gates on prefers-reduced-motion so
-// the rest of the app does not need to think about it.
+// Shared motion primitives; every one gates on prefers-reduced-motion.
 
 import {
   AnimatePresence,
@@ -18,9 +16,9 @@ import {
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-/** Refined ease-out-quint — looks like macOS spring without being bouncy. */
+// ease-out-quint
 export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-/** Ease-in-out for ambient looped motion (hero backgrounds). */
+// ease-in-out for ambient loops
 export const EASE_LOOP = [0.45, 0, 0.55, 1] as const;
 
 export const DURATION = {
@@ -145,7 +143,7 @@ export function RevealOnScroll({
 
 interface AnimatedNumberProps {
   value: number;
-  /** Format the in-flight integer value into the displayed string. */
+  // format the in-flight value for display
   format?: (v: number) => string;
   duration?: number;
   className?: string;
@@ -179,11 +177,7 @@ export function AnimatedNumber({
   return <span className={className}>{format(display)}</span>;
 }
 
-// -------------------------------------------------------------------------
-// AmbientGlow — extremely subtle floating gradient for hero backgrounds.
-//   Used sparingly — only on dashboard hero / settings hero / reports hero.
-//   Two layers drift independently at very slow speeds (~22s and 28s).
-// -------------------------------------------------------------------------
+// AmbientGlow: subtle floating gradient for hero backgrounds; two slow drifting layers.
 
 export function AmbientGlow({ className }: { className?: string }) {
   const reduced = useReducedMotion();
@@ -214,11 +208,7 @@ export function AmbientGlow({ className }: { className?: string }) {
   );
 }
 
-// -------------------------------------------------------------------------
-// AnimatedSwitch — fades+slides between content keyed by `viewKey`.
-//   Useful when one panel's content fully replaces another (e.g. simulator
-//   scenario type tab change, receipt review state change).
-// -------------------------------------------------------------------------
+// AnimatedSwitch: fades/slides between content keyed by viewKey.
 
 export function AnimatedSwitch({
   viewKey, children, className,
