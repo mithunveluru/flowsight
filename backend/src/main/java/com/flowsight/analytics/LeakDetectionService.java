@@ -19,23 +19,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Detects "financial leaks" — recoverable spending patterns the user may not be tracking.
- *
- * <p>Four leak types are surfaced:
- * <ol>
- *   <li>{@code DUPLICATE_SUBSCRIPTIONS} — multiple recurring patterns in the same category
- *       (e.g. 3 streaming services in ENTERTAINMENT)</li>
- *   <li>{@code SUBSCRIPTION_CREEP} — recurring pattern where recent amounts trend upward
- *       (price hikes that go unnoticed)</li>
- *   <li>{@code HIGH_FREQUENCY_SMALL_SPEND} — non-recurring "habit" purchases that add up
- *       (e.g. daily coffee at ₹150 × 25 visits = ₹3750/month)</li>
- *   <li>{@code BANK_FEES} — fee/charge/penalty keyword matches in descriptions</li>
- * </ol>
- *
- * <p>All detection is computed on-demand from existing transactions and Phase 6
- * recurring patterns — no new persistence is introduced.
- */
+// Detects recoverable spending leaks on-demand; no new persistence.
+// Types: duplicate subscriptions, subscription creep, silent drains, bank fees.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,27 +28,25 @@ public class LeakDetectionService {
 
     private static final int LOOKBACK_MONTHS = 3;
 
-    // High-frequency small-spend thresholds
     private static final int        FREQ_MIN_COUNT        = 8;          // ≥ 8 visits in window
     private static final BigDecimal FREQ_MAX_PER_TX       = new BigDecimal("500");
     private static final BigDecimal FREQ_MIN_MONTHLY      = new BigDecimal("1500");
 
-    // Subscription creep: ≥4 occurrences, recent avg > earlier avg × 1.10
+    // creep: ≥4 occurrences, recent avg > earlier avg × 1.10
     private static final int    CREEP_MIN_OCCURRENCES = 4;
     private static final double CREEP_RATIO_THRESHOLD = 1.10;
 
-    // Severity thresholds (monthly impact)
+    // severity thresholds (monthly impact)
     private static final BigDecimal SEVERITY_HIGH   = new BigDecimal("2000");
     private static final BigDecimal SEVERITY_MEDIUM = new BigDecimal("500");
 
-    // Categories used for duplicate detection
     private static final Set<TransactionCategory> DUPLICATE_DETECT_CATEGORIES = Set.of(
         TransactionCategory.SUBSCRIPTIONS,
         TransactionCategory.ENTERTAINMENT,
         TransactionCategory.EDUCATION
     );
 
-    // Bank-fee detection regex — word-boundary based to avoid false positives like "Charging Station"
+    // word-boundary based to avoid false positives like "Charging Station"
     private static final Pattern FEE_PATTERN = Pattern.compile(
         "\\b(fee|fees|penalty|penalties|overdraft|late\\s+(?:fee|charge|payment)|" +
         "atm\\s+(?:fee|charge)|processing\\s+(?:fee|charge)|service\\s+charge|" +
@@ -74,8 +57,6 @@ public class LeakDetectionService {
 
     private final TransactionRepository      transactionRepository;
     private final RecurringPatternRepository patternRepository;
-
-    // Public API
 
     public LeakDetectionResponse detectLeaks(UUID userId) {
         LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
@@ -92,7 +73,7 @@ public class LeakDetectionService {
         addIfPresent(leaks, detectHighFrequencySmallSpend(txns));
         addIfPresent(leaks, detectBankFees(txns));
 
-        // Sort by monthly impact descending — biggest opportunities first
+        // biggest opportunities first
         leaks.sort(Comparator.comparing(
             LeakInsight::getMonthlyImpact, Comparator.nullsLast(Comparator.reverseOrder())));
 
@@ -115,13 +96,10 @@ public class LeakDetectionService {
             .build();
     }
 
-    // 1) Duplicate subscriptions
-
     private LeakInsight detectDuplicateSubscriptions(
         List<RecurringPattern> patterns,
         Map<String, TransactionCategory> merchantCategory
     ) {
-        // Group patterns by category (using merchant -> category lookup)
         Map<TransactionCategory, List<RecurringPattern>> byCategory = new EnumMap<>(TransactionCategory.class);
         for (RecurringPattern p : patterns) {
             TransactionCategory cat = merchantCategory.get(p.getMerchant());
@@ -129,7 +107,6 @@ public class LeakDetectionService {
             byCategory.computeIfAbsent(cat, k -> new ArrayList<>()).add(p);
         }
 
-        // Pick category with most duplicates
         Optional<Map.Entry<TransactionCategory, List<RecurringPattern>>> winner = byCategory.entrySet().stream()
             .filter(e -> e.getValue().size() >= 2)
             .max(Comparator.comparingInt(e -> e.getValue().size()));
@@ -139,7 +116,7 @@ public class LeakDetectionService {
         TransactionCategory cat = winner.get().getKey();
         List<RecurringPattern> dupes = winner.get().getValue();
 
-        // Savings = monthly equivalent of the cheapest one (cancel the lowest-value to keep best service)
+        // cancel the cheapest to keep the best service
         BigDecimal cheapestMonthly = dupes.stream()
             .map(this::monthlyEquivalent)
             .min(BigDecimal::compareTo)
@@ -176,10 +153,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // 2) Subscription creep
-
     private LeakInsight detectSubscriptionCreep(List<RecurringPattern> patterns, List<Transaction> allTxns) {
-        // Group transactions by merchant for fast lookup
         Map<String, List<Transaction>> byMerchant = allTxns.stream()
             .filter(t -> t.getMerchant() != null)
             .collect(Collectors.groupingBy(Transaction::getMerchant));
@@ -191,7 +165,7 @@ public class LeakDetectionService {
             List<Transaction> txns = byMerchant.getOrDefault(p.getMerchant(), List.of());
             if (txns.size() < CREEP_MIN_OCCURRENCES) continue;
 
-            // Sort by date ascending; compare last 2 vs earlier (n-2)
+            // compare the last 2 payments vs the earlier average
             txns.sort(Comparator.comparing(Transaction::getTransactionDate));
             int recentCount = 2;
             int earlierCount = txns.size() - recentCount;
@@ -234,10 +208,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // 3) High-frequency small spend (silent drains)
-
     private LeakInsight detectHighFrequencySmallSpend(List<Transaction> txns) {
-        // Aggregate per merchant within lookback window
         Map<String, List<Transaction>> byMerchant = txns.stream()
             .filter(t -> t.getMerchant() != null && !t.getMerchant().isBlank())
             .filter(t -> t.getAmount().compareTo(FREQ_MAX_PER_TX) <= 0)
@@ -253,7 +224,7 @@ public class LeakDetectionService {
             BigDecimal total = merchantTxns.stream()
                 .map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Normalize to monthly (window is LOOKBACK_MONTHS months)
+            // normalize to monthly (window is LOOKBACK_MONTHS)
             BigDecimal monthly = total.divide(BigDecimal.valueOf(LOOKBACK_MONTHS), 2, RoundingMode.HALF_UP);
             if (monthly.compareTo(FREQ_MIN_MONTHLY) < 0) continue;
 
@@ -288,10 +259,7 @@ public class LeakDetectionService {
             .build();
     }
 
-    // 4) Bank fees
-
     private LeakInsight detectBankFees(List<Transaction> txns) {
-        // Group fee transactions by merchant
         Map<String, List<Transaction>> feesByMerchant = new LinkedHashMap<>();
 
         for (Transaction tx : txns) {
@@ -344,11 +312,11 @@ public class LeakDetectionService {
     }
 
     private Map<String, TransactionCategory> buildMerchantCategoryMap(List<Transaction> txns) {
-        // Use the latest (rightmost in sort order) category for each merchant
+        // last category wins per merchant
         Map<String, TransactionCategory> map = new HashMap<>();
         for (Transaction tx : txns) {
             if (tx.getMerchant() == null || tx.getCategory() == null) continue;
-            map.put(tx.getMerchant(), tx.getCategory()); // overwrite — last wins
+            map.put(tx.getMerchant(), tx.getCategory());
         }
         return map;
     }
