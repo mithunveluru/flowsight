@@ -65,11 +65,7 @@ public class AuthService {
         user = userRepository.save(user);
         log.info("Registered new user: {}", user.getEmail());
 
-        // Audit AFTER this transaction commits. AuditLogService.log runs in a
-        // REQUIRES_NEW transaction; if invoked inline it would try to insert an
-        // audit_logs row referencing a user row that is not yet committed,
-        // violating the FK and rolling back the whole registration. Deferring to
-        // afterCommit lets the new user be visible to that separate transaction.
+        // audit after commit: the REQUIRES_NEW write can't see the uncommitted user (FK)
         final User registered = user;
         auditAfterCommit(() -> auditLogService.log(
             registered, AuditLogService.ACTION_USER_REGISTERED, "User", registered.getId().toString()));
@@ -83,9 +79,7 @@ public class AuthService {
 
         String normalizedEmail = request.getEmail().toLowerCase().trim();
 
-        // AuthenticationManager handles both UsernameNotFound and BadCredentials.
-        // hideUserNotFoundExceptions=true (Spring default) ensures both collapse to
-        // BadCredentialsException, so callers cannot enumerate registered emails.
+        // both failures collapse to BadCredentials, so emails can't be enumerated
         try {
             authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
@@ -103,11 +97,7 @@ public class AuthService {
         return toAuthResponse(token, user);
     }
 
-    /**
-     * Run an audit action after the current transaction commits, so any
-     * REQUIRES_NEW audit write can see rows persisted by this transaction. If no
-     * transaction is active (e.g. unit tests), run it immediately.
-     */
+    // run after commit so a REQUIRES_NEW audit write sees this txn's rows
     private void auditAfterCommit(Runnable action) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -121,7 +111,7 @@ public class AuthService {
         }
     }
 
-    /** Use the client IP as the rate-limit key (or "unknown" if not in a request). */
+    // rate-limit key: client IP
     private String clientId() {
         if (currentRequest == null) return "unknown";
         try {

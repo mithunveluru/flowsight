@@ -50,24 +50,11 @@ public class PasswordResetService {
     @Value("${application.password-reset.frontend-url:http://localhost:3007}")
     private String frontendBaseUrl;
 
-    // DEV ONLY. When true, requestReset returns the freshly minted reset URL so
-    // callers can surface it for local testing without a configured mail provider.
-    // Default false; must never be enabled in a shared/production environment.
+    // DEV ONLY: exposes the reset link to the caller; never enable in prod
     @Value("${application.password-reset.dev-expose-link:false}")
     private boolean devExposeLink;
 
-    /**
-     * Issue a reset link for the email if it belongs to an active user.
-     *
-     * The caller-facing response must be identical whether or not the email
-     * exists, so this returns the reset URL only as a DEV testing aid and only
-     * when {@code dev-expose-link} is enabled; otherwise it returns
-     * {@link Optional#empty()} regardless of whether a token was issued. This
-     * keeps account enumeration impossible in normal/production operation.
-     *
-     * @return the freshly minted reset URL when (and only when) dev-expose-link
-     *         is on and a token was issued; otherwise empty.
-     */
+    // Returns the URL only when dev-expose-link is on; empty otherwise (no enumeration).
     @Transactional
     public Optional<String> requestReset(String rawEmail) {
         String email = normalize(rawEmail);
@@ -75,8 +62,7 @@ public class PasswordResetService {
 
         Optional<User> maybeUser = userRepository.findByEmail(email);
         if (maybeUser.isEmpty() || !maybeUser.get().isEnabled()) {
-            // Audit the attempt either way so abuse is observable, but never
-            // surface this distinction to the caller.
+            // audit the attempt without revealing it to the caller
             auditLogService.log(
                 null,
                 AuditLogService.ACTION_PASSWORD_RESET_REQUESTED,
@@ -117,13 +103,7 @@ public class PasswordResetService {
         return devExposeLink ? Optional.of(resetUrl) : Optional.empty();
     }
 
-    /**
-     * Consume a reset token: validate, set the new password, mark the token
-     * used, and invalidate every other live token for the user.
-     *
-     * Uses a single generic error for every failure mode (unknown token,
-     * expired token, already consumed) so attackers cannot distinguish them.
-     */
+    // Generic error for every failure mode so attackers can't distinguish them.
     @Transactional
     public void consumeReset(String rawToken, String newPassword) {
         if (rawToken == null || rawToken.isBlank()) {
@@ -141,9 +121,7 @@ public class PasswordResetService {
 
         User user = token.getUser();
 
-        // Audit BEFORE the password-row write. The audit-log REQUIRES_NEW
-        // transaction needs to FK-lookup users(id); doing it after we lock
-        // the user row would deadlock with the outer transaction.
+        // audit before locking the user row: REQUIRES_NEW FK-lookup would deadlock
         auditLogService.log(
             user,
             AuditLogService.ACTION_PASSWORD_RESET_COMPLETED,
@@ -157,7 +135,7 @@ public class PasswordResetService {
         token.setConsumedAt(now);
         tokenRepository.save(token);
 
-        // Defense in depth: any other live token for this user is now stale.
+        // invalidate any other live tokens for this user
         tokenRepository.invalidateAllForUser(user.getId(), now);
 
         log.info("Password reset completed for user {}", user.getId());
@@ -175,7 +153,7 @@ public class PasswordResetService {
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
-            // SHA-256 is a JDK guarantee; this branch is unreachable.
+            // SHA-256 is a JDK guarantee; unreachable
             throw new IllegalStateException("SHA-256 not available", e);
         }
     }

@@ -35,8 +35,7 @@ public class ResendEmailService implements EmailService {
     @Async
     public void sendPasswordReset(String toEmail, String recipientName, String resetUrl) {
         if (apiKey == null || apiKey.isBlank()) {
-            // Development fallback: never silently swallow. Log the link so dev/CI can
-            // exercise the reset flow without configuring Resend.
+            // dev fallback: log the link when unconfigured
             log.warn("RESEND_API_KEY not set. Password reset link for {} would be sent to {}", recipientName, toEmail);
             log.warn("Reset URL: {}", resetUrl);
             return;
@@ -62,7 +61,7 @@ public class ResendEmailService implements EmailService {
                 .toBodilessEntity();
             log.info("Password reset email dispatched for user {}", recipientName);
         } catch (RestClientResponseException e) {
-            // Surface only at WARN — the user response must not depend on email delivery.
+            // delivery must not affect the API response
             log.warn("Resend API rejected password reset email ({}): {}",
                 e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {

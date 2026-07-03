@@ -12,17 +12,7 @@ import org.springframework.web.client.RestClientResponseException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Sends the password-reset email through Brevo's transactional HTTP API.
- *
- * Selected when {@code application.email.provider=brevo}. Unlike Gmail SMTP,
- * this uses HTTPS (port 443), so it works on hosts that block outbound SMTP
- * ports (e.g. Render's free tier). Brevo allows single-sender verification, so
- * a plain address can send without owning a domain.
- *
- * Delivery never affects the API response: any failure is logged and swallowed
- * so the caller-facing message is identical regardless of outcome.
- */
+// HTTPS provider; works where outbound SMTP is blocked. Single-sender, no domain.
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "application.email.provider", havingValue = "brevo")
@@ -35,7 +25,7 @@ public class BrevoEmailService implements EmailService {
     @Value("${application.email.brevo.api-key:}")
     private String apiKey;
 
-    // Must be a sender verified in the Brevo dashboard (single sender or domain).
+    // must be a verified sender in Brevo
     @Value("${application.email.brevo.sender-email:}")
     private String senderEmail;
 
@@ -50,8 +40,7 @@ public class BrevoEmailService implements EmailService {
     @Async
     public void sendPasswordReset(String toEmail, String recipientName, String resetUrl) {
         if (apiKey.isBlank() || senderEmail.isBlank()) {
-            // Development fallback: never silently swallow. Log the link so dev/CI can
-            // exercise the reset flow without configuring Brevo.
+            // dev fallback: log the link when unconfigured
             log.warn("Brevo not configured (BREVO_API_KEY/BREVO_SENDER_EMAIL empty). "
                 + "Password reset link for {} would be sent to {}", recipientName, toEmail);
             log.warn("Reset URL: {}", resetUrl);
@@ -76,7 +65,7 @@ public class BrevoEmailService implements EmailService {
                 .toBodilessEntity();
             log.info("Password reset email sent to {} via Brevo", toEmail);
         } catch (RestClientResponseException e) {
-            // Surface only at WARN — the user response must not depend on email delivery.
+            // delivery must not affect the API response
             log.warn("Brevo API rejected password reset email ({}): {}",
                 e.getStatusCode(), e.getResponseBodyAsString());
         } catch (Exception e) {

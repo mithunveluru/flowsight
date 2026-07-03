@@ -44,29 +44,24 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Only the registration and login endpoints are public — /me and all others require auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                // Admin-only endpoints require ROLE_ADMIN
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
-            // Defense-in-depth response headers. This service returns only JSON, so the
-            // CSP is locked to 'none' — there is no first-party script/style/frame to allow.
-            // HSTS is emitted only over HTTPS (Spring Security gates it on a secure request),
-            // so local HTTP development is unaffected.
+            // JSON-only API: CSP locked to 'none'; HSTS emitted only over HTTPS
             .headers(headers -> headers
-                .frameOptions(frame -> frame.deny())                 // X-Frame-Options: DENY
-                .contentTypeOptions(opts -> {})                      // X-Content-Type-Options: nosniff
+                .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(opts -> {})
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
-                    .maxAgeInSeconds(31_536_000))                    // 1 year
+                    .maxAgeInSeconds(31_536_000))
                 .addHeaderWriter(new StaticHeadersWriter(
                     "Referrer-Policy", "strict-origin-when-cross-origin"))
                 .addHeaderWriter(new StaticHeadersWriter(

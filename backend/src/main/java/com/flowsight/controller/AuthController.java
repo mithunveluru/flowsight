@@ -25,8 +25,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
 
-    // Identical response body for every forgot-password request — never reveals
-    // whether the email belongs to a registered account.
+    // same body for every request; never reveals if the email is registered
     private static final String FORGOT_PASSWORD_MESSAGE =
         "If an account exists for that email, we have sent a link to reset your password.";
     private static final Map<String, String> FORGOT_PASSWORD_RESPONSE =
@@ -52,9 +51,7 @@ public class AuthController {
         HttpServletRequest httpRequest
     ) {
         rateLimiter.checkPasswordResetRequest(clientIp(httpRequest));
-        // Returns a link only when the DEV-only dev-expose-link flag is on; in
-        // normal/production operation this is always empty, so the response is
-        // identical for every email and reveals nothing about account existence.
+        // non-empty only under the dev-expose flag; empty in prod
         Optional<String> devResetUrl = passwordResetService.requestReset(request.getEmail());
         if (devResetUrl.isPresent()) {
             return ResponseEntity.ok(Map.of(
@@ -75,7 +72,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Your password has been updated."));
     }
 
-    // Returns the profile of the currently authenticated user from the JWT principal.
     @GetMapping("/me")
     public ResponseEntity<AuthResponse.UserProfile> me(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

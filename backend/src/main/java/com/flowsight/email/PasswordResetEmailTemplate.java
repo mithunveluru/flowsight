@@ -1,10 +1,6 @@
 package com.flowsight.email;
 
-/**
- * Renders the password-reset email body. Provider-agnostic: Gmail SMTP, Resend,
- * or any future {@link EmailService} implementation share this markup so the
- * branding stays identical regardless of transport.
- */
+// Shared reset-email markup, reused by every provider.
 final class PasswordResetEmailTemplate {
 
     static final String SUBJECT = "Reset your FlowSight password";
