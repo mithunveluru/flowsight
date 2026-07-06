@@ -43,6 +43,8 @@ class PasswordResetServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private EmailService emailService;
     @Mock private AuditLogService auditLogService;
+    @Mock private com.flowsight.security.ClientIpResolver clientIpResolver;
+    @Mock private RefreshTokenService refreshTokenService;
 
     private PasswordResetService service;
 
@@ -53,7 +55,9 @@ class PasswordResetServiceTest {
             tokenRepository,
             passwordEncoder,
             emailService,
-            auditLogService
+            auditLogService,
+            clientIpResolver,
+            refreshTokenService
         );
         ReflectionTestUtils.setField(service, "expirationMinutes", 30L);
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "https://app.example");

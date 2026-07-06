@@ -10,6 +10,8 @@ import java.util.UUID;
 public class AuthResponse {
 
     private String token;
+    // opaque rotating refresh token; exchange at /auth/refresh when the access token expires
+    private String refreshToken;
     private String tokenType;
     private long expiresIn;
     private UserProfile user;

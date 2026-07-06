@@ -40,6 +40,8 @@ public class PasswordResetService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+    private final com.flowsight.security.ClientIpResolver clientIpResolver;
+    private final RefreshTokenService refreshTokenService;
 
     @Autowired(required = false)
     private HttpServletRequest currentRequest;
@@ -138,6 +140,9 @@ public class PasswordResetService {
         // invalidate any other live tokens for this user
         tokenRepository.invalidateAllForUser(user.getId(), now);
 
+        // password changed: kill every live session so a stolen credential can't outlive it
+        refreshTokenService.revokeAllForUser(user.getId());
+
         log.info("Password reset completed for user {}", user.getId());
     }
 
@@ -184,13 +189,6 @@ public class PasswordResetService {
     }
 
     private String extractIpAddress() {
-        if (currentRequest == null) return null;
-        try {
-            String forwarded = currentRequest.getHeader("X-Forwarded-For");
-            if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
-            return currentRequest.getRemoteAddr();
-        } catch (Exception e) {
-            return null;
-        }
+        return currentRequest == null ? null : clientIpResolver.resolve(currentRequest);
     }
 }

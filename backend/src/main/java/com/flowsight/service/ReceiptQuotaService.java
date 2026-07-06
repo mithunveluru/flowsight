@@ -42,6 +42,10 @@ public class ReceiptQuotaService {
         }
     }
 
+    public ReceiptQuotaInfo getQuota(UUID userId) {
+        return getQuota(loadUser(userId));
+    }
+
     public ReceiptQuotaInfo getQuota(User user) {
         boolean unlimited = user.isUnlimitedReceipts();
         Integer remaining = unlimited ? null

@@ -37,6 +37,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RateLimiter rateLimiter;
     private final AuditLogService auditLogService;
+    private final com.flowsight.security.ClientIpResolver clientIpResolver;
+    private final RefreshTokenService refreshTokenService;
 
     @Autowired(required = false)
     private HttpServletRequest currentRequest;
@@ -71,9 +73,10 @@ public class AuthService {
             registered, AuditLogService.ACTION_USER_REGISTERED, "User", registered.getId().toString()));
 
         String token = jwtService.generateToken(buildExtraClaims(user), user);
-        return toAuthResponse(token, user);
+        return toAuthResponse(token, refreshTokenService.issue(user), user);
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         rateLimiter.checkAuthAttempt(clientId());
 
@@ -94,7 +97,23 @@ public class AuthService {
 
         auditLogService.log(user, AuditLogService.ACTION_USER_LOGIN, "User", user.getId().toString());
         String token = jwtService.generateToken(buildExtraClaims(user), user);
-        return toAuthResponse(token, user);
+        return toAuthResponse(token, refreshTokenService.issue(user), user);
+    }
+
+    // Exchange a live refresh token for a new access + refresh pair (rotation).
+    public AuthResponse refresh(String rawRefreshToken) {
+        rateLimiter.checkAuthAttempt(clientId());
+        RefreshTokenService.Rotation rotation = refreshTokenService.rotate(rawRefreshToken);
+        User user = rotation.user();
+        String token = jwtService.generateToken(buildExtraClaims(user), user);
+        return toAuthResponse(token, rotation.rawToken(), user);
+    }
+
+    // Server-side logout: the refresh token dies now; the access token expires
+    // on its own within the (short) JWT lifetime.
+    public void logout(String rawRefreshToken) {
+        rateLimiter.checkAuthAttempt(clientId());
+        refreshTokenService.revoke(rawRefreshToken);
     }
 
     // run after commit so a REQUIRES_NEW audit write sees this txn's rows
@@ -111,16 +130,9 @@ public class AuthService {
         }
     }
 
-    // rate-limit key: client IP
+    // rate-limit key: client IP (spoofing-resistant resolution in ClientIpResolver)
     private String clientId() {
-        if (currentRequest == null) return "unknown";
-        try {
-            String forwarded = currentRequest.getHeader("X-Forwarded-For");
-            if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
-            return currentRequest.getRemoteAddr();
-        } catch (Exception e) {
-            return "unknown";
-        }
+        return clientIpResolver.resolve(currentRequest);
     }
 
     private Map<String, Object> buildExtraClaims(User user) {
@@ -130,9 +142,10 @@ public class AuthService {
         return claims;
     }
 
-    private AuthResponse toAuthResponse(String token, User user) {
+    private AuthResponse toAuthResponse(String token, String refreshToken, User user) {
         return AuthResponse.builder()
             .token(token)
+            .refreshToken(refreshToken)
             .tokenType("Bearer")
             .expiresIn(jwtExpiration / 1000)
             .user(AuthResponse.UserProfile.builder()

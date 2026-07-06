@@ -38,8 +38,9 @@ public class AdminQuotaController {
             result = quotaService.setUnlimited(userId, request.getUnlimited());
         }
         if (result == null) {
-            // neither field supplied: return current state
-            return ResponseEntity.ok(quotaService.resetUsage(userId));
+            // neither field supplied: return current state without mutating anything
+            // (previously this reset the user's usage counter as a side effect)
+            return ResponseEntity.ok(quotaService.getQuota(userId));
         }
         return ResponseEntity.ok(result);
     }

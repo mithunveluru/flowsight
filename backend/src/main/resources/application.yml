@@ -89,7 +89,15 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET}
-      expiration: ${JWT_EXPIRATION:86400000}
+      # Access tokens are short-lived (15 min); clients silently rotate their
+      # refresh token at /auth/refresh, so a stolen access token dies fast.
+      expiration: ${JWT_EXPIRATION:900000}
+      # Refresh token lifetime (14 days). Rotated on every use, revoked on
+      # logout/password change, reuse triggers full session revocation.
+      refresh-expiration: ${REFRESH_TOKEN_EXPIRATION:1209600000}
+    # Number of trusted reverse proxies in front of the app (Render/Vercel = 1).
+    # Used to pick the client IP from X-Forwarded-For; add 1 per extra hop (CDN).
+    trusted-proxy-count: ${TRUSTED_PROXY_COUNT:1}
   cors:
     # Web app (3007), Tauri desktop dev server (1420), and the Tauri webview
     # production origins (tauri://localhost on Linux/macOS, http://tauri.localhost

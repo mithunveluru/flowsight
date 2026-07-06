@@ -3,6 +3,7 @@ package com.flowsight.controller;
 import com.flowsight.dto.auth.AuthResponse;
 import com.flowsight.dto.auth.ForgotPasswordRequest;
 import com.flowsight.dto.auth.LoginRequest;
+import com.flowsight.dto.auth.RefreshRequest;
 import com.flowsight.dto.auth.RegisterRequest;
 import com.flowsight.dto.auth.ResetPasswordRequest;
 import com.flowsight.entity.User;
@@ -34,6 +35,7 @@ public class AuthController {
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
     private final RateLimiter rateLimiter;
+    private final com.flowsight.security.ClientIpResolver clientIpResolver;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -45,12 +47,25 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    // Rotate a refresh token into a fresh access + refresh pair.
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    // Revoke the refresh token (server-side logout). Idempotent.
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(
         @Valid @RequestBody ForgotPasswordRequest request,
         HttpServletRequest httpRequest
     ) {
-        rateLimiter.checkPasswordResetRequest(clientIp(httpRequest));
+        rateLimiter.checkPasswordResetRequest(clientIpResolver.resolve(httpRequest));
         // non-empty only under the dev-expose flag; empty in prod
         Optional<String> devResetUrl = passwordResetService.requestReset(request.getEmail());
         if (devResetUrl.isPresent()) {
@@ -67,7 +82,7 @@ public class AuthController {
         @Valid @RequestBody ResetPasswordRequest request,
         HttpServletRequest httpRequest
     ) {
-        rateLimiter.checkPasswordResetConfirm(clientIp(httpRequest));
+        rateLimiter.checkPasswordResetConfirm(clientIpResolver.resolve(httpRequest));
         passwordResetService.consumeReset(request.getToken(), request.getPassword());
         return ResponseEntity.ok(Map.of("message", "Your password has been updated."));
     }
@@ -83,12 +98,5 @@ public class AuthController {
                 .role(user.getRole().name())
                 .build()
         );
-    }
-
-    private static String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
-        String addr = request.getRemoteAddr();
-        return addr != null ? addr : "unknown";
     }
 }
