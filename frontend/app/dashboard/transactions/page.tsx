@@ -3,22 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowDownLeft,
   ArrowUpRight,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Download,
   Loader2,
   Plus,
-  Search,
+  ReceiptText,
   Trash2,
   Upload,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { CategoryPill } from "@/components/ui/category-pill";
 import {
   Select,
   SelectContent,
@@ -28,7 +26,6 @@ import {
 } from "@/components/ui/select";
 import { transactionApi } from "@/features/transactions/api";
 import {
-  CATEGORY_META,
   CATEGORY_OPTIONS,
   type BulkImportResult,
   type Transaction,
@@ -73,8 +70,8 @@ export default function TransactionsPage() {
     try {
       await transactionApi.delete(id);
       await load();
-    } catch {
-      // swallow
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not delete the transaction");
     } finally {
       setDeletingId(null);
     }
@@ -103,13 +100,13 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Transactions</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Transactions</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground tabular-nums">
             {page?.totalElements != null
-              ? `${page.totalElements.toLocaleString()} total`
-              : ""}
+              ? `${page.totalElements.toLocaleString("en-IN")} total`
+              : " "}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -149,17 +146,13 @@ export default function TransactionsPage() {
 
       {/* Error banner */}
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
           {error}
         </div>
       )}
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <div className="relative w-64">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-8 h-8 text-xs" placeholder="Search transactions..." disabled />
-        </div>
         <Select
           value={categoryFilter}
           onValueChange={(v: string) => {
@@ -167,7 +160,7 @@ export default function TransactionsPage() {
             setCurrentPage(0);
           }}
         >
-          <SelectTrigger className="w-44 h-8 text-xs">
+          <SelectTrigger className="h-8 w-44 text-xs">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
@@ -182,24 +175,24 @@ export default function TransactionsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-slate-200 bg-white">
+      <div className="card-refined overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Date
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Description
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Category
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Source
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Amount
                 </th>
                 <th className="w-10 px-4 py-3" />
@@ -207,13 +200,9 @@ export default function TransactionsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">
-                    <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-                  </td>
-                </tr>
+                <SkeletonRows />
               ) : !page?.content.length ? (
-                <EmptyState />
+                <EmptyState filtered={categoryFilter !== "__all__"} />
               ) : (
                 page.content.map((tx) => (
                   <TransactionRow
@@ -230,8 +219,8 @@ export default function TransactionsPage() {
 
         {/* Pagination */}
         {page && page.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-            <span className="text-xs text-slate-500">
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <span className="text-xs text-muted-foreground tabular-nums">
               Page {page.number + 1} of {page.totalPages}
             </span>
             <div className="flex items-center gap-1">
@@ -240,6 +229,7 @@ export default function TransactionsPage() {
                 size="icon-sm"
                 disabled={page.first}
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -248,6 +238,7 @@ export default function TransactionsPage() {
                 size="icon-sm"
                 disabled={page.last}
                 onClick={() => setCurrentPage((p) => p + 1)}
+                aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -256,6 +247,26 @@ export default function TransactionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <tr key={i} className="border-b border-border/60 last:border-0">
+          <td className="px-4 py-3.5"><div className="skeleton h-3.5 w-20 rounded" /></td>
+          <td className="px-4 py-3.5">
+            <div className="skeleton h-3.5 w-40 rounded" />
+            <div className="skeleton mt-1.5 h-2.5 w-24 rounded" />
+          </td>
+          <td className="px-4 py-3.5"><div className="skeleton h-5 w-24 rounded-full" /></td>
+          <td className="px-4 py-3.5"><div className="skeleton h-5 w-16 rounded-md" /></td>
+          <td className="px-4 py-3.5"><div className="skeleton ml-auto h-3.5 w-24 rounded" /></td>
+          <td className="px-4 py-3.5" />
+        </tr>
+      ))}
+    </>
   );
 }
 
@@ -268,12 +279,19 @@ function TransactionRow({
   onDelete: (id: string) => void;
   deleting: boolean;
 }) {
-  const categoryMeta = tx.category ? CATEGORY_META[tx.category] : null;
   const isDebit = tx.type === "DEBIT";
+  // two-step destructive action: first click arms, second confirms
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirming]);
 
   return (
-    <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-slate-600 tabular-nums whitespace-nowrap">
+    <tr className="group border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
+      <td className="whitespace-nowrap px-4 py-3 text-sm tabular-nums text-muted-foreground">
         {new Date(tx.transactionDate).toLocaleDateString("en-IN", {
           day: "numeric",
           month: "short",
@@ -281,28 +299,17 @@ function TransactionRow({
         })}
       </td>
       <td className="px-4 py-3">
-        <div className="text-sm font-medium text-slate-900 line-clamp-1">
+        <div className="line-clamp-1 text-sm font-medium text-foreground">
           {tx.merchant ?? tx.description}
         </div>
-        {tx.merchant && (
-          <div className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+        {tx.merchant && tx.description !== tx.merchant && (
+          <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
             {tx.description}
           </div>
         )}
       </td>
       <td className="px-4 py-3">
-        {categoryMeta ? (
-          <span
-            className={cn(
-              "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-              categoryMeta.color
-            )}
-          >
-            {categoryMeta.label}
-          </span>
-        ) : (
-          <span className="text-xs text-slate-400">—</span>
-        )}
+        <CategoryPill category={tx.category} />
       </td>
       <td className="px-4 py-3">
         <Badge variant="slate" className="text-xs capitalize">
@@ -310,26 +317,31 @@ function TransactionRow({
         </Badge>
       </td>
       <td className="px-4 py-3 text-right">
-        <div
+        {/* Debits stay neutral — a page of ordinary spending shouldn't scream red.
+            Income is the exception worth color. */}
+        <span
           className={cn(
-            "flex items-center justify-end gap-1 text-sm font-medium tabular-nums",
-            isDebit ? "text-red-600" : "text-emerald-600"
+            "text-sm font-medium tabular-nums",
+            isDebit ? "text-foreground" : "text-positive"
           )}
         >
-          {isDebit ? (
-            <ArrowDownLeft className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          )}
+          {isDebit ? "−" : "+"}
           {tx.currency} {Number(tx.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-        </div>
+        </span>
       </td>
       <td className="px-4 py-3">
         <button
-          onClick={() => onDelete(tx.id)}
+          onClick={() => (confirming ? onDelete(tx.id) : setConfirming(true))}
+          onBlur={() => setConfirming(false)}
           disabled={deleting}
-          className="text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
-          aria-label="Delete transaction"
+          className={cn(
+            "rounded-md p-1 transition-all disabled:opacity-50",
+            confirming
+              ? "bg-warning-soft text-warning"
+              : "text-muted-foreground/0 hover:text-warning group-hover:text-muted-foreground/50 group-hover:hover:text-warning focus-visible:text-muted-foreground"
+          )}
+          aria-label={confirming ? "Confirm delete" : "Delete transaction"}
+          title={confirming ? "Click again to delete" : "Delete"}
         >
           {deleting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -342,23 +354,31 @@ function TransactionRow({
   );
 }
 
-function EmptyState() {
+function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <tr>
-      <td colSpan={6} className="px-4 py-16 text-center">
-        <Download className="mx-auto h-8 w-8 text-slate-200 mb-3" />
-        <p className="text-sm font-medium text-slate-900">Nothing recorded yet</p>
-        <p className="mt-1 text-xs text-slate-400">
-          Import a CSV or add your first transaction by hand.
-        </p>
-        <div className="mt-4 flex justify-center gap-2">
-          <Button size="sm" asChild>
-            <Link href="/dashboard/transactions/new">
-              <Plus className="h-4 w-4" />
-              Add transaction
-            </Link>
-          </Button>
+      <td colSpan={6} className="px-4 py-20 text-center">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+          <ReceiptText className="h-5 w-5 text-muted-foreground/60" strokeWidth={1.75} />
         </div>
+        <p className="mt-4 text-sm font-medium text-foreground">
+          {filtered ? "Nothing in this category" : "Nothing recorded yet"}
+        </p>
+        <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
+          {filtered
+            ? "Try a different category, or clear the filter to see everything."
+            : "Import a bank statement CSV or add your first transaction by hand."}
+        </p>
+        {!filtered && (
+          <div className="mt-5 flex justify-center gap-2">
+            <Button size="sm" asChild>
+              <Link href="/dashboard/transactions/new">
+                <Plus className="h-4 w-4" />
+                Add transaction
+              </Link>
+            </Button>
+          </div>
+        )}
       </td>
     </tr>
   );
@@ -389,18 +409,18 @@ function ImportResultBanner({
   return (
     <div
       className={cn(
-        "rounded-md border px-4 py-3 text-sm",
+        "animate-slide-up rounded-lg border px-4 py-3 text-sm",
         hasErrors
-          ? "border-amber-200 bg-amber-50 text-amber-800"
-          : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          ? "border-caution/25 bg-caution-soft text-caution"
+          : "border-positive/25 bg-positive-soft text-positive"
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2 flex-1">
+        <div className="flex flex-1 items-start gap-2">
           {hasErrors ? (
-            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
           ) : (
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           )}
           <div className="flex-1">
             <p>
@@ -419,7 +439,7 @@ function ImportResultBanner({
             </p>
 
             {result.errors.length > 0 && (
-              <ul className="mt-1 list-disc list-inside text-xs opacity-80">
+              <ul className="mt-1 list-inside list-disc text-xs opacity-80">
                 {result.errors.slice(0, 3).map((e, i) => (
                   <li key={i}>{e}</li>
                 ))}
@@ -435,14 +455,15 @@ function ImportResultBanner({
                 href={`/dashboard/analytics?from=${result.firstTransactionDate}&to=${result.lastTransactionDate}`}
                 className="mt-2 inline-flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline"
               >
-                View analytics for this period →
+                View analytics for this period
+                <ArrowUpRight className="h-3 w-3" />
               </Link>
             )}
           </div>
         </div>
         <button
           onClick={onDismiss}
-          className="text-current opacity-60 hover:opacity-100"
+          className="text-current opacity-60 transition-opacity hover:opacity-100"
           aria-label="Dismiss"
         >
           ×
