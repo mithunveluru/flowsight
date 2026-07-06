@@ -8,9 +8,10 @@ interface HeaderProps {
   description?: string;
   actions?: React.ReactNode;
   onOpenNav?: () => void;
+  onOpenSearch?: () => void;
 }
 
-export function Header({ title, description, actions, onOpenNav }: HeaderProps) {
+export function Header({ title, description, actions, onOpenNav, onOpenSearch }: HeaderProps) {
   return (
     <header className="flex h-header shrink-0 items-center gap-2 border-b border-border bg-background px-4 sm:px-6 lg:px-8">
       {/* Mobile hamburger — opens the sidebar drawer. 44px target. */}
@@ -38,13 +39,14 @@ export function Header({ title, description, actions, onOpenNav }: HeaderProps) 
 
       <div className="flex items-center gap-2">
         <button
+          onClick={onOpenSearch}
           className={cn(
             "hidden md:flex items-center gap-2 h-8 rounded-lg border bg-background pl-3 pr-1.5",
             "text-xs text-muted-foreground",
             "transition-colors hover:bg-muted"
           )}
           style={{ borderColor: "hsl(var(--input))" }}
-          aria-label="Search"
+          aria-label="Open command menu"
         >
           <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
           <span>Search</span>

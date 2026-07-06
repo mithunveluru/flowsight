@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { CommandMenu } from "./command-menu";
 
 interface ShellProps {
   children: React.ReactNode;
@@ -31,10 +32,24 @@ export function Shell({ children, title, description, actions }: ShellProps) {
   const pathname = usePathname();
   const sectionAccent = accentForPath(pathname);
   const [navOpen, setNavOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  // global ⌘K / Ctrl+K opens the command menu
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
+      <CommandMenu open={commandOpen} onClose={() => setCommandOpen(false)} />
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
@@ -42,6 +57,7 @@ export function Shell({ children, title, description, actions }: ShellProps) {
           description={description}
           actions={actions}
           onOpenNav={() => setNavOpen(true)}
+          onOpenSearch={() => setCommandOpen(true)}
         />
         <main
           className="flex-1 overflow-y-auto"
