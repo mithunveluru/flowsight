@@ -41,15 +41,15 @@ public class ExportService {
         for (Transaction tx : txns) {
             appendCsvRow(sb,
                 tx.getTransactionDate().format(ISO_DATE),
-                tx.getDescription(),
-                tx.getMerchant(),
+                neutralizeFormula(tx.getDescription()),
+                neutralizeFormula(tx.getMerchant()),
                 tx.getCategory() != null ? tx.getCategory().name() : "",
                 tx.getType() != null ? tx.getType().name() : "",
                 tx.getAmount() != null ? tx.getAmount().toPlainString() : "",
                 tx.getCurrency() != null ? tx.getCurrency() : "INR",
                 tx.getSource() != null ? tx.getSource().name() : "",
                 String.valueOf(tx.isReviewed()),
-                tx.getNotes()
+                neutralizeFormula(tx.getNotes())
             );
         }
 
@@ -69,6 +69,21 @@ public class ExportService {
             sb.append(escape(fields[i]));
         }
         sb.append("\r\n");
+    }
+
+    // Neutralize spreadsheet formula injection (CWE-1236) in free-text fields:
+    // description/merchant/notes can originate from imported statements or OCR,
+    // and a leading =, +, -, @, tab or CR executes as a formula in Excel/Sheets.
+    // Applied only to text columns so numeric columns (e.g. negative amounts)
+    // stay machine-readable.
+    private static String neutralizeFormula(String field) {
+        if (field == null || field.isEmpty()) return field;
+        char first = field.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@'
+            || first == '\t' || first == '\r') {
+            return "'" + field;
+        }
+        return field;
     }
 
     private static String escape(String field) {
