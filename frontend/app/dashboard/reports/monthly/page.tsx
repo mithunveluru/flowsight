@@ -51,11 +51,11 @@ export default function MonthlyReportPage() {
 
   if (error || !report) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-        <p className="text-sm font-medium text-red-900">{error ?? "Report unavailable"}</p>
+      <div className="rounded-xl border border-warning/25 bg-warning-soft p-8 text-center">
+        <p className="text-sm font-medium text-warning">{error ?? "Report unavailable"}</p>
         <Link
           href="/dashboard/reports"
-          className="mt-4 inline-block text-sm text-red-700 hover:underline"
+          className="mt-4 inline-block text-sm text-warning hover:underline"
         >
           Back to reports
         </Link>
@@ -129,9 +129,9 @@ export default function MonthlyReportPage() {
                   <span
                     className={cn(
                       "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                      a.severity === "HIGH"   && "bg-red-500",
-                      a.severity === "MEDIUM" && "bg-amber-500",
-                      a.severity === "LOW"    && "bg-blue-500"
+                      a.severity === "HIGH"   && "bg-warning",
+                      a.severity === "MEDIUM" && "bg-caution",
+                      a.severity === "LOW"    && "bg-brand"
                     )}
                   />
                   <div>
@@ -347,8 +347,8 @@ function Stat({
       <p
         className={cn(
           "mt-1.5 text-2xl font-semibold tabular-nums tracking-tight",
-          tone === "positive" && "text-emerald-700",
-          tone === "negative" && "text-red-700",
+          tone === "positive" && "text-positive",
+          tone === "negative" && "text-warning",
           !tone && "text-foreground"
         )}
       >

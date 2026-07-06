@@ -311,9 +311,9 @@ function AlertsPanel({ alerts }: { alerts: AnalyticsOverview["alerts"] }) {
       >
         {alerts.map((alert, i) => {
           const dotCls =
-            alert.severity === "HIGH"   ? "bg-red-500"
-            : alert.severity === "MEDIUM" ? "bg-amber-500"
-            : "bg-blue-500";
+            alert.severity === "HIGH"   ? "bg-warning"
+            : alert.severity === "MEDIUM" ? "bg-caution"
+            : "bg-brand";
           return (
             <div key={i} className="flex items-center gap-3 px-5 py-3.5">
               <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotCls)} />
@@ -546,7 +546,7 @@ function ChartSkeleton({ height }: { height: number }) {
 
 function EmptyChart({ message }: { message: string }) {
   return (
-    <div className="flex h-52 items-center justify-center text-sm text-slate-400">
+    <div className="flex h-52 items-center justify-center text-sm text-muted-foreground/70">
       {message}
     </div>
   );
@@ -554,13 +554,13 @@ function EmptyChart({ message }: { message: string }) {
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-12 text-center">
-      <XCircle className="mx-auto h-10 w-10 text-red-300 mb-3" />
-      <p className="text-sm font-medium text-red-900">We could not load your overview</p>
-      <p className="mt-1 text-xs text-red-700 max-w-md mx-auto">{message}</p>
+    <div className="rounded-lg border border-warning/25 bg-warning-soft px-6 py-12 text-center">
+      <XCircle className="mx-auto h-10 w-10 text-warning/50 mb-3" />
+      <p className="text-sm font-medium text-warning">We could not load your overview</p>
+      <p className="mt-1 text-xs text-warning max-w-md mx-auto">{message}</p>
       <button
         onClick={onRetry}
-        className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700 transition-colors"
+        className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-warning px-4 py-2 text-xs font-medium text-white hover:bg-warning transition-colors"
       >
         <RefreshCw className="h-3 w-3" />
         Retry
@@ -637,22 +637,22 @@ function CustomRangeBanner({ from, to }: { from: string; to: string }) {
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
-      <BarChart3 className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">Nothing to chart yet</p>
-      <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
+    <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
+      <BarChart3 className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm font-medium text-foreground">Nothing to chart yet</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
         Add a transaction, import a CSV, or scan a receipt to see your overview take shape.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Link
           href="/dashboard/transactions"
-          className="rounded-md bg-slate-900 px-4 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors"
+          className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors"
         >
           Add transactions
         </Link>
         <Link
           href="/dashboard/receipts/upload"
-          className="rounded-md border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          className="rounded-md border border-border px-4 py-2 text-xs font-medium text-foreground/80 hover:bg-muted/50 transition-colors"
         >
           Scan receipt
         </Link>

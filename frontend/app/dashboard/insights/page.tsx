@@ -137,16 +137,16 @@ function Header({ summary }: { summary?: string }) {
 function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
   return (
     <section
-      className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-emerald-50 via-white to-white p-8 lg:p-10"
+      className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-positive-soft via-white to-white p-8 lg:p-10"
       style={{ borderColor: "hsl(var(--border))" }}
     >
       <AmbientGlow />
       <div className="relative flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white">
-          <Sparkles className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-positive/25 bg-card">
+          <Sparkles className="h-5 w-5 text-positive" strokeWidth={1.75} />
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-positive">
             Potential monthly savings
           </p>
           <p className="mt-1.5 stat-value text-4xl lg:text-5xl">

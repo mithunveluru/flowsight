@@ -28,12 +28,12 @@ function formatINR(v: number) {
 }
 
 const PACE_META: Record<PaceStatus, { label: string; cls: string; rail: string }> = {
-  ON_PACE:   { label: "On pace",     cls: "text-blue-600",    rail: "bg-blue-500"    },
-  AHEAD:     { label: "Ahead",       cls: "text-emerald-600", rail: "bg-emerald-500" },
-  BEHIND:    { label: "Behind",      cls: "text-amber-600",   rail: "bg-amber-500"   },
-  COMPLETED: { label: "Completed",   cls: "text-emerald-600", rail: "bg-emerald-500" },
-  OVERDUE:   { label: "Overdue",     cls: "text-red-600",     rail: "bg-red-500"     },
-  ABANDONED: { label: "Abandoned",   cls: "text-slate-500",   rail: "bg-slate-300"   },
+  ON_PACE:   { label: "On pace",     cls: "text-brand",    rail: "bg-brand"    },
+  AHEAD:     { label: "Ahead",       cls: "text-positive", rail: "bg-positive" },
+  BEHIND:    { label: "Behind",      cls: "text-caution",   rail: "bg-caution"   },
+  COMPLETED: { label: "Completed",   cls: "text-positive", rail: "bg-positive" },
+  OVERDUE:   { label: "Overdue",     cls: "text-warning",     rail: "bg-warning"     },
+  ABANDONED: { label: "Abandoned",   cls: "text-muted-foreground",   rail: "bg-muted-foreground/40"   },
 };
 
 const ICON_CHOICES = ["🏠", "✈️", "🚗", "💍", "🎓", "💼", "🏖️", "💰", "📱", "💻", "🎯", "🎁"];
@@ -92,8 +92,8 @@ export default function GoalsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Goals</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-foreground">Goals</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Save toward what matters, and watch your progress over time.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function GoalsPage() {
       </div>
 
       {error && (
-        <p className="flex items-center gap-1.5 text-sm text-red-600">
+        <p className="flex items-center gap-1.5 text-sm text-warning">
           <XCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
@@ -116,28 +116,28 @@ export default function GoalsPage() {
         <>
           {/* Overall progress */}
           {active.length > 0 && (
-            <div className="rounded-lg border border-slate-200 bg-white p-5">
+            <div className="rounded-lg border border-border bg-card p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Overall progress
                   </p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums">
+                  <p className="mt-1 text-2xl font-semibold text-foreground tabular-nums">
                     {formatINR(totalSaved)}{" "}
-                    <span className="text-sm font-normal text-slate-400">of {formatINR(totalTarget)}</span>
+                    <span className="text-sm font-normal text-muted-foreground/70">of {formatINR(totalTarget)}</span>
                   </p>
                 </div>
-                <p className="text-sm font-medium text-slate-600 tabular-nums">
+                <p className="text-sm font-medium text-muted-foreground tabular-nums">
                   {overallPct.toFixed(0)}%
                 </p>
               </div>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-500"
+                  className="h-full bg-positive transition-all duration-500"
                   style={{ width: `${Math.min(100, overallPct)}%` }}
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {active.length} active goal{active.length === 1 ? "" : "s"} · {completed.length} completed
               </p>
             </div>
@@ -146,7 +146,7 @@ export default function GoalsPage() {
           {/* Active goals */}
           {active.length > 0 && (
             <section className="space-y-3">
-              <p className="text-sm font-semibold text-slate-900">Active goals</p>
+              <p className="text-sm font-semibold text-foreground">Active goals</p>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {active.map((g) => (
                   <GoalCard
@@ -164,7 +164,7 @@ export default function GoalsPage() {
           {/* Completed goals */}
           {completed.length > 0 && (
             <section className="space-y-3">
-              <p className="text-sm font-semibold text-slate-900">Completed</p>
+              <p className="text-sm font-semibold text-foreground">Completed</p>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {completed.map((g) => (
                   <GoalCard
@@ -216,42 +216,42 @@ function GoalCard({
 
   return (
     <div className={cn(
-      "relative overflow-hidden rounded-lg border bg-white p-5 group transition-colors",
-      isCompleted ? "border-emerald-200" : "border-slate-200 hover:border-slate-300"
+      "relative overflow-hidden rounded-lg border bg-card p-5 group transition-colors",
+      isCompleted ? "border-positive/25" : "border-border hover:border-muted-foreground/30"
     )}>
       <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-[3px]", paceMeta.rail)} />
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             {goal.icon && <span className="text-lg">{goal.icon}</span>}
-            <p className="text-sm font-semibold text-slate-900 truncate">{goal.name}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{goal.name}</p>
           </div>
-          <p className="mt-0.5 text-xs text-slate-400">Target {targetDate}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground/70">Target {targetDate}</p>
         </div>
         <StatusMarker label={paceMeta.label} className={cn("shrink-0", paceMeta.cls)} />
       </div>
 
       <div className="space-y-2">
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
             className={cn("h-full transition-all duration-500",
-              isCompleted ? "bg-emerald-500" : "bg-blue-500")}
+              isCompleted ? "bg-positive" : "bg-brand")}
             style={{ width: `${pct}%` }}
           />
         </div>
         <div className="flex items-baseline justify-between">
-          <p className="text-sm text-slate-900">
+          <p className="text-sm text-foreground">
             <span className="font-semibold tabular-nums">{formatINR(goal.currentAmount)}</span>
-            <span className="ml-1 text-xs text-slate-400">
+            <span className="ml-1 text-xs text-muted-foreground/70">
               of {formatINR(goal.targetAmount)}
             </span>
           </p>
-          <p className="text-xs font-medium text-slate-600 tabular-nums">
+          <p className="text-xs font-medium text-muted-foreground tabular-nums">
             {goal.percentComplete.toFixed(0)}%
           </p>
         </div>
         {!isCompleted && goal.daysRemaining > 0 && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {formatINR(goal.dailyPaceRequired)}/day for {goal.daysRemaining} days
           </p>
         )}
@@ -264,8 +264,8 @@ function GoalCard({
           </Button>
         )}
         <div className={cn("flex items-center gap-1", !isCompleted && "opacity-0 group-hover:opacity-100 transition-opacity")}>
-          <button onClick={onEdit}   className="rounded p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100"><Sparkles className="h-3.5 w-3.5" /></button>
-          <button onClick={onDelete} className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" /></button>
+          <button onClick={onEdit}   className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"><Sparkles className="h-3.5 w-3.5" /></button>
+          <button onClick={onDelete} className="rounded p-1.5 text-muted-foreground/70 hover:text-warning hover:bg-warning-soft"><Trash2 className="h-3.5 w-3.5" /></button>
         </div>
       </div>
     </div>
@@ -316,13 +316,13 @@ function GoalFormDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-slate-900/20" onClick={onClose} />
-      <div className="w-full max-w-md bg-white shadow-xl flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-900">
+      <div className="flex-1 bg-primary/20" onClick={onClose} />
+      <div className="w-full max-w-md bg-card shadow-xl flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">
             {goal ? "Edit goal" : "New goal"}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+          <button onClick={onClose} className="text-muted-foreground/70 hover:text-foreground/80">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -340,8 +340,8 @@ function GoalFormDrawer({
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-md border text-lg transition-colors",
                     selectedIcon === ic
-                      ? "border-blue-400 bg-blue-50"
-                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-brand/50 bg-brand-soft"
+                      : "border-border hover:border-muted-foreground/30 hover:bg-muted/50"
                   )}
                 >
                   {ic}
@@ -353,25 +353,25 @@ function GoalFormDrawer({
           {/* Name */}
           <div className="space-y-1.5">
             <Label htmlFor="name">Goal name</Label>
-            <Input id="name" {...register("name")} placeholder="e.g. New laptop" className={cn(errors.name && "border-red-300")} />
-            {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
+            <Input id="name" {...register("name")} placeholder="e.g. New laptop" className={cn(errors.name && "border-warning/40")} />
+            {errors.name && <p className="text-xs text-warning">{errors.name.message}</p>}
           </div>
 
           {/* Target amount */}
           <div className="space-y-1.5">
             <Label htmlFor="targetAmount">Target amount</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">INR</span>
-              <Input id="targetAmount" type="number" step="0.01" min="0.01" {...register("targetAmount")} placeholder="0.00" className={cn("flex-1", errors.targetAmount && "border-red-300")} />
+              <span className="text-sm text-muted-foreground">INR</span>
+              <Input id="targetAmount" type="number" step="0.01" min="0.01" {...register("targetAmount")} placeholder="0.00" className={cn("flex-1", errors.targetAmount && "border-warning/40")} />
             </div>
-            {errors.targetAmount && <p className="text-xs text-red-600">{errors.targetAmount.message}</p>}
+            {errors.targetAmount && <p className="text-xs text-warning">{errors.targetAmount.message}</p>}
           </div>
 
           {/* Current amount */}
           <div className="space-y-1.5">
             <Label htmlFor="currentAmount">Already saved (optional)</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">INR</span>
+              <span className="text-sm text-muted-foreground">INR</span>
               <Input id="currentAmount" type="number" step="0.01" min="0" {...register("currentAmount")} placeholder="0.00" className="flex-1" />
             </div>
           </div>
@@ -379,18 +379,18 @@ function GoalFormDrawer({
           {/* Target date */}
           <div className="space-y-1.5">
             <Label htmlFor="targetDate">Target date</Label>
-            <Input id="targetDate" type="date" min={tomorrow} {...register("targetDate")} className={cn(errors.targetDate && "border-red-300")} />
-            {errors.targetDate && <p className="text-xs text-red-600">{errors.targetDate.message}</p>}
+            <Input id="targetDate" type="date" min={tomorrow} {...register("targetDate")} className={cn(errors.targetDate && "border-warning/40")} />
+            {errors.targetDate && <p className="text-xs text-warning">{errors.targetDate.message}</p>}
           </div>
 
           {serverError && (
-            <p className="flex items-center gap-1.5 text-sm text-red-600">
+            <p className="flex items-center gap-1.5 text-sm text-warning">
               <XCircle className="h-4 w-4 shrink-0" /> {serverError}
             </p>
           )}
         </form>
 
-        <div className="border-t border-slate-200 p-5 flex items-center gap-2">
+        <div className="border-t border-border p-5 flex items-center gap-2">
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="flex-1">
             {goal ? "Save changes" : "Create goal"}
           </Button>
@@ -424,34 +424,34 @@ function ContributeDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-slate-900/20" onClick={onClose} />
-      <div className="w-full max-w-sm bg-white shadow-xl flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-900">Record contribution</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700"><X className="h-4 w-4" /></button>
+      <div className="flex-1 bg-primary/20" onClick={onClose} />
+      <div className="w-full max-w-sm bg-card shadow-xl flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">Record contribution</h2>
+          <button onClick={onClose} className="text-muted-foreground/70 hover:text-foreground/80"><X className="h-4 w-4" /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 p-5 space-y-4">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             How much did you save toward this goal?
           </p>
           <div className="space-y-1.5">
             <Label htmlFor="amount">Amount</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">INR</span>
-              <Input id="amount" type="number" step="0.01" min="0.01" {...register("amount")} placeholder="0.00" className={cn("flex-1", errors.amount && "border-red-300")} />
+              <span className="text-sm text-muted-foreground">INR</span>
+              <Input id="amount" type="number" step="0.01" min="0.01" {...register("amount")} placeholder="0.00" className={cn("flex-1", errors.amount && "border-warning/40")} />
             </div>
-            {errors.amount && <p className="text-xs text-red-600">{errors.amount.message}</p>}
+            {errors.amount && <p className="text-xs text-warning">{errors.amount.message}</p>}
           </div>
 
           {serverError && (
-            <p className="flex items-center gap-1.5 text-sm text-red-600">
+            <p className="flex items-center gap-1.5 text-sm text-warning">
               <XCircle className="h-4 w-4 shrink-0" /> {serverError}
             </p>
           )}
         </form>
 
-        <div className="border-t border-slate-200 p-5 flex items-center gap-2">
+        <div className="border-t border-border p-5 flex items-center gap-2">
           <Button type="button" onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="flex-1">
             <CheckCircle2 className="h-4 w-4" /> Add contribution
           </Button>
@@ -474,10 +474,10 @@ function LoadingSkeleton() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
-      <Flag className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No goals set</p>
-      <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
+    <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
+      <Flag className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm font-medium text-foreground">No goals set</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
         Name a target with a deadline. We will track your progress and suggest a daily pace.
       </p>
       <Button size="sm" className="mt-5" onClick={onCreate}>

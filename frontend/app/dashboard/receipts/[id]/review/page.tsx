@@ -67,7 +67,7 @@ export default function ReceiptReviewPage() {
   if (loading) {
     return (
       <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
       </div>
     );
   }
@@ -75,8 +75,8 @@ export default function ReceiptReviewPage() {
   if (!receipt) {
     return (
       <div className="max-w-2xl">
-        <p className="text-sm text-slate-500">Receipt not found.</p>
-        <Link href="/dashboard/receipts" className="mt-4 inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline">
+        <p className="text-sm text-muted-foreground">Receipt not found.</p>
+        <Link href="/dashboard/receipts" className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand hover:underline">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to receipts
         </Link>
       </div>
@@ -162,15 +162,15 @@ function ReviewForm({
       <div>
         <Link
           href="/dashboard/receipts"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to receipts
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">Review receipt</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-xl font-semibold text-foreground">Review receipt</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Confirm the details below before saving the transaction.
             </p>
           </div>
@@ -179,11 +179,11 @@ function ReviewForm({
       </div>
 
       {/* Receipt file info */}
-      <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-        <FileImage className="h-4 w-4 shrink-0 text-slate-400" />
-        <span className="text-sm text-slate-700 truncate">{receipt.fileName}</span>
+      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/50 px-4 py-3">
+        <FileImage className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+        <span className="text-sm text-foreground/80 truncate">{receipt.fileName}</span>
         {receipt.ocrProvider && (
-          <span className="ml-auto shrink-0 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-500">
+          <span className="ml-auto shrink-0 rounded border border-border bg-card px-1.5 py-0.5 text-xs text-muted-foreground">
             {receipt.ocrProvider === "RECEIPT_OCR_SERVICE" ? "Vision model" : "Text scan"}
           </span>
         )}
@@ -191,9 +191,9 @@ function ReviewForm({
 
       {/* Low-confidence warning */}
       {requiresConfirmation && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
-          <p className="text-sm text-amber-800">
+        <div className="flex items-start gap-3 rounded-lg border border-caution/25 bg-caution-soft p-4">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-caution mt-0.5" />
+          <p className="text-sm text-caution">
             We are less certain about the amount we extracted. It may have caught a sub-total or tax line instead of the final total. Please confirm before saving.
           </p>
         </div>
@@ -201,13 +201,13 @@ function ReviewForm({
 
       {/* Partial OCR warning */}
       {!extraction?.successful && receipt.status === "COMPLETED" && (
-        <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <PenLine className="h-5 w-5 shrink-0 text-slate-500 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-4">
+          <PenLine className="h-5 w-5 shrink-0 text-muted-foreground mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-slate-700">A few details need your review</p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="text-sm font-medium text-foreground/80">A few details need your review</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Add the missing values below, or{" "}
-              <Link href="/dashboard/transactions/new" className="text-blue-600 hover:underline">
+              <Link href="/dashboard/transactions/new" className="text-brand hover:underline">
                 enter the transaction manually
               </Link>
               .
@@ -228,10 +228,10 @@ function ReviewForm({
             id="merchant"
             {...register("merchant")}
             placeholder="e.g. Walmart, Starbucks"
-            className={cn(errors.merchant && "border-red-300")}
+            className={cn(errors.merchant && "border-warning/40")}
           />
           {errors.merchant && (
-            <p className="text-xs text-red-600">{errors.merchant.message}</p>
+            <p className="text-xs text-warning">{errors.merchant.message}</p>
           )}
         </div>
 
@@ -240,13 +240,13 @@ function ReviewForm({
           <Label htmlFor="amount">
             Total amount
             {requiresConfirmation && (
-              <span className="ml-1.5 inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+              <span className="ml-1.5 inline-flex items-center gap-1 rounded border border-caution/25 bg-caution-soft px-1.5 py-0.5 text-xs font-medium text-caution">
                 <AlertTriangle className="h-3 w-3" /> Verify
               </span>
             )}
           </Label>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500 w-8">INR</span>
+            <span className="text-sm text-muted-foreground w-8">INR</span>
             <Input
               id="amount"
               type="number"
@@ -254,11 +254,11 @@ function ReviewForm({
               min="0.01"
               {...register("amount")}
               placeholder="0.00"
-              className={cn("flex-1", errors.amount && "border-red-300")}
+              className={cn("flex-1", errors.amount && "border-warning/40")}
             />
           </div>
           {errors.amount && (
-            <p className="text-xs text-red-600">{errors.amount.message}</p>
+            <p className="text-xs text-warning">{errors.amount.message}</p>
           )}
         </div>
 
@@ -270,10 +270,10 @@ function ReviewForm({
             type="date"
             {...register("date")}
             max={new Date().toISOString().split("T")[0]}
-            className={cn(errors.date && "border-red-300")}
+            className={cn(errors.date && "border-warning/40")}
           />
           {errors.date && (
-            <p className="text-xs text-red-600">{errors.date.message}</p>
+            <p className="text-xs text-warning">{errors.date.message}</p>
           )}
         </div>
 
@@ -317,15 +317,15 @@ function ReviewForm({
 
         {/* Line items (read-only) */}
         {extraction?.lineItems && extraction.lineItems.length > 0 && (
-          <details className="rounded-lg border border-slate-200 bg-white">
-            <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-slate-500 hover:text-slate-700 select-none">
+          <details className="rounded-lg border border-border bg-card">
+            <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground/80 select-none">
               Line items ({extraction.lineItems.length})
             </summary>
-            <div className="divide-y divide-slate-100 px-4 pb-3">
+            <div className="divide-y divide-border/60 px-4 pb-3">
               {extraction.lineItems.map((item, i) => (
                 <div key={i} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-slate-700">{item.itemName ?? "—"}</span>
-                  <span className="text-sm text-slate-500 tabular-nums">
+                  <span className="text-sm text-foreground/80">{item.itemName ?? "—"}</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">
                     {item.itemPrice != null
                       ? `INR ${Number(item.itemPrice).toFixed(2)}`
                       : "—"}
@@ -338,7 +338,7 @@ function ReviewForm({
 
         {/* Server error */}
         {serverError && (
-          <p className="flex items-center gap-1.5 text-sm text-red-600">
+          <p className="flex items-center gap-1.5 text-sm text-warning">
             <XCircle className="h-4 w-4 shrink-0" />
             {serverError}
           </p>
@@ -373,23 +373,23 @@ function OcrFailureFallback({ receipt }: { receipt: Receipt }) {
     <div className="max-w-xl space-y-5 animate-fade-in">
       <Link
         href="/dashboard/receipts"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to receipts
       </Link>
 
-      <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-        <XCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft p-4">
+        <XCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-red-900">Receipt analysis could not complete</p>
-          <p className="mt-0.5 text-xs text-red-700">
+          <p className="text-sm font-medium text-warning">Receipt analysis could not complete</p>
+          <p className="mt-0.5 text-xs text-warning">
             {receipt.errorMessage ?? "We could not extract details from this image."}
           </p>
         </div>
       </div>
 
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted-foreground">
         You can still record this transaction by entering the details manually.
       </p>
 
@@ -414,17 +414,17 @@ function AlreadyConfirmed({ receipt }: { receipt: Receipt }) {
     <div className="max-w-xl space-y-5 animate-fade-in">
       <Link
         href="/dashboard/receipts"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to receipts
       </Link>
 
-      <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-lg border border-positive/25 bg-positive-soft p-4">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-positive mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-emerald-900">This receipt is confirmed</p>
-          <p className="mt-0.5 text-xs text-emerald-700">
+          <p className="text-sm font-medium text-positive">This receipt is confirmed</p>
+          <p className="mt-0.5 text-xs text-positive">
             The transaction for <strong>{tx.merchant ?? "unknown merchant"}</strong> has been saved.
           </p>
         </div>
@@ -449,9 +449,9 @@ function ConfidenceBadge({ confidence }: { confidence: number | null }) {
     : "LOW";
 
   const styles = {
-    HIGH:   "border-emerald-200 bg-emerald-50 text-emerald-700",
-    MEDIUM: "border-amber-200  bg-amber-50  text-amber-700",
-    LOW:    "border-red-200    bg-red-50    text-red-700",
+    HIGH:   "border-positive/25 bg-positive-soft text-positive",
+    MEDIUM: "border-caution/25  bg-caution-soft  text-caution",
+    LOW:    "border-warning/25    bg-warning-soft    text-warning",
   };
 
   const label = {
@@ -471,5 +471,5 @@ function ConfidenceBadge({ confidence }: { confidence: number | null }) {
 }
 
 function RequiredDot() {
-  return <span className="ml-1 text-amber-500 text-xs">*</span>;
+  return <span className="ml-1 text-caution text-xs">*</span>;
 }

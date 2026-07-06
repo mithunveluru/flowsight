@@ -31,10 +31,10 @@ import {
 import { budgetsApi } from "@/features/budgets/api";
 import type { Budget, BudgetStatus, BudgetSummary } from "@/features/budgets/types";
 import {
-  CATEGORY_META,
   CATEGORY_OPTIONS,
   type TransactionCategory,
 } from "@/features/transactions/types";
+import { CategoryPill } from "@/components/ui/category-pill";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +43,10 @@ function formatINR(v: number) {
 }
 
 const STATUS_META: Record<BudgetStatus, { label: string; cls: string; bar: string; iconBg: string }> = {
-  ON_TRACK:       { label: "On track",      cls: "text-emerald-600", bar: "bg-emerald-500", iconBg: "bg-emerald-50 border-emerald-100 text-emerald-600" },
-  NEAR_LIMIT:     { label: "Near limit",    cls: "text-amber-600",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
-  PROJECTED_OVER: { label: "Trending over", cls: "text-amber-600",   bar: "bg-amber-500",   iconBg: "bg-amber-50   border-amber-100   text-amber-600" },
-  OVER:           { label: "Over budget",   cls: "text-red-600",     bar: "bg-red-500",     iconBg: "bg-red-50     border-red-100     text-red-600" },
+  ON_TRACK:       { label: "On track",      cls: "text-positive", bar: "bg-positive", iconBg: "bg-positive-soft border-positive/20 text-positive" },
+  NEAR_LIMIT:     { label: "Near limit",    cls: "text-caution",   bar: "bg-caution",   iconBg: "bg-caution-soft   border-caution/20   text-caution" },
+  PROJECTED_OVER: { label: "Trending over", cls: "text-caution",   bar: "bg-caution",   iconBg: "bg-caution-soft   border-caution/20   text-caution" },
+  OVER:           { label: "Over budget",   cls: "text-warning",     bar: "bg-warning",     iconBg: "bg-warning-soft     border-warning/20     text-warning" },
 };
 
 const schema = z.object({
@@ -103,8 +103,8 @@ export default function BudgetsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Budgets</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-foreground">Budgets</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Set monthly limits per category, and watch progress throughout the month.
           </p>
         </div>
@@ -114,7 +114,7 @@ export default function BudgetsPage() {
       </div>
 
       {error && (
-        <p className="flex items-center gap-1.5 text-sm text-red-600">
+        <p className="flex items-center gap-1.5 text-sm text-warning">
           <XCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
@@ -159,23 +159,23 @@ export default function BudgetsPage() {
 function SummaryCards({ summary }: { summary: BudgetSummary }) {
   const remaining = Math.max(0, summary.totalBudgeted - summary.totalSpent);
   const cards = [
-    { label: "Budgeted",        value: formatINR(summary.totalBudgeted), icon: Wallet,        cls: "text-blue-500",    bg: "bg-blue-50 border-blue-100"        },
-    { label: "Spent",           value: formatINR(summary.totalSpent),    icon: TrendingDown,  cls: "text-orange-500",  bg: "bg-orange-50 border-orange-100"     },
-    { label: "Remaining",       value: formatINR(remaining),             icon: TrendingUp,    cls: "text-emerald-500", bg: "bg-emerald-50 border-emerald-100"   },
-    { label: "Over budget",     value: String(summary.overBudgetCount),  icon: AlertTriangle, cls: "text-red-500",     bg: "bg-red-50 border-red-100"           },
+    { label: "Budgeted",        value: formatINR(summary.totalBudgeted), icon: Wallet,        cls: "text-brand",    bg: "bg-brand-soft border-brand/20"        },
+    { label: "Spent",           value: formatINR(summary.totalSpent),    icon: TrendingDown,  cls: "text-caution",  bg: "bg-caution-soft border-caution/20"     },
+    { label: "Remaining",       value: formatINR(remaining),             icon: TrendingUp,    cls: "text-positive", bg: "bg-positive-soft border-positive/20"   },
+    { label: "Over budget",     value: String(summary.overBudgetCount),  icon: AlertTriangle, cls: "text-warning",     bg: "bg-warning-soft border-warning/20"           },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((c) => (
-        <div key={c.label} className="rounded-lg border border-slate-200 bg-white p-5">
+        <div key={c.label} className="rounded-lg border border-border bg-card p-5">
           <div className="flex items-center gap-2 mb-2">
             <div className={cn("flex h-7 w-7 items-center justify-center rounded-md border", c.bg)}>
               <c.icon className={cn("h-3.5 w-3.5", c.cls)} />
             </div>
-            <span className="text-xs font-medium text-slate-500">{c.label}</span>
+            <span className="text-xs font-medium text-muted-foreground">{c.label}</span>
           </div>
-          <p className="text-2xl font-semibold tabular-nums text-slate-900">{c.value}</p>
+          <p className="text-2xl font-semibold tabular-nums text-foreground">{c.value}</p>
         </div>
       ))}
     </div>
@@ -190,25 +190,20 @@ function BudgetCard({
   onDelete: () => void;
 }) {
   const meta = STATUS_META[budget.status];
-  const cat = budget.category ? CATEGORY_META[budget.category] : null;
   const pct = Math.min(100, budget.percentUsed);
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white p-5 group hover:border-slate-300 transition-colors">
+    <div className="relative overflow-hidden rounded-lg border border-border bg-card p-5 group hover:border-muted-foreground/30 transition-colors">
       <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-[3px]", meta.bar)} />
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-slate-900 truncate">
+            <p className="text-sm font-semibold text-foreground truncate">
               {budget.categoryDisplayName}
             </p>
-            {cat && (
-              <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 text-xs font-medium", cat.color)}>
-                {cat.label}
-              </span>
-            )}
+            {budget.category && <CategoryPill category={budget.category} />}
           </div>
-          <p className="mt-0.5 text-xs text-slate-400">
+          <p className="mt-0.5 text-xs text-muted-foreground/70">
             {budget.daysRemaining} days left in month
           </p>
         </div>
@@ -217,25 +212,25 @@ function BudgetCard({
 
       {/* Progress bar */}
       <div className="space-y-2">
-        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
             className={cn("h-full transition-all duration-500", meta.bar)}
             style={{ width: `${pct}%` }}
           />
         </div>
         <div className="flex items-baseline justify-between">
-          <p className="text-sm text-slate-900">
+          <p className="text-sm text-foreground">
             <span className="font-semibold tabular-nums">{formatINR(budget.currentSpend)}</span>
-            <span className="ml-1 text-xs text-slate-400">
+            <span className="ml-1 text-xs text-muted-foreground/70">
               of {formatINR(budget.monthlyLimit)}
             </span>
           </p>
-          <p className="text-xs font-medium text-slate-600 tabular-nums">
+          <p className="text-xs font-medium text-muted-foreground tabular-nums">
             {budget.percentUsed.toFixed(0)}%
           </p>
         </div>
         {budget.projectedTotal > budget.monthlyLimit && (
-          <p className="text-xs text-amber-600 flex items-center gap-1">
+          <p className="text-xs text-caution flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
             Projected {formatINR(budget.projectedTotal)} at current pace
           </p>
@@ -246,13 +241,13 @@ function BudgetCard({
       <div className="mt-4 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={onEdit}
-          className="rounded p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+          className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"
         >
           <Wallet className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onDelete}
-          className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50"
+          className="rounded p-1.5 text-muted-foreground/70 hover:text-warning hover:bg-warning-soft"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -314,13 +309,13 @@ function BudgetFormDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      <div className="flex-1 bg-slate-900/20" onClick={onClose} />
-      <div className="w-full max-w-md bg-white shadow-xl flex flex-col">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
-          <h2 className="text-base font-semibold text-slate-900">
+      <div className="flex-1 bg-primary/20" onClick={onClose} />
+      <div className="w-full max-w-md bg-card shadow-xl flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <h2 className="text-base font-semibold text-foreground">
             {budget ? "Edit budget" : "New budget"}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">
+          <button onClick={onClose} className="text-muted-foreground/70 hover:text-foreground/80">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -353,7 +348,7 @@ function BudgetFormDrawer({
               </SelectContent>
             </Select>
             {budget && (
-              <p className="text-xs text-slate-400">Category cannot be changed after creation.</p>
+              <p className="text-xs text-muted-foreground/70">Category cannot be changed after creation.</p>
             )}
           </div>
 
@@ -361,7 +356,7 @@ function BudgetFormDrawer({
           <div className="space-y-1.5">
             <Label htmlFor="monthlyLimit">Monthly limit</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">INR</span>
+              <span className="text-sm text-muted-foreground">INR</span>
               <Input
                 id="monthlyLimit"
                 type="number"
@@ -369,40 +364,40 @@ function BudgetFormDrawer({
                 min="0.01"
                 {...register("monthlyLimit")}
                 placeholder="0.00"
-                className={cn("flex-1", errors.monthlyLimit && "border-red-300")}
+                className={cn("flex-1", errors.monthlyLimit && "border-warning/40")}
               />
             </div>
             {errors.monthlyLimit && (
-              <p className="text-xs text-red-600">{errors.monthlyLimit.message}</p>
+              <p className="text-xs text-warning">{errors.monthlyLimit.message}</p>
             )}
           </div>
 
           {/* Rollover */}
-          <div className="flex items-start gap-2 rounded-md border border-slate-200 p-3">
+          <div className="flex items-start gap-2 rounded-md border border-border p-3">
             <input
               id="rollover"
               type="checkbox"
               {...register("rollover")}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300"
+              className="mt-0.5 h-4 w-4 rounded border-muted-foreground/30"
             />
             <div>
-              <Label htmlFor="rollover" className="text-sm font-medium text-slate-900">
+              <Label htmlFor="rollover" className="text-sm font-medium text-foreground">
                 Rollover unused amount
               </Label>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 If you stay under budget, the remainder carries forward to next month.
               </p>
             </div>
           </div>
 
           {serverError && (
-            <p className="flex items-center gap-1.5 text-sm text-red-600">
+            <p className="flex items-center gap-1.5 text-sm text-warning">
               <XCircle className="h-4 w-4 shrink-0" /> {serverError}
             </p>
           )}
         </form>
 
-        <div className="border-t border-slate-200 p-5 flex items-center gap-2">
+        <div className="border-t border-border p-5 flex items-center gap-2">
           <Button type="submit" form="" onClick={handleSubmit(onSubmit)} disabled={isSubmitting} className="flex-1">
             {budget ? "Save changes" : "Create budget"}
           </Button>
@@ -432,10 +427,10 @@ function LoadingSkeleton() {
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
-      <Target className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No budgets set</p>
-      <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
+    <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
+      <Target className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm font-medium text-foreground">No budgets set</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
         Define a monthly limit per category, or one overall cap, to keep your spending in view.
       </p>
       <div className="mt-5 flex justify-center gap-3">

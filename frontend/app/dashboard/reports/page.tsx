@@ -156,7 +156,7 @@ function CsvExportCard() {
         </div>
 
         {error && (
-          <p className="flex items-center gap-1.5 text-sm text-red-600">
+          <p className="flex items-center gap-1.5 text-sm text-warning">
             <XCircle className="h-4 w-4 shrink-0" /> {error}
           </p>
         )}
@@ -477,7 +477,7 @@ function IntelligenceReportsCard() {
         </div>
 
         {error && (
-          <p className="flex items-center gap-1.5 text-sm text-red-600">
+          <p className="flex items-center gap-1.5 text-sm text-warning">
             <XCircle className="h-4 w-4 shrink-0" /> {error}
           </p>
         )}
@@ -550,7 +550,7 @@ function ActiveJobCard({
   }, [inProgress]);
 
   const targetPct = isReady ? 100 : isFailed ? 100 : job.status === "PENDING" ? 25 : 70;
-  const progressColor = isReady ? "bg-emerald-500" : isFailed ? "bg-red-500" : "bg-blue-500";
+  const progressColor = isReady ? "bg-positive" : isFailed ? "bg-warning" : "bg-brand";
 
   return (
     <motion.div
@@ -558,7 +558,7 @@ function ActiveJobCard({
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "rounded-xl border p-5",
-        isReady ? "border-emerald-200 bg-emerald-50/30" : "bg-card"
+        isReady ? "border-positive/25 bg-positive-soft/30" : "bg-card"
       )}
       style={!isReady ? { borderColor: "hsl(var(--border))" } : undefined}
     >
@@ -586,12 +586,12 @@ function ActiveJobCard({
             className="flex items-center gap-1.5"
           >
             {isReady ? (
-              <span className="flex items-center gap-1.5 text-emerald-700">
+              <span className="flex items-center gap-1.5 text-positive">
                 <CheckCircle2 className="h-3 w-3" />
                 Ready
               </span>
             ) : isFailed ? (
-              <span className="flex items-center gap-1.5 text-red-700">
+              <span className="flex items-center gap-1.5 text-warning">
                 <XCircle className="h-3 w-3" />
                 Generation could not complete
               </span>
@@ -613,7 +613,7 @@ function ActiveJobCard({
           />
         </div>
         {job.errorMessage && (
-          <p className="mt-2 text-xs text-red-700">{job.errorMessage}</p>
+          <p className="mt-2 text-xs text-warning">{job.errorMessage}</p>
         )}
       </div>
     </motion.div>
@@ -636,7 +636,7 @@ function HistoryRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
           {job.periodLabel}
-          {isActive && <span className="ml-2 text-[10px] uppercase tracking-wider text-blue-700">Active</span>}
+          {isActive && <span className="ml-2 text-[10px] uppercase tracking-wider text-brand">Active</span>}
         </p>
         <p className="text-xs text-muted-foreground">
           {fmtTimestamp(job.createdAt)}
@@ -645,9 +645,9 @@ function HistoryRow({
       </div>
       <span className={cn(
         "text-[10px] uppercase tracking-wider font-medium",
-        job.status === "READY"      ? "text-emerald-700"
-        : job.status === "FAILED"   ? "text-red-700"
-        : job.status === "GENERATING" ? "text-blue-700"
+        job.status === "READY"      ? "text-positive"
+        : job.status === "FAILED"   ? "text-warning"
+        : job.status === "GENERATING" ? "text-brand"
         : "text-muted-foreground"
       )}>
         {job.status === "GENERATING" ? "Generating" : job.status.toLowerCase()}
@@ -656,7 +656,7 @@ function HistoryRow({
         {job.status === "READY" && (
           <button
             onClick={() => onDownload(job)}
-            className="rounded p-1.5 text-slate-400 hover:text-foreground hover:bg-muted transition-colors"
+            className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
             title="Download"
           >
             <Download className="h-3.5 w-3.5" />
@@ -664,7 +664,7 @@ function HistoryRow({
         )}
         <button
           onClick={() => onDelete(job)}
-          className="rounded p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+          className="rounded p-1.5 text-muted-foreground/70 hover:text-warning hover:bg-warning-soft transition-colors"
           title="Delete"
         >
           <Trash2 className="h-3.5 w-3.5" />

@@ -83,18 +83,18 @@ function formatINRCompact(v: number): string {
 }
 
 const TIER_META: Record<FlexibilityTier, { label: string; cls: string; bar: string }> = {
-  EXCELLENT:   { label: "Excellent",   cls: "text-emerald-700", bar: "bg-emerald-500" },
-  GOOD:        { label: "Good",        cls: "text-blue-700",    bar: "bg-blue-500" },
-  FAIR:        { label: "Fair",        cls: "text-slate-700",   bar: "bg-slate-500" },
-  TIGHT:       { label: "Tight",       cls: "text-amber-700",   bar: "bg-amber-500" },
-  CONSTRAINED: { label: "Constrained", cls: "text-red-700",     bar: "bg-red-500" },
+  EXCELLENT:   { label: "Excellent",   cls: "text-positive", bar: "bg-positive" },
+  GOOD:        { label: "Good",        cls: "text-brand",    bar: "bg-brand" },
+  FAIR:        { label: "Fair",        cls: "text-foreground/80",   bar: "bg-muted-foreground" },
+  TIGHT:       { label: "Tight",       cls: "text-caution",   bar: "bg-caution" },
+  CONSTRAINED: { label: "Constrained", cls: "text-warning",     bar: "bg-warning" },
 };
 
 const SEVERITY_META: Record<Severity, { dot: string; ring: string; icon: React.ElementType }> = {
-  POSITIVE: { dot: "bg-emerald-500", ring: "border-emerald-200", icon: CheckCircle2  },
-  NEUTRAL:  { dot: "bg-slate-400",   ring: "border-slate-200",   icon: Info          },
-  CAUTION:  { dot: "bg-amber-500",   ring: "border-amber-200",   icon: AlertTriangle },
-  WARNING:  { dot: "bg-red-500",     ring: "border-red-200",     icon: AlertTriangle },
+  POSITIVE: { dot: "bg-positive", ring: "border-positive/25", icon: CheckCircle2  },
+  NEUTRAL:  { dot: "bg-muted-foreground/70",   ring: "border-border",   icon: Info          },
+  CAUTION:  { dot: "bg-caution",   ring: "border-caution/25",   icon: AlertTriangle },
+  WARNING:  { dot: "bg-warning",     ring: "border-warning/25",     icon: AlertTriangle },
 };
 
 const DEFAULT_SCENARIO: Record<ScenarioType, ScenarioRequest> = {
@@ -171,7 +171,7 @@ export default function SimulatePage() {
         <section className="space-y-8">
           {error && (
             <FadeIn>
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-xl border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
                 {error}
               </div>
             </FadeIn>
@@ -431,21 +431,21 @@ function ImpactSummary({ result }: { result: SimulationResult }) {
         ? "One-time outlay"
         : positive ? "Net inflow" : "Net outflow",
       icon: positive ? TrendingUp : TrendingDown,
-      accent: positive ? "text-emerald-700" : "text-red-700",
+      accent: positive ? "text-positive" : "text-warning",
     },
     {
       label: "Yearly impact",
       value: formatINRCompact(result.yearlyImpact),
       hint: "Total over 12 months",
       icon: Coins,
-      accent: result.yearlyImpact >= 0 ? "text-emerald-700" : "text-red-700",
+      accent: result.yearlyImpact >= 0 ? "text-positive" : "text-warning",
     },
     {
       label: "5-year cumulative",
       value: formatINRCompact(result.fiveYearImpact),
       hint: "Total over 60 months",
       icon: Coins,
-      accent: result.fiveYearImpact >= 0 ? "text-emerald-700" : "text-red-700",
+      accent: result.fiveYearImpact >= 0 ? "text-positive" : "text-warning",
     },
     {
       label: "10-year opportunity cost",
@@ -522,8 +522,8 @@ function FlexibilityCard({
           <div className={cn(
             "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
             delta >= 0
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-red-200    bg-red-50    text-red-700"
+              ? "border-positive/25 bg-positive-soft text-positive"
+              : "border-warning/25    bg-warning-soft    text-warning"
           )}>
             {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
             {Math.abs(delta).toFixed(1)}%
@@ -688,11 +688,11 @@ function InsightRow({ insight }: { insight: ConsequenceInsight }) {
 
 function LowDataNotice() {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-      <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+    <div className="flex items-start gap-3 rounded-lg border border-caution/25 bg-caution-soft px-4 py-3">
+      <Info className="h-4 w-4 text-caution shrink-0 mt-0.5" />
       <div>
-        <p className="text-sm font-medium text-amber-900">Limited baseline data</p>
-        <p className="mt-0.5 text-xs text-amber-700">
+        <p className="text-sm font-medium text-caution">Limited baseline data</p>
+        <p className="mt-0.5 text-xs text-caution">
           A few months of history make the projection more reliable.{" "}
           <Link href="/dashboard/transactions" className="underline">Add transactions →</Link>
         </p>

@@ -94,7 +94,7 @@ export default function ReceiptUploadPage() {
     <div className="max-w-2xl animate-fade-in">
       <Link
         href="/dashboard/receipts"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to receipts
@@ -103,8 +103,8 @@ export default function ReceiptUploadPage() {
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">Scan a receipt</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-xl font-semibold text-foreground">Scan a receipt</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Upload a photo and we will extract the merchant, amount, and date for your review.
             </p>
           </div>
@@ -114,9 +114,9 @@ export default function ReceiptUploadPage() {
 
       {/* Quota-exceeded notice — soft block, backend enforces too */}
       {quota && !quota.canProcess && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="mb-4 rounded-lg border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
           <p className="font-medium">Receipt analysis limit reached</p>
-          <p className="mt-0.5 text-xs text-red-700">
+          <p className="mt-0.5 text-xs text-warning">
             You have used all {quota.limit} of your receipt analyses. Your existing receipts and analytics remain fully available.
           </p>
         </div>
@@ -137,15 +137,15 @@ export default function ReceiptUploadPage() {
 
       {/* File selected — preview + process */}
       {(uploadState === "selected" || uploadState === "uploading") && selectedFile && preview && (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-          <div className="relative aspect-[4/3] max-h-72 bg-slate-50 overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="relative aspect-[4/3] max-h-72 bg-muted/50 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Receipt preview" className="w-full h-full object-contain" />
           </div>
-          <div className="p-4 flex items-center justify-between border-t border-slate-200">
+          <div className="p-4 flex items-center justify-between border-t border-border">
             <div>
-              <p className="text-sm font-medium text-slate-900">{selectedFile.name}</p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-sm font-medium text-foreground">{selectedFile.name}</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">
                 {(selectedFile.size / 1024).toFixed(0)} KB
               </p>
             </div>
@@ -173,9 +173,9 @@ export default function ReceiptUploadPage() {
 
       {/* Upload guidance */}
       {uploadState === "idle" && (
-        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4">
-          <p className="text-xs font-medium text-slate-700 mb-2">For best results:</p>
-          <ul className="space-y-1 text-xs text-slate-500">
+        <div className="mt-4 rounded-md border border-border bg-muted/50 p-4">
+          <p className="text-xs font-medium text-foreground/80 mb-2">For best results:</p>
+          <ul className="space-y-1 text-xs text-muted-foreground">
             <li>• Ensure the receipt is flat and well-lit</li>
             <li>• Capture the entire receipt including the total amount</li>
             <li>• Avoid shadows and glare on the text</li>
@@ -213,15 +213,15 @@ function DropZone({
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 transition-colors",
           isDragging
-            ? "border-blue-400 bg-blue-50"
-            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+            ? "border-brand/50 bg-brand-soft"
+            : "border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/50"
         )}
       >
-        <Upload className={cn("h-8 w-8 mb-3", isDragging ? "text-blue-500" : "text-slate-300")} />
-        <p className="text-sm font-medium text-slate-700">
+        <Upload className={cn("h-8 w-8 mb-3", isDragging ? "text-brand" : "text-muted-foreground/50")} />
+        <p className="text-sm font-medium text-foreground/80">
           Drop a receipt image here
         </p>
-        <p className="mt-1 text-xs text-slate-400">or click to browse</p>
+        <p className="mt-1 text-xs text-muted-foreground/70">or click to browse</p>
         <input
           type="file"
           accept={accepted}
@@ -230,7 +230,7 @@ function DropZone({
         />
       </label>
       {error && (
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600">
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-warning">
           <XCircle className="h-4 w-4 shrink-0" />
           {error}
         </p>
@@ -245,7 +245,7 @@ function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
     return (
       <Link
         href="/dashboard/settings"
-        className="inline-flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 hover:bg-violet-100 transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-1.5 rounded-md border border-brand/25 bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand-soft transition-colors whitespace-nowrap"
       >
         <InfinityIcon className="h-3 w-3" strokeWidth={2} />
         Unlimited
@@ -254,9 +254,9 @@ function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
   }
   const pct = (quota.used / Math.max(1, quota.limit)) * 100;
   const tone =
-    pct >= 100 ? "border-red-200    bg-red-50    text-red-700"
-    : pct >= 80  ? "border-amber-200  bg-amber-50  text-amber-700"
-    :              "border-slate-200  bg-slate-50  text-slate-600";
+    pct >= 100 ? "border-warning/25    bg-warning-soft    text-warning"
+    : pct >= 80  ? "border-caution/25  bg-caution-soft  text-caution"
+    :              "border-border  bg-muted/50  text-muted-foreground";
   return (
     <Link
       href="/dashboard/settings"

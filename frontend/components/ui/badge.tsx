@@ -6,16 +6,18 @@ const badgeVariants = cva(
   "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors",
   {
     variants: {
+      /* Palette variants alias the design tokens so every badge in the app
+         shares the same calibrated family (legacy names kept for call sites). */
       variant: {
         default:     "border-transparent bg-primary text-primary-foreground",
         secondary:   "border-transparent bg-secondary text-secondary-foreground",
         destructive: "border-transparent bg-destructive text-destructive-foreground",
-        outline:     "text-foreground",
-        blue:        "border-blue-200 bg-blue-50 text-blue-700",
-        emerald:     "border-emerald-200 bg-emerald-50 text-emerald-700",
-        amber:       "border-amber-200 bg-amber-50 text-amber-700",
-        red:         "border-red-200 bg-red-50 text-red-700",
-        slate:       "border-slate-200 bg-slate-100 text-slate-600",
+        outline:     "border-border text-muted-foreground",
+        blue:        "border-transparent bg-brand-soft text-brand",
+        emerald:     "border-transparent bg-positive-soft text-positive",
+        amber:       "border-transparent bg-caution-soft text-caution",
+        red:         "border-transparent bg-warning-soft text-warning",
+        slate:       "border-transparent bg-muted text-muted-foreground",
       },
     },
     defaultVariants: { variant: "default" },

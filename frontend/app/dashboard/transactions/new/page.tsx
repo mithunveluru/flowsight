@@ -88,23 +88,23 @@ export default function NewTransactionPage() {
       {/* Breadcrumb */}
       <Link
         href="/dashboard/transactions"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to transactions
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Add transaction</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-foreground">Add transaction</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           FlowSight will auto-categorize based on the description you enter.
         </p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {serverError && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div className="rounded-md border border-warning/25 bg-warning-soft px-3 py-2.5 text-sm text-warning">
               {serverError}
             </div>
           )}
@@ -174,7 +174,7 @@ export default function NewTransactionPage() {
               {...register("description")}
             />
             {description.length > 2 && (
-              <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-400">
+              <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground/70">
                 <Sparkles className="h-3 w-3" />
                 FlowSight will auto-categorize this transaction
               </p>
@@ -216,7 +216,7 @@ export default function NewTransactionPage() {
                           <span
                             className={cn(
                               "h-2 w-2 rounded-full",
-                              CATEGORY_META[opt.value].color.split(" ")[0]
+                              CATEGORY_META[opt.value].dot
                             )}
                           />
                           {opt.label}
@@ -275,14 +275,14 @@ function Field({
       <div className="flex items-center gap-1.5">
         <Label>{label}</Label>
         {optional && (
-          <span className="text-xs text-slate-400">(optional)</span>
+          <span className="text-xs text-muted-foreground/70">(optional)</span>
         )}
       </div>
       {children}
       {hint && !error && (
-        <p className="text-xs text-slate-400">{hint}</p>
+        <p className="text-xs text-muted-foreground/70">{hint}</p>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-warning">{error}</p>}
     </div>
   );
 }

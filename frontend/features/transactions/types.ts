@@ -65,25 +65,28 @@ export interface BulkImportResult {
   totalAmountImported:  number | null;
 }
 
+// Category identity is carried by a small colored dot from the curated chart
+// palette (globals.css) — pills themselves stay quiet and neutral so a table
+// of categories reads as one calm family instead of a rainbow.
 export const CATEGORY_META: Record<
   TransactionCategory,
-  { label: string; color: string }
+  { label: string; dot: string }
 > = {
-  FOOD_DINING:    { label: "Food & Dining",      color: "bg-orange-50 text-orange-700 border-orange-200"  },
-  GROCERIES:      { label: "Groceries",           color: "bg-green-50 text-green-700 border-green-200"     },
-  SHOPPING:       { label: "Shopping",            color: "bg-purple-50 text-purple-700 border-purple-200"  },
-  TRANSPORTATION: { label: "Transportation",      color: "bg-blue-50 text-blue-700 border-blue-200"        },
-  UTILITIES:      { label: "Utilities",           color: "bg-slate-100 text-slate-700 border-slate-200"    },
-  ENTERTAINMENT:  { label: "Entertainment",       color: "bg-pink-50 text-pink-700 border-pink-200"        },
-  HEALTHCARE:     { label: "Healthcare",          color: "bg-red-50 text-red-700 border-red-200"           },
-  FINANCE:        { label: "Finance & Banking",   color: "bg-indigo-50 text-indigo-700 border-indigo-200"  },
-  EDUCATION:      { label: "Education",           color: "bg-yellow-50 text-yellow-700 border-yellow-200"  },
-  TRAVEL:         { label: "Travel",              color: "bg-teal-50 text-teal-700 border-teal-200"        },
-  SUBSCRIPTIONS:  { label: "Subscriptions",       color: "bg-violet-50 text-violet-700 border-violet-200"  },
-  INCOME:         { label: "Income",              color: "bg-emerald-50 text-emerald-700 border-emerald-200"},
-  TRANSFER:       { label: "Transfer",            color: "bg-cyan-50 text-cyan-700 border-cyan-200"        },
-  OTHER:          { label: "Other",               color: "bg-gray-50 text-gray-600 border-gray-200"        },
-  UNCATEGORIZED:  { label: "Uncategorized",       color: "bg-slate-100 text-slate-400 border-slate-200"    },
+  FOOD_DINING:    { label: "Food & Dining",     dot: "bg-[hsl(var(--chart-1))]"  },
+  GROCERIES:      { label: "Groceries",          dot: "bg-[hsl(var(--chart-2))]"  },
+  SHOPPING:       { label: "Shopping",           dot: "bg-[hsl(var(--chart-3))]"  },
+  TRANSPORTATION: { label: "Transportation",     dot: "bg-[hsl(var(--chart-4))]"  },
+  UTILITIES:      { label: "Utilities",          dot: "bg-[hsl(var(--chart-5))]"  },
+  ENTERTAINMENT:  { label: "Entertainment",      dot: "bg-[hsl(var(--chart-6))]"  },
+  HEALTHCARE:     { label: "Healthcare",         dot: "bg-[hsl(var(--chart-7))]"  },
+  FINANCE:        { label: "Finance & Banking",  dot: "bg-[hsl(var(--chart-8))]"  },
+  EDUCATION:      { label: "Education",          dot: "bg-[hsl(var(--chart-9))]"  },
+  TRAVEL:         { label: "Travel",             dot: "bg-[hsl(var(--chart-13))]" },
+  SUBSCRIPTIONS:  { label: "Subscriptions",      dot: "bg-[hsl(var(--chart-11))]" },
+  INCOME:         { label: "Income",             dot: "bg-positive"               },
+  TRANSFER:       { label: "Transfer",           dot: "bg-[hsl(var(--chart-10))]" },
+  OTHER:          { label: "Other",              dot: "bg-[hsl(var(--chart-14))]" },
+  UNCATEGORIZED:  { label: "Uncategorized",      dot: "bg-[hsl(var(--chart-15))]" },
 };
 
 export const CATEGORY_OPTIONS = Object.entries(CATEGORY_META)

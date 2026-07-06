@@ -51,23 +51,23 @@ export default function ForgotPasswordPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Forgot your password?
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Enter the email you signed up with and we will send you a link to set a new password.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-[13px] font-medium text-slate-700">
+            <Label htmlFor="email" className="text-[13px] font-medium text-foreground/80">
               Email
             </Label>
             <Input
@@ -78,7 +78,7 @@ export default function ForgotPasswordPage() {
               aria-invalid={!!errors.email}
               {...register("email")}
             />
-            {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
+            {errors.email && <p className="text-xs text-warning">{errors.email.message}</p>}
           </div>
 
           <Button type="submit" className="group w-full" disabled={isSubmitting}>
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/auth/login"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to sign in
@@ -112,24 +112,24 @@ function SuccessState({ email }: { email: string }) {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-positive-soft text-positive">
           <Mail className="h-5 w-5" strokeWidth={1.75} />
         </div>
 
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Check your inbox.
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            If an account exists for <span className="font-medium text-slate-700">{email}</span>,
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            If an account exists for <span className="font-medium text-foreground/80">{email}</span>,
             we have sent a link to reset your password. The link will be valid for 30 minutes and
             can be used once.
           </p>
         </header>
 
-        <div className="rounded-lg border border-slate-200/80 bg-slate-50/60 px-4 py-3 text-xs leading-relaxed text-slate-500">
+        <div className="rounded-lg border border-border/80 bg-muted/50/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
           <p className="flex items-start gap-2">
-            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" strokeWidth={2} />
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-positive" strokeWidth={2} />
             <span>
               No email? Check your spam folder, or wait a minute and request a new link.
             </span>
@@ -139,14 +139,14 @@ function SuccessState({ email }: { email: string }) {
         <div className="flex items-center gap-3 text-sm">
           <Link
             href="/auth/login"
-            className="text-slate-500 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
             Back to sign in
           </Link>
-          <span className="text-slate-300">·</span>
+          <span className="text-muted-foreground/50">·</span>
           <Link
             href="/auth/forgot-password"
-            className="text-slate-500 underline-offset-4 transition-colors hover:text-slate-900 hover:underline"
+            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
             Try a different email
           </Link>

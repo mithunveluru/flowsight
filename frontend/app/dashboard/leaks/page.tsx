@@ -135,11 +135,11 @@ function SavingsHero({ data }: { data: LeakDetectionResponse }) {
     <section className="surface-gradient-emerald relative overflow-hidden rounded-xl card-refined p-6 sm:p-8">
       <AmbientGlow />
       <div className="relative flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-card">
-          <Sparkles className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-positive/25 bg-card">
+          <Sparkles className="h-5 w-5 text-positive" strokeWidth={1.75} />
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-positive">
             Potential monthly savings
           </p>
           <p className="mt-1.5 stat-value text-4xl">

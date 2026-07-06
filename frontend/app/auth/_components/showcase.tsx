@@ -171,7 +171,7 @@ function DesktopPanel({
         };
 
   return (
-    <div className="relative flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#f7f6f1] text-slate-900">
+    <div className="relative flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#f7f6f1] text-foreground">
       <BackgroundLayers />
 
       <div className="relative z-10 flex h-full flex-col px-12 py-12 xl:px-16 xl:py-14 2xl:px-20">
@@ -181,17 +181,17 @@ function DesktopPanel({
 
         <div className="mt-16 max-w-[28rem]">
           <FadeIn delay={0.05}>
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               {hero.eyebrow}
             </p>
           </FadeIn>
           <FadeIn delay={0.12}>
-            <h2 className="mt-4 text-[2.5rem] font-semibold leading-[1.1] tracking-tight text-slate-900 xl:text-[2.75rem]">
+            <h2 className="mt-4 text-[2.5rem] font-semibold leading-[1.1] tracking-tight text-foreground xl:text-[2.75rem]">
               {hero.title}
             </h2>
           </FadeIn>
           <FadeIn delay={0.2}>
-            <p className="mt-5 text-[15px] leading-relaxed text-slate-500">{hero.sub}</p>
+            <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">{hero.sub}</p>
           </FadeIn>
         </div>
 
@@ -210,7 +210,7 @@ function DesktopPanel({
           </StaggerContainer>
 
           <FadeIn delay={0.5}>
-            <div className="mt-10 flex items-center gap-2 text-[11px] text-slate-400">
+            <div className="mt-10 flex items-center gap-2 text-[11px] text-muted-foreground/70">
               <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
               <span>
                 FlowSight never connects to your bank. Your data is yours alone.
@@ -240,7 +240,7 @@ function MobileStrip({
       : "Understand the decisions behind your finances.";
 
   return (
-    <div className="relative overflow-hidden bg-[#f7f6f1] px-6 pb-8 pt-8 text-slate-900">
+    <div className="relative overflow-hidden bg-[#f7f6f1] px-6 pb-8 pt-8 text-foreground">
       <BackgroundLayers mobile />
       <div className="relative z-10">
         <FadeIn>
@@ -264,7 +264,7 @@ function Brand({ compact }: { compact?: boolean } = {}) {
   return (
     <div className="flex items-center gap-2.5">
       <Logo />
-      <span className={compact ? "text-sm font-semibold tracking-tight text-slate-900" : "text-[15px] font-semibold tracking-tight text-slate-900"}>
+      <span className={compact ? "text-sm font-semibold tracking-tight text-foreground" : "text-[15px] font-semibold tracking-tight text-foreground"}>
         FlowSight
       </span>
     </div>
@@ -302,7 +302,7 @@ function InsightCard({ insight, compact }: { insight: Insight; compact?: boolean
 
   return (
     <motion.div
-      className="relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_-12px_rgba(15,23,42,0.08)] backdrop-blur-sm"
+      className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_30px_-12px_rgba(15,23,42,0.08)] backdrop-blur-sm"
       whileHover={{ y: -2 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -314,10 +314,10 @@ function InsightCard({ insight, compact }: { insight: Insight; compact?: boolean
           <Icon className="h-4 w-4" strokeWidth={1.75} style={{ color: toneAccent.fg }} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
             {insight.category}
           </p>
-          <p className={compact ? "mt-0.5 text-sm font-medium leading-snug text-slate-900" : "mt-0.5 text-[15px] font-medium leading-snug text-slate-900"}>
+          <p className={compact ? "mt-0.5 text-sm font-medium leading-snug text-foreground" : "mt-0.5 text-[15px] font-medium leading-snug text-foreground"}>
             {insight.headline}
           </p>
         </div>
@@ -325,17 +325,17 @@ function InsightCard({ insight, compact }: { insight: Insight; compact?: boolean
 
       <div className="mt-5 flex items-end justify-between">
         <div>
-          <p className="text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums text-slate-900">
+          <p className="text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums text-foreground">
             {insight.metric}
           </p>
-          <p className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <span
               className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums"
               style={{ backgroundColor: deltaTone.bg, color: deltaTone.fg }}
             >
               {insight.delta.value}
             </span>
-            <span className="text-slate-400">·</span>
+            <span className="text-muted-foreground/70">·</span>
             <span className="truncate">{insight.context}</span>
           </p>
         </div>
@@ -438,8 +438,8 @@ function Sparkline({
 
 function OutcomeRow({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2.5 text-[13px] text-slate-600">
-      <span className="inline-flex h-1 w-1 shrink-0 rounded-full bg-slate-400" />
+    <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
+      <span className="inline-flex h-1 w-1 shrink-0 rounded-full bg-muted-foreground/70" />
       <span>{label}</span>
     </div>
   );

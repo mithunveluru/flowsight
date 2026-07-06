@@ -2,7 +2,7 @@ import { Showcase } from "./_components/showcase";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen w-full bg-white lg:grid lg:grid-cols-[1.2fr_1fr]">
+    <div className="min-h-screen w-full bg-card lg:grid lg:grid-cols-[1.2fr_1fr]">
       <aside className="relative hidden lg:block">
         <Showcase />
       </aside>

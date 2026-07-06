@@ -95,23 +95,23 @@ function ResetPasswordForm() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Choose a new password.
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             For your security, this link can only be used once and expires after 30 minutes.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-[13px] font-medium text-slate-700">
+            <Label htmlFor="password" className="text-[13px] font-medium text-foreground/80">
               New password
             </Label>
             <div className="relative">
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
               />
               <button
                 type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 transition-colors hover:text-foreground/80"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -141,21 +141,21 @@ function ResetPasswordForm() {
                     <div
                       key={level}
                       className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                        strength.score >= level ? strength.color : "bg-slate-200"
+                        strength.score >= level ? strength.color : "bg-border"
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-500">{strength.label}</p>
+                <p className="text-[11px] text-muted-foreground">{strength.label}</p>
               </div>
             )}
             {errors.password && (
-              <p className="text-xs text-red-600">{errors.password.message}</p>
+              <p className="text-xs text-warning">{errors.password.message}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirm" className="text-[13px] font-medium text-slate-700">
+            <Label htmlFor="confirm" className="text-[13px] font-medium text-foreground/80">
               Confirm new password
             </Label>
             <Input
@@ -167,7 +167,7 @@ function ResetPasswordForm() {
               {...register("confirm")}
             />
             {errors.confirm && (
-              <p className="text-xs text-red-600">{errors.confirm.message}</p>
+              <p className="text-xs text-warning">{errors.confirm.message}</p>
             )}
           </div>
 
@@ -194,14 +194,14 @@ function DoneState() {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-positive-soft text-positive">
           <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} />
         </div>
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Password updated.
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Your password has been changed. Sign in to continue where you left off.
           </p>
         </header>
@@ -221,14 +221,14 @@ function InvalidLinkState({ reason }: { reason: string }) {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-50 text-amber-700">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-caution-soft text-caution">
           <ShieldAlert className="h-5 w-5" strokeWidth={1.75} />
         </div>
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             That link will not work.
           </h1>
-          <p className="mt-2 text-sm text-slate-500">{reason}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{reason}</p>
         </header>
         <Link
           href="/auth/forgot-password"
@@ -254,8 +254,8 @@ function getPasswordStrength(password: string): {
   if (/[a-z]/.test(password) && /\d/.test(password)) score++;
   if (password.length >= 12 && /[^a-zA-Z\d]/.test(password)) score++;
 
-  if (score <= 1) return { score: 1, label: "Weak", color: "bg-red-400" };
-  if (score === 2) return { score: 2, label: "Fair", color: "bg-amber-400" };
-  if (score === 3) return { score: 3, label: "Good", color: "bg-blue-400" };
-  return { score: 4, label: "Strong", color: "bg-emerald-500" };
+  if (score <= 1) return { score: 1, label: "Weak", color: "bg-warning/80" };
+  if (score === 2) return { score: 2, label: "Fair", color: "bg-caution/80" };
+  if (score === 3) return { score: 3, label: "Good", color: "bg-brand/80" };
+  return { score: 4, label: "Strong", color: "bg-positive" };
 }

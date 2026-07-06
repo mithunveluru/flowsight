@@ -28,16 +28,16 @@ function formatINR(v: number) {
 }
 
 const STATUS_STYLES: Record<RecurringStatus, { label: string; cls: string }> = {
-  ACTIVE:   { label: "Active",    cls: "text-emerald-600" },
-  DUE_SOON: { label: "Due soon",  cls: "text-blue-600"    },
-  OVERDUE:  { label: "Overdue",   cls: "text-amber-600"   },
-  MISSED:   { label: "Missed",    cls: "text-red-600"     },
+  ACTIVE:   { label: "Active",    cls: "text-positive" },
+  DUE_SOON: { label: "Due soon",  cls: "text-brand"    },
+  OVERDUE:  { label: "Overdue",   cls: "text-caution"   },
+  MISSED:   { label: "Missed",    cls: "text-warning"     },
 };
 
 const TIER_STYLES: Record<ConfidenceTier, { label: string; cls: string }> = {
-  HIGH:     { label: "High",     cls: "text-emerald-600" },
-  MEDIUM:   { label: "Medium",   cls: "text-blue-600"    },
-  POSSIBLE: { label: "Possible", cls: "text-slate-500"   },
+  HIGH:     { label: "High",     cls: "text-positive" },
+  MEDIUM:   { label: "Medium",   cls: "text-brand"    },
+  POSSIBLE: { label: "Possible", cls: "text-muted-foreground"   },
 };
 
 export default function RecurringPage() {
@@ -105,8 +105,8 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Subscriptions &amp; bills</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h1 className="text-xl font-semibold text-foreground">Subscriptions &amp; bills</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right.
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function RecurringPage() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 flex items-center gap-1.5">
+        <p className="text-sm text-warning flex items-center gap-1.5">
           <XCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
@@ -130,10 +130,10 @@ export default function RecurringPage() {
         <>
           {/* Summary cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Per month"                value={formatINR(totalMonthly)} icon={Repeat}        cls="text-orange-500"  bg="bg-orange-50 border-orange-100" />
-            <StatCard label="Per year"                 value={formatINR(totalAnnual)}  icon={CalendarClock} cls="text-blue-500"    bg="bg-blue-50 border-blue-100"     />
-            <StatCard label="Active subscriptions"     value={String(patterns.length)} icon={CheckCircle2}  cls="text-emerald-500" bg="bg-emerald-50 border-emerald-100" />
-            <StatCard label="Worth cancelling"         value={String(cancellable)}     icon={TrendingDown}  cls="text-violet-500"  bg="bg-violet-50 border-violet-100"   />
+            <StatCard label="Per month"                value={formatINR(totalMonthly)} icon={Repeat}        cls="text-caution"  bg="bg-caution-soft border-caution/20" />
+            <StatCard label="Per year"                 value={formatINR(totalAnnual)}  icon={CalendarClock} cls="text-brand"    bg="bg-brand-soft border-brand/20"     />
+            <StatCard label="Active subscriptions"     value={String(patterns.length)} icon={CheckCircle2}  cls="text-positive" bg="bg-positive-soft border-positive/20" />
+            <StatCard label="Worth cancelling"         value={String(cancellable)}     icon={TrendingDown}  cls="text-brand"  bg="bg-brand-soft border-brand/20"   />
           </div>
 
           {/* Confirmed section */}
@@ -141,7 +141,7 @@ export default function RecurringPage() {
             <Section
               title="Confirmed by you"
               count={confirmed.length}
-              icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+              icon={<CheckCircle2 className="h-3.5 w-3.5 text-positive" />}
               hint="We'll keep these and refresh them every time you re-scan."
             >
               <PatternsTable
@@ -159,7 +159,7 @@ export default function RecurringPage() {
             <Section
               title="Looks recurring"
               count={detected.length}
-              icon={<Sparkles className="h-3.5 w-3.5 text-blue-600" />}
+              icon={<Sparkles className="h-3.5 w-3.5 text-brand" />}
               hint="We're fairly confident these repeat. Confirm the ones that do."
             >
               <PatternsTable
@@ -177,7 +177,7 @@ export default function RecurringPage() {
             <Section
               title="Maybe recurring"
               count={possible.length}
-              icon={<HelpCircle className="h-3.5 w-3.5 text-slate-500" />}
+              icon={<HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />}
               hint="We're not sure about these. Confirm the ones that repeat, dismiss the rest."
             >
               <PatternsTable
@@ -208,11 +208,11 @@ function Section({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         {icon}
-        <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <span className="text-xs text-slate-400">({count})</span>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <span className="text-xs text-muted-foreground/70">({count})</span>
       </div>
-      <p className="text-xs text-slate-500">{hint}</p>
-      <div className="rounded-lg border border-slate-200 bg-white overflow-x-auto">
+      <p className="text-xs text-muted-foreground">{hint}</p>
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
         {children}
       </div>
     </section>
@@ -226,14 +226,14 @@ function StatCard({
   icon: React.ElementType; cls: string; bg: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
+    <div className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("flex h-7 w-7 items-center justify-center rounded-md border", bg)}>
           <Icon className={cn("h-3.5 w-3.5", cls)} />
         </div>
-        <span className="text-xs font-medium text-slate-500">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
-      <p className="text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
+      <p className="text-2xl font-semibold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
@@ -250,9 +250,9 @@ function PatternsTable({
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="border-b border-slate-200 bg-slate-50">
+        <tr className="border-b border-border bg-muted/50">
           {["Merchant","Period","Confidence","Amount","Next expected","Status",""].map((h) => (
-            <th key={h} className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">
+            <th key={h} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">
               {h}
             </th>
           ))}
@@ -287,43 +287,43 @@ function PatternRow({
   const tier   = TIER_STYLES[pattern.confidenceTier];
 
   return (
-    <tr className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+    <tr className="border-b border-border/60 last:border-0 hover:bg-muted/50 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-slate-900">{pattern.merchant}</span>
+          <span className="font-medium text-foreground">{pattern.merchant}</span>
           {pattern.isCancellationCandidate && (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600">
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-brand">
               <TrendingDown className="h-3 w-3" strokeWidth={2} /> Optional
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-slate-400">
+        <p className="mt-0.5 text-xs text-muted-foreground/70">
           Seen {pattern.occurrenceCount} times so far
         </p>
       </td>
-      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
         {pattern.periodLabel}
       </td>
       <td className="px-4 py-3">
         <StatusMarker label={tier.label} className={tier.cls} />
-        <p className="mt-0.5 text-xs text-slate-400">
+        <p className="mt-0.5 text-xs text-muted-foreground/70">
           {(Number(pattern.confidence) * 100).toFixed(0)}%
         </p>
       </td>
       <td className="px-4 py-3 tabular-nums">
-        <span className="font-medium text-slate-900">{formatINR(pattern.estimatedAmount)}</span>
-        <p className="mt-0.5 text-xs text-slate-400">
+        <span className="font-medium text-foreground">{formatINR(pattern.estimatedAmount)}</span>
+        <p className="mt-0.5 text-xs text-muted-foreground/70">
           {formatINR(pattern.monthlyEquivalent)}/mo equivalent
         </p>
       </td>
-      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
         {pattern.nextExpectedDate
           ? new Date(pattern.nextExpectedDate).toLocaleDateString("en-IN", {
               day: "numeric", month: "short", year: "numeric",
             })
           : "—"}
         {pattern.daysUntilNext !== 0 && (
-          <span className={cn("ml-1 block", pattern.daysUntilNext < 0 ? "text-amber-600" : "text-slate-400")}>
+          <span className={cn("ml-1 block", pattern.daysUntilNext < 0 ? "text-caution" : "text-muted-foreground/70")}>
             ({pattern.daysUntilNext < 0
               ? `${Math.abs(pattern.daysUntilNext)}d ago`
               : `in ${pattern.daysUntilNext}d`})
@@ -339,7 +339,7 @@ function PatternRow({
             <button
               onClick={() => onUnconfirm(pattern.id)}
               disabled={busy}
-              className="rounded p-1.5 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+              className="rounded p-1.5 text-positive hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
               title="Remove confirmation"
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -348,7 +348,7 @@ function PatternRow({
             <button
               onClick={() => onConfirm(pattern.id)}
               disabled={busy}
-              className="rounded p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+              className="rounded p-1.5 text-muted-foreground/70 hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
               title="Confirm as recurring"
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -357,7 +357,7 @@ function PatternRow({
           <button
             onClick={() => onDismiss(pattern.id)}
             disabled={busy}
-            className="rounded p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            className="rounded p-1.5 text-muted-foreground/50 hover:text-warning hover:bg-warning-soft transition-colors disabled:opacity-50"
             title="Not recurring — dismiss"
           >
             <Trash2 className="h-4 w-4" />
@@ -380,10 +380,10 @@ function LoadingSkeleton() {
 
 function EmptyState({ onScan, scanning }: { onScan: () => void; scanning: boolean }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-6 py-16 text-center">
-      <Repeat className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-      <p className="text-sm font-medium text-slate-900">No subscriptions found yet</p>
-      <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
+    <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
+      <Repeat className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+      <p className="text-sm font-medium text-foreground">No subscriptions found yet</p>
+      <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
         Once we see the same charge a couple of times, it'll show up here automatically.
       </p>
       <div className="mt-5 flex justify-center gap-3">
