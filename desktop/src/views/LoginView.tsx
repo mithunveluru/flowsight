@@ -19,7 +19,7 @@ export function LoginView() {
     setLoading(true);
     try {
       const res = await authApi.login({ email: email.trim(), password });
-      await setAuth(res.token, res.user);
+      await setAuth(res.token, res.refreshToken, res.user);
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 401

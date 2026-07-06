@@ -39,34 +39,9 @@ export const transactionApi = {
   delete: (id: string) =>
     api.delete<void>(`/api/v1/transactions/${id}`, { auth: true }),
 
-  importCsv: async (file: File): Promise<BulkImportResult> => {
-    const token = (() => {
-      try {
-        const raw = localStorage.getItem("flowsight-auth");
-        if (!raw) return null;
-        const parsed = JSON.parse(raw) as { state?: { token?: string } };
-        return parsed.state?.token ?? null;
-      } catch {
-        return null;
-      }
-    })();
-
+  importCsv: (file: File): Promise<BulkImportResult> => {
     const form = new FormData();
     form.append("file", file);
-
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1/transactions/import/csv`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: form,
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: "Import failed" }));
-      throw new Error(err.message ?? "Import failed");
-    }
-    return res.json();
+    return api.upload<BulkImportResult>("/api/v1/transactions/import/csv", form);
   },
 };

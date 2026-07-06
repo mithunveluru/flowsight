@@ -17,4 +17,8 @@ export const authApi = {
 
   resetPassword: (payload: { token: string; password: string }) =>
     api.post<MessageResponse>("/api/v1/auth/reset-password", payload),
+
+  // server-side logout: revokes the refresh token; fire-and-forget on sign-out
+  logout: (refreshToken: string) =>
+    api.post<void>("/api/v1/auth/logout", { refreshToken }),
 };

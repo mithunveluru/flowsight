@@ -20,10 +20,12 @@ import {
   X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
+import { authApi } from "@/features/auth/api";
 import { cn } from "@/lib/utils";
 
 // each nav section carries an accent token, passed down as --section-accent (see globals.css)
-const navSections = [
+// exported so the command menu (⌘K) offers the same destinations
+export const navSections = [
   {
     section: "Overview",
     accent: "var(--accent-overview)",
@@ -87,6 +89,9 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
   }, [open]);
 
   const handleSignOut = () => {
+    // revoke the refresh token server-side; local logout proceeds regardless
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (refreshToken) void authApi.logout(refreshToken).catch(() => {});
     clearAuth();
     router.replace("/auth/login");
   };
@@ -102,7 +107,7 @@ export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: (
         onClick={onClose}
         aria-hidden="true"
         className={cn(
-          "fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-[2px] transition-opacity duration-200 lg:hidden",
+          "fixed inset-0 z-40 bg-primary/40 backdrop-blur-[2px] transition-opacity duration-200 lg:hidden",
           open ? "opacity-100" : "pointer-events-none opacity-0"
         )}
       />

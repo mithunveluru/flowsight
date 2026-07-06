@@ -21,6 +21,7 @@ import type {
   AuditLogPage,
 } from "@/features/account/types";
 import { useAuthStore } from "@/store/auth";
+import { authApi } from "@/features/auth/api";
 import { cn } from "@/lib/utils";
 
 function fmtDate(iso: string) {
@@ -73,6 +74,9 @@ export default function SettingsPage() {
   }, [auditPage]);
 
   const handleSignOut = () => {
+    // revoke the refresh token server-side; local logout proceeds regardless
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (refreshToken) void authApi.logout(refreshToken).catch(() => {});
     clearAuth();
     router.replace("/auth/login");
   };
@@ -140,8 +144,8 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
     >
       {q.unlimited ? (
         <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-4 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50">
-            <InfinityIcon className="h-4 w-4 text-violet-700" strokeWidth={2} />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft">
+            <InfinityIcon className="h-4 w-4 text-brand" strokeWidth={2} />
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">Unlimited</p>
@@ -159,7 +163,7 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
             </p>
             <p className={cn(
               "text-xs tabular-nums",
-              over ? "text-red-700" : near ? "text-amber-700" : "text-muted-foreground"
+              over ? "text-warning" : near ? "text-caution" : "text-muted-foreground"
             )}>
               {q.remaining ?? 0} remaining
             </p>
@@ -168,13 +172,13 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
             <div
               className={cn(
                 "h-full transition-all duration-500",
-                over ? "bg-red-500" : near ? "bg-amber-500" : "bg-emerald-500"
+                over ? "bg-warning" : near ? "bg-caution" : "bg-positive"
               )}
               style={{ width: `${pct}%` }}
             />
           </div>
           {over && (
-            <p className="text-xs text-red-700">
+            <p className="text-xs text-warning">
               You have reached your receipt analysis limit. Existing receipts and analytics remain fully available, only new uploads are paused.
             </p>
           )}
@@ -249,8 +253,8 @@ function AuditRow({ entry }: { entry: AuditLogEntry }) {
       <td className="px-6 py-3">
         <div className="flex items-center gap-2">
           {entry.action === "USER_LOGIN_FAILED"
-            ? <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-            : <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+            ? <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+            : <span className="h-1.5 w-1.5 rounded-full bg-positive" />}
           <span className="text-sm text-foreground">{label}</span>
         </div>
       </td>

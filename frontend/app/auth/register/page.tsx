@@ -51,7 +51,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: FormValues) => {
     try {
       const response = await authApi.register(data);
-      setAuth(response.token, response.user);
+      setAuth(response.token, response.refreshToken, response.user);
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiError && err.violations?.length) {
@@ -76,17 +76,17 @@ export default function RegisterPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Create your account.
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Free to start. No credit card required.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
@@ -126,7 +126,7 @@ export default function RegisterPage() {
               />
               <button
                 type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 transition-colors hover:text-foreground/80"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -143,12 +143,12 @@ export default function RegisterPage() {
                       className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
                         passwordStrength.score >= level
                           ? passwordStrength.color
-                          : "bg-slate-200"
+                          : "bg-border"
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-500">{passwordStrength.label}</p>
+                <p className="text-[11px] text-muted-foreground">{passwordStrength.label}</p>
               </div>
             )}
           </Field>
@@ -169,16 +169,16 @@ export default function RegisterPage() {
         </form>
 
         <div className="space-y-3">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="font-medium text-slate-900 underline-offset-4 transition-colors hover:underline"
+              className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
             >
               Sign in
             </Link>
           </p>
-          <p className="text-[11px] leading-relaxed text-slate-400">
+          <p className="text-[11px] leading-relaxed text-muted-foreground/70">
             By creating an account you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
@@ -200,11 +200,11 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-[13px] font-medium text-slate-700">
+      <Label htmlFor={id} className="text-[13px] font-medium text-foreground/80">
         {label}
       </Label>
       {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-warning">{error}</p>}
     </div>
   );
 }
@@ -221,8 +221,8 @@ function getPasswordStrength(password: string): {
   if (/[a-z]/.test(password) && /\d/.test(password)) score++;
   if (password.length >= 12 && /[^a-zA-Z\d]/.test(password)) score++;
 
-  if (score <= 1) return { score: 1, label: "Weak", color: "bg-red-400" };
-  if (score === 2) return { score: 2, label: "Fair", color: "bg-amber-400" };
-  if (score === 3) return { score: 3, label: "Good", color: "bg-blue-400" };
-  return { score: 4, label: "Strong", color: "bg-emerald-500" };
+  if (score <= 1) return { score: 1, label: "Weak", color: "bg-warning/80" };
+  if (score === 2) return { score: 2, label: "Fair", color: "bg-caution/80" };
+  if (score === 3) return { score: 3, label: "Good", color: "bg-brand/80" };
+  return { score: 4, label: "Strong", color: "bg-positive" };
 }

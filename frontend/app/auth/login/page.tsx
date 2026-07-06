@@ -39,7 +39,7 @@ export default function LoginPage() {
   const onSubmit = async (data: FormValues) => {
     try {
       const response = await authApi.login(data);
-      setAuth(response.token, response.user);
+      setAuth(response.token, response.refreshToken, response.user);
       router.push("/dashboard");
     } catch (err) {
       setError("root", {
@@ -55,17 +55,17 @@ export default function LoginPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-slate-900">
+          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
             Welcome back.
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Pick up where you left off.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
@@ -92,7 +92,7 @@ export default function LoginPage() {
             rightSlot={
               <Link
                 href="/auth/forgot-password"
-                className="text-xs text-slate-500 transition-colors hover:text-slate-900"
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Forgot password?
               </Link>
@@ -110,7 +110,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/70 transition-colors hover:text-foreground/80"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -134,11 +134,11 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           New to FlowSight?{" "}
           <Link
             href="/auth/register"
-            className="font-medium text-slate-900 underline-offset-4 transition-colors hover:underline"
+            className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
           >
             Create an account
           </Link>
@@ -164,13 +164,13 @@ function Field({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label htmlFor={id} className="text-[13px] font-medium text-slate-700">
+        <Label htmlFor={id} className="text-[13px] font-medium text-foreground/80">
           {label}
         </Label>
         {rightSlot}
       </div>
       {children}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-warning">{error}</p>}
     </div>
   );
 }

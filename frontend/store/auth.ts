@@ -6,9 +6,10 @@ import type { UserProfile } from "@/features/auth/types";
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: UserProfile | null;
   isAuthenticated: boolean;
-  setAuth: (token: string, user: UserProfile) => void;
+  setAuth: (token: string, refreshToken: string, user: UserProfile) => void;
   clearAuth: () => void;
 }
 
@@ -17,30 +18,38 @@ export const useAuthStore = create<AuthState>()(
     persist(
       (set) => ({
         token: null,
+        refreshToken: null,
         user: null,
         isAuthenticated: false,
 
-        setAuth: (token, user) =>
-          set({ token, user, isAuthenticated: true }, false, "auth/setAuth"),
+        setAuth: (token, refreshToken, user) =>
+          set(
+            { token, refreshToken, user, isAuthenticated: true },
+            false,
+            "auth/setAuth"
+          ),
 
         clearAuth: () =>
           set(
-            { token: null, user: null, isAuthenticated: false },
+            { token: null, refreshToken: null, user: null, isAuthenticated: false },
             false,
             "auth/clearAuth"
           ),
       }),
       {
         name: "flowsight-auth",
-        // Only persist the token and user — not the action functions
+        // Only persist the tokens and user — not the action functions
         partialize: (state) => ({
           token: state.token,
+          refreshToken: state.refreshToken,
           user: state.user,
           isAuthenticated: state.isAuthenticated,
         }),
       }
     ),
-    { name: "flowsight/auth" }
+    // devtools off in production: the store holds the JWT, and Redux DevTools
+    // would expose it to any extension/tab inspecting the page
+    { name: "flowsight/auth", enabled: process.env.NODE_ENV !== "production" }
   )
 );
 
