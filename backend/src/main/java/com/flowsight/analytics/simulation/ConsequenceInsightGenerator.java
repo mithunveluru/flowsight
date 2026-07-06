@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Plain-language consequence insights grounded in the user's baseline numbers.
-// Each carries a code (UI icon) and severity (POSITIVE/NEUTRAL/CAUTION/WARNING).
+// Each carries a code and severity (POSITIVE/NEUTRAL/CAUTION/WARNING).
 @Service
 public class ConsequenceInsightGenerator {
 
