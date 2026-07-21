@@ -384,7 +384,7 @@ function EmptyState({ onScan, scanning }: { onScan: () => void; scanning: boolea
       <Repeat className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
       <p className="text-sm font-medium text-foreground">No subscriptions found yet</p>
       <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
-        Once we see the same charge a couple of times, it'll show up here automatically.
+        Once we see the same charge a couple of times, it&apos;ll show up here automatically.
       </p>
       <div className="mt-5 flex justify-center gap-3">
         <Button size="sm" onClick={onScan} disabled={scanning}>

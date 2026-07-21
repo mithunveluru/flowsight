@@ -493,7 +493,7 @@ function FlexibilityCard({
         <div>
           <p className="text-sm font-semibold text-foreground">Breathing room</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            How much room you'd have to absorb surprises and pursue what comes next.
+            How much room you&apos;d have to absorb surprises and pursue what comes next.
           </p>
         </div>
       </div>
