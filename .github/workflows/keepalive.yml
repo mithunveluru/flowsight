@@ -1,0 +1,15 @@
+name: Keepalive
+
+# Pings the Render free-tier backend so it does not spin down (15 min idle limit).
+# GitHub cron drifts 5-15+ min under load, so misses happen and a cold start
+# follows. Move to UptimeRobot/cron-job.org if that matters.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sSf -m 90 -o /dev/null https://flowsight-rhj8.onrender.com/actuator/health
