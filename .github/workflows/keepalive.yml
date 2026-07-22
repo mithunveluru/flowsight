@@ -12,4 +12,7 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -sSf -m 90 -o /dev/null https://flowsight-rhj8.onrender.com/actuator/health
+      # -m is per attempt, so a cold JVM boot gets 3 fresh tries before we call it down.
+      - run: >
+          curl -sSf -m 120 --retry 2 --retry-all-errors --retry-delay 15
+          -o /dev/null https://flowsight-rhj8.onrender.com/actuator/health
