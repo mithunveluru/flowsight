@@ -66,5 +66,3 @@ database.
 - The high-quality OCR path (the `receipt-ocr` microservice) is not included in
   this Blueprint. With `RECEIPT_OCR_URL` empty, the backend falls back to the
   in-image Tesseract engine.
-- Rate limiting is in-memory and per-instance; it resets on restart and is not
-  shared across horizontally scaled instances.
