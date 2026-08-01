@@ -8,17 +8,15 @@ import {
   FileImage,
   Infinity as InfinityIcon,
   Loader2,
-  ScanLine,
   Upload,
   XCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { receiptApi } from "@/features/receipts/api";
 import { accountApi } from "@/features/account/api";
 import type { ReceiptQuotaInfo } from "@/features/account/types";
 import { cn } from "@/lib/utils";
 
-type UploadState = "idle" | "selected" | "uploading" | "error";
+type UploadState = "idle" | "uploading" | "error";
 
 const ACCEPTED = "image/jpeg,image/png,image/webp,image/tiff";
 const MAX_MB = 5;
@@ -37,7 +35,8 @@ export default function ReceiptUploadPage() {
     accountApi.get().then((a) => setQuota(a.receiptQuota)).catch(() => {});
   }, []);
 
-  const handleFile = useCallback((file: File) => {
+  // picking a file starts the analysis, no second confirm click
+  const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setErrorMsg("Only image files are supported (JPEG, PNG, WebP, TIFF).");
       return;
@@ -49,8 +48,17 @@ export default function ReceiptUploadPage() {
     setErrorMsg(null);
     setSelectedFile(file);
     setPreview(URL.createObjectURL(file));
-    setUploadState("selected");
-  }, []);
+    setUploadState("uploading");
+
+    try {
+      const data = await receiptApi.upload(file);
+      // go to review; the user confirms before a transaction is saved
+      router.push(`/dashboard/receipts/${data.id}/review`);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Upload failed");
+      setUploadState("error");
+    }
+  }, [router]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -66,28 +74,6 @@ export default function ReceiptUploadPage() {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
     e.target.value = "";
-  };
-
-  const processReceipt = async () => {
-    if (!selectedFile) return;
-    setUploadState("uploading");
-    setErrorMsg(null);
-
-    try {
-      const data = await receiptApi.upload(selectedFile);
-      // go to review; the user confirms before a transaction is saved
-      router.push(`/dashboard/receipts/${data.id}/review`);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Upload failed");
-      setUploadState("error");
-    }
-  };
-
-  const reset = () => {
-    setUploadState("idle");
-    setSelectedFile(null);
-    setPreview(null);
-    setErrorMsg(null);
   };
 
   return (
@@ -135,37 +121,20 @@ export default function ReceiptUploadPage() {
         />
       ) : null}
 
-      {/* File selected — preview + process */}
-      {(uploadState === "selected" || uploadState === "uploading") && selectedFile && preview && (
+      {/* Analysing — preview plus progress */}
+      {uploadState === "uploading" && selectedFile && preview && (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="relative aspect-[4/3] max-h-72 bg-muted/50 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="Receipt preview" className="w-full h-full object-contain" />
           </div>
-          <div className="p-4 flex items-center justify-between border-t border-border">
-            <div>
-              <p className="text-sm font-medium text-foreground">{selectedFile.name}</p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">
-                {(selectedFile.size / 1024).toFixed(0)} KB
+          <div className="flex items-center gap-2.5 border-t border-border p-4">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">Reading your receipt</p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground/70">
+                {selectedFile.name}
               </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={reset} disabled={uploadState === "uploading"}>
-                Change
-              </Button>
-              <Button size="sm" onClick={processReceipt} disabled={uploadState === "uploading"}>
-                {uploadState === "uploading" ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <ScanLine className="h-4 w-4" />
-                    Analyze receipt
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         </div>
