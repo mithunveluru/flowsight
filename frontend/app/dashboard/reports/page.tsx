@@ -11,10 +11,10 @@ import {
   Loader2,
   Receipt,
   Sparkles,
-  Trash2,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import {
   Select,
   SelectContent,
@@ -426,7 +426,6 @@ function IntelligenceReportsCard() {
   };
 
   const handleDelete = async (job: ReportJob) => {
-    if (!confirm("Delete this report?")) return;
     try {
       await reportsApi.deleteReportJob(job.id);
       if (activeJob?.id === job.id) setActiveJob(null);
@@ -662,13 +661,7 @@ function HistoryRow({
             <Download className="h-3.5 w-3.5" />
           </button>
         )}
-        <button
-          onClick={() => onDelete(job)}
-          className="rounded p-1.5 text-muted-foreground/70 hover:text-warning hover:bg-warning-soft transition-colors"
-          title="Delete"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <ConfirmButton onConfirm={() => onDelete(job)} label="Delete report" className="p-1.5" />
       </div>
     </div>
   );

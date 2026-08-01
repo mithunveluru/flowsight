@@ -10,12 +10,12 @@ import {
   Loader2,
   Plus,
   ReceiptText,
-  Trash2,
   Upload,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { CategoryPill } from "@/components/ui/category-pill";
 import {
   Select,
@@ -280,14 +280,6 @@ function TransactionRow({
   deleting: boolean;
 }) {
   const isDebit = tx.type === "DEBIT";
-  // two-step destructive action: first click arms, second confirms
-  const [confirming, setConfirming] = useState(false);
-
-  useEffect(() => {
-    if (!confirming) return;
-    const t = setTimeout(() => setConfirming(false), 3000);
-    return () => clearTimeout(t);
-  }, [confirming]);
 
   return (
     <tr className="group border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
@@ -330,25 +322,12 @@ function TransactionRow({
         </span>
       </td>
       <td className="px-4 py-3">
-        <button
-          onClick={() => (confirming ? onDelete(tx.id) : setConfirming(true))}
-          onBlur={() => setConfirming(false)}
-          disabled={deleting}
-          className={cn(
-            "rounded-md p-1 transition-all disabled:opacity-50",
-            confirming
-              ? "bg-warning-soft text-warning"
-              : "text-muted-foreground/0 hover:text-warning group-hover:text-muted-foreground/50 group-hover:hover:text-warning focus-visible:text-muted-foreground"
-          )}
-          aria-label={confirming ? "Confirm delete" : "Delete transaction"}
-          title={confirming ? "Click again to delete" : "Delete"}
-        >
-          {deleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </button>
+        <ConfirmButton
+          onConfirm={() => onDelete(tx.id)}
+          busy={deleting}
+          label="Delete transaction"
+          className="opacity-0 focus:opacity-100 group-hover:opacity-100"
+        />
       </td>
     </tr>
   );

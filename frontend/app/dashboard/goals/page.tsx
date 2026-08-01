@@ -6,7 +6,6 @@ import {
   Flag,
   Plus,
   Sparkles,
-  Trash2,
   TrendingUp,
   X,
   XCircle,
@@ -15,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusMarker } from "@/components/ui/signals";
@@ -75,7 +75,6 @@ export default function GoalsPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this goal?")) return;
     await goalsApi.delete(id);
     await load();
   };
@@ -265,7 +264,7 @@ function GoalCard({
         )}
         <div className={cn("flex items-center gap-1", !isCompleted && "opacity-0 group-hover:opacity-100 transition-opacity")}>
           <button onClick={onEdit}   className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"><Sparkles className="h-3.5 w-3.5" /></button>
-          <button onClick={onDelete} className="rounded p-1.5 text-muted-foreground/70 hover:text-warning hover:bg-warning-soft"><Trash2 className="h-3.5 w-3.5" /></button>
+          <ConfirmButton onConfirm={onDelete} label="Delete goal" className="p-1.5" />
         </div>
       </div>
     </div>

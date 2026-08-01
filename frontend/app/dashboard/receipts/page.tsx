@@ -10,11 +10,11 @@ import {
   FileImage,
   Loader2,
   Plus,
-  Trash2,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { receiptApi } from "@/features/receipts/api";
 import type { Receipt, ReceiptPage } from "@/features/receipts/types";
 import { CategoryPill } from "@/components/ui/category-pill";
@@ -218,14 +218,11 @@ function ReceiptRow({
 
       {/* Delete */}
       <td className="px-4 py-3">
-        <button
-          onClick={() => onDelete(receipt.id)}
-          disabled={deleting}
-          className="text-muted-foreground/50 hover:text-warning transition-colors disabled:opacity-50"
-          aria-label="Delete receipt"
-        >
-          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-        </button>
+        <ConfirmButton
+          onConfirm={() => onDelete(receipt.id)}
+          busy={deleting}
+          label="Delete receipt"
+        />
       </td>
     </tr>
   );
