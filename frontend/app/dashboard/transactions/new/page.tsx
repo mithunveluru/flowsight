@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,7 +49,6 @@ export default function NewTransactionPage() {
     register,
     handleSubmit,
     control,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -59,8 +58,6 @@ export default function NewTransactionPage() {
       transactionDate: new Date().toISOString().split("T")[0],
     },
   });
-
-  const description = watch("description", "");
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
@@ -97,7 +94,7 @@ export default function NewTransactionPage() {
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-foreground">Add transaction</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          FlowSight will auto-categorize based on the description you enter.
+          We will sort it into a category from what you write in the description.
         </p>
       </div>
 
@@ -133,39 +130,21 @@ export default function NewTransactionPage() {
             </Field>
           </div>
 
-          {/* Row: Amount + Currency */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <Field label="Amount" error={errors.amount?.message}>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="0.00"
-                  {...register("amount")}
-                />
-              </Field>
-            </div>
-            <Field label="Currency" error={errors.currency?.message}>
-              <Controller
-                name="currency"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+          {/* Amount */}
+          <Field label="Amount" error={errors.amount?.message}>
+            <div className="flex items-center gap-2">
+              <span className="w-6 shrink-0 text-sm text-muted-foreground">₹</span>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                autoFocus
+                className="flex-1"
+                {...register("amount")}
               />
-            </Field>
-          </div>
+            </div>
+          </Field>
 
           {/* Description */}
           <Field label="Description" error={errors.description?.message}>
@@ -173,12 +152,6 @@ export default function NewTransactionPage() {
               placeholder="e.g. Zomato order, Amazon purchase, Salary credit"
               {...register("description")}
             />
-            {description.length > 2 && (
-              <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground/70">
-                <Sparkles className="h-3 w-3" />
-                FlowSight will auto-categorize this transaction
-              </p>
-            )}
           </Field>
 
           {/* Merchant (optional) */}
@@ -195,7 +168,7 @@ export default function NewTransactionPage() {
           <Field
             label="Category"
             optional
-            hint="Leave blank to use auto-categorization"
+            hint="Leave blank and we will pick one from the description"
           >
             <Controller
               name="category"
