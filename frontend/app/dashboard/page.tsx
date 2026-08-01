@@ -5,40 +5,37 @@ import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
-  BarChart3,
-  Brain,
-  Flag,
+  Plus,
   Receipt,
-  Repeat,
-  Target,
   TrendingDown,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { analyticsApi } from "@/features/analytics/api";
+import { insightsApi } from "@/features/insights/api";
+import { leaksApi } from "@/features/leaks/api";
+import { transactionApi } from "@/features/transactions/api";
 import type { AnalyticsOverview } from "@/features/analytics/types";
+import type { InsightsResponse } from "@/features/insights/types";
+import type { LeakDetectionResponse } from "@/features/leaks/types";
+import type { Transaction } from "@/features/transactions/types";
+import { CategoryPill } from "@/components/ui/category-pill";
+import { InsightCallout, SignalCard } from "@/components/ui/signals";
 import {
   AmbientGlow,
   AnimatedNumber,
   FadeIn,
-  StaggerContainer,
-  StaggerItem,
 } from "@/components/motion/primitives";
 
 const formatINRDigits = (v: number) =>
   v.toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
-function formatINR(value: number): string {
-  return `₹${Number(value).toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`;
-}
+const formatINR = (v: number) => `₹${formatINRDigits(Number(v))}`;
 
-function currentMonthRange(): { from: string; to: string } {
+const isoDate = (d: Date) => d.toISOString().split("T")[0];
+
+function currentMonthRange() {
   const now = new Date();
-  const fmt = (d: Date) => d.toISOString().split("T")[0];
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  return { from: fmt(from), to: fmt(now) };
+  return { from: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: isoDate(now) };
 }
 
 function greeting(): string {
@@ -57,88 +54,91 @@ export default function DashboardPage() {
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
 
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [today, setToday] = useState<AnalyticsOverview | null>(null);
+  const [insights, setInsights] = useState<InsightsResponse | null>(null);
+  const [leaks, setLeaks] = useState<LeakDetectionResponse | null>(null);
+  const [recent, setRecent] = useState<Transaction[] | null>(null);
 
   useEffect(() => {
     const { from, to } = currentMonthRange();
-    analyticsApi.getOverview(from, to).then(setOverview).catch(() => {});
+    const todayIso = isoDate(new Date());
+
+    analyticsApi.getOverview(from, to).then(setOverview).catch(() => setOverview(null));
+    analyticsApi.getOverview(todayIso, todayIso).then(setToday).catch(() => {});
+    transactionApi.list({ page: 0, size: 5 })
+      .then((p) => setRecent(p.content))
+      .catch(() => setRecent([]));
+    insightsApi.get().then(setInsights).catch(() => {});
+    leaksApi.detect().then(setLeaks).catch(() => {});
   }, []);
 
-  const hasData = overview && overview.transactionCount > 0;
+  const hasData = !!overview && overview.transactionCount > 0;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <FadeIn>
-        <section>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            {greeting()}, {firstName}.
-          </h1>
-          <p className="mt-2 text-base text-muted-foreground">
-            Your financial snapshot for {monthLabel()}.
-          </p>
+        <section className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              {greeting()}, {firstName}.
+            </h1>
+            <p className="mt-2 text-base text-muted-foreground">
+              Your financial snapshot for {monthLabel()}.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/transactions/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2} />
+              Add transaction
+            </Link>
+            <Link
+              href="/dashboard/receipts/upload"
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              style={{ borderColor: "hsl(var(--border))" }}
+            >
+              <Receipt className="h-3.5 w-3.5" strokeWidth={1.75} />
+              Scan receipt
+            </Link>
+          </div>
         </section>
       </FadeIn>
 
       <FadeIn delay={0.08}>
-        <section>
-          <HeroMetric overview={overview} hasData={!!hasData} />
-        </section>
+        <HeroMetric overview={overview} today={today} hasData={hasData} />
       </FadeIn>
 
-      <section>
-        <FadeIn delay={0.16}>
-          <div className="section-header">
-            <p className="section-title">Shortcuts</p>
-          </div>
-        </FadeIn>
-        <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
-            <StaggerItem key={action.label}>
-              <QuickAction {...action} />
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
-      </section>
-
-      <section>
-        <FadeIn delay={0.24}>
-          <div className="section-header">
-            <div>
-              <p className="section-title">Explore</p>
-              <p className="section-subtitle">Everything FlowSight can do for you</p>
-            </div>
-          </div>
-        </FadeIn>
-        <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" stagger={0.04}>
-          {modules.map((mod) => (
-            <StaggerItem key={mod.title}>
-              <ModuleCard {...mod} />
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
-      </section>
+      {hasData && (
+        <>
+          <WorthKnowing insights={insights} leaks={leaks} />
+          <RecentActivity transactions={recent} />
+        </>
+      )}
     </div>
   );
 }
 
 function HeroMetric({
   overview,
+  today,
   hasData,
 }: {
   overview: AnalyticsOverview | null;
+  today: AnalyticsOverview | null;
   hasData: boolean;
 }) {
-  if (!overview) {
-    return <div className="skeleton h-44 w-full rounded-xl" />;
-  }
+  if (!overview) return <div className="skeleton h-44 w-full rounded-xl" />;
 
   if (!hasData) {
     return (
       <div className="card-refined p-10 text-center">
         <p className="text-headline">No activity recorded yet this month</p>
         <p className="mt-2 text-supporting">
-          Your snapshot will appear here as transactions and receipts are added.
+          Add a transaction or scan a receipt, and your snapshot builds itself from there.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/dashboard/transactions/new"
             className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
@@ -146,11 +146,11 @@ function HeroMetric({
             Add transaction
           </Link>
           <Link
-            href="/dashboard/receipts/upload"
+            href="/dashboard/transactions"
             className="rounded-lg border px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             style={{ borderColor: "hsl(var(--border))" }}
           >
-            Scan receipt
+            Import a bank statement
           </Link>
         </div>
       </div>
@@ -169,15 +169,14 @@ function HeroMetric({
           <p className="stat-label">Net cashflow</p>
           <p className="mt-3 stat-value text-3xl sm:text-4xl lg:text-5xl">
             {positive ? "" : "−"}
-            <AnimatedNumber
-              value={Math.abs(net)}
-              format={(v) => `₹${formatINRDigits(v)}`}
-            />
+            <AnimatedNumber value={Math.abs(net)} format={(v) => `₹${formatINRDigits(v)}`} />
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 sm:gap-x-6">
-            <MetricInline label="Spent"        value={overview.totalSpend} />
+            <MetricInline label="Spent today" value={today?.totalSpend ?? 0} />
             <div className="hidden h-4 w-px bg-border sm:block" />
-            <MetricInline label="Earned"       value={overview.totalIncome} />
+            <MetricInline label="Spent" value={overview.totalSpend} />
+            <div className="hidden h-4 w-px bg-border sm:block" />
+            <MetricInline label="Earned" value={overview.totalIncome} />
             <div className="hidden h-4 w-px bg-border sm:block" />
             <MetricInline label="Transactions" value={overview.transactionCount} isCount />
           </div>
@@ -204,121 +203,187 @@ function MetricInline({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">
-        {label}
-      </p>
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground/80">{label}</p>
       <p className="mt-0.5 text-sm font-medium text-foreground tabular-nums">
         <AnimatedNumber
           value={value}
-          format={(v) => isCount ? String(v) : `₹${formatINRDigits(v)}`}
+          format={(v) => (isCount ? String(v) : `₹${formatINRDigits(v)}`)}
         />
       </p>
     </div>
   );
 }
 
-function QuickAction({
-  label,
-  description,
-  href,
-  icon: Icon,
+// the single highest-value recommendation plus the biggest drain
+function WorthKnowing({
+  insights,
+  leaks,
 }: {
-  label: string;
-  description: string;
-  href: string;
-  icon: React.ElementType;
+  insights: InsightsResponse | null;
+  leaks: LeakDetectionResponse | null;
 }) {
+  const topRec = insights?.recommendations?.[0] ?? null;
+  const topLeak = leaks?.leaks?.[0] ?? null;
+
+  if (!insights && !leaks) {
+    return (
+      <section>
+        <SectionHeader title="Worth knowing" />
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="skeleton h-32 rounded-xl" />
+          <div className="skeleton h-32 rounded-xl" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!topRec && !topLeak) {
+    return (
+      <section>
+        <SectionHeader title="Worth knowing" />
+        <div className="card-refined px-5 py-6">
+          <p className="text-sm text-foreground">Nothing needs your attention right now.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Patterns sharpen with a few more months of activity.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      className="card-tactile group flex items-center gap-3 px-4 py-3.5"
-    >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
-        <Icon className="h-4 w-4" strokeWidth={1.75} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        <div className="text-xs text-muted-foreground">{description}</div>
-      </div>
-      <ArrowRight
-        className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-foreground"
-        strokeWidth={1.75}
+    <section>
+      <SectionHeader
+        title="Worth knowing"
+        href="/dashboard/insights"
+        hrefLabel="All observations"
       />
-    </Link>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {topRec && (
+          <SignalCard
+            severity={topRec.confidence}
+            title={topRec.title}
+            metric={
+              topRec.potentialMonthlySaving ? (
+                <>
+                  <p className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatINR(topRec.potentialMonthlySaving)}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    per month
+                  </p>
+                </>
+              ) : undefined
+            }
+          >
+            <p className="text-xs leading-relaxed text-muted-foreground">{topRec.description}</p>
+            <InsightCallout tone="signal" className="mt-2.5">
+              {topRec.suggestedAction}
+            </InsightCallout>
+          </SignalCard>
+        )}
+
+        {topLeak && (
+          <SignalCard
+            severity={topLeak.severity}
+            icon={<TrendingDown className="h-4 w-4" strokeWidth={1.75} />}
+            title={topLeak.title}
+            metric={
+              <>
+                <p className="text-sm font-semibold tabular-nums text-foreground">
+                  {formatINR(topLeak.monthlyImpact)}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  per month
+                </p>
+              </>
+            }
+          >
+            <p className="text-xs leading-relaxed text-muted-foreground">{topLeak.description}</p>
+            <Link
+              href="/dashboard/leaks"
+              className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
+            >
+              See what is recoverable
+              <ArrowRight className="h-3 w-3" strokeWidth={2} />
+            </Link>
+          </SignalCard>
+        )}
+      </div>
+    </section>
   );
 }
 
-function ModuleCard({
-  icon: Icon,
-  title,
-  description,
-  href,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  href?: string;
-}) {
-  const content = (
-    <>
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground/70">
-        <Icon className="h-4 w-4" strokeWidth={1.75} />
-      </div>
-      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
-    </>
-  );
-
-  if (href) {
+function RecentActivity({ transactions }: { transactions: Transaction[] | null }) {
+  if (!transactions) {
     return (
-      <Link href={href} className="card-tactile block p-5">
-        {content}
-      </Link>
+      <section>
+        <SectionHeader title="Recent activity" />
+        <div className="skeleton h-48 rounded-xl" />
+      </section>
     );
   }
+
+  if (!transactions.length) return null;
+
   return (
-    <div className="card-refined block p-5">
-      {content}
+    <section>
+      <SectionHeader
+        title="Recent activity"
+        href="/dashboard/transactions"
+        hrefLabel="All transactions"
+      />
+      <div className="card-refined divide-y divide-border/60 overflow-hidden">
+        {transactions.map((tx) => (
+          <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">
+                {tx.merchant ?? tx.description}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {new Date(tx.transactionDate).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                })}
+              </p>
+            </div>
+            <CategoryPill category={tx.category} className="hidden sm:inline-flex" />
+            <span
+              className={`shrink-0 text-sm font-medium tabular-nums ${
+                tx.type === "DEBIT" ? "text-foreground" : "text-positive"
+              }`}
+            >
+              {tx.type === "DEBIT" ? "−" : "+"}
+              {formatINR(tx.amount)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SectionHeader({
+  title,
+  href,
+  hrefLabel,
+}: {
+  title: string;
+  href?: string;
+  hrefLabel?: string;
+}) {
+  return (
+    <div className="section-header items-center">
+      <p className="section-title">{title}</p>
+      {href && (
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {hrefLabel}
+          <ArrowUpRight className="h-3 w-3" strokeWidth={2} />
+        </Link>
+      )}
     </div>
   );
 }
-
-const quickActions = [
-  { label: "Transactions",  description: "Review and record",         href: "/dashboard/transactions",    icon: BarChart3 },
-  { label: "Scan receipt",  description: "Analyze a new receipt",      href: "/dashboard/receipts/upload", icon: Receipt   },
-  { label: "Set a budget",  description: "Define a monthly limit",     href: "/dashboard/budgets",         icon: Target    },
-  { label: "Create a goal", description: "Save toward what matters",   href: "/dashboard/goals",           icon: Flag      },
-];
-
-const modules = [
-  {
-    icon: BarChart3, href: "/dashboard/analytics",
-    title: "Spending trends",
-    description: "Where your money goes each month, by category, merchant, and over time.",
-  },
-  {
-    icon: Repeat, href: "/dashboard/recurring",
-    title: "Subscriptions & bills",
-    description: "Every recurring charge in one place, with the ones worth cancelling flagged.",
-  },
-  {
-    icon: TrendingDown, href: "/dashboard/leaks",
-    title: "Money drains",
-    description: "Duplicate subscriptions, creeping prices, small daily habits, and fees worth recovering.",
-  },
-  {
-    icon: Target, href: "/dashboard/budgets",
-    title: "Budgets & goals",
-    description: "Set monthly limits, save toward what matters, and watch your progress.",
-  },
-  {
-    icon: Receipt, href: "/dashboard/receipts",
-    title: "Receipts",
-    description: "Snap a receipt, check what we read off it, and save it in a tap.",
-  },
-  {
-    icon: Brain, href: "/dashboard/insights",
-    title: "Your money habits",
-    description: "The patterns in how you spend, what you could do, and what it adds up to over time.",
-  },
-];
