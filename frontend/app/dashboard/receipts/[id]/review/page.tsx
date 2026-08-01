@@ -228,6 +228,7 @@ function ReviewForm({
             id="merchant"
             {...register("merchant")}
             placeholder="e.g. Walmart, Starbucks"
+            autoFocus={!extraction?.merchant}
             className={cn(errors.merchant && "border-warning/40")}
           />
           {errors.merchant && (
@@ -246,7 +247,7 @@ function ReviewForm({
             )}
           </Label>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground w-8">INR</span>
+            <span className="w-6 shrink-0 text-sm text-muted-foreground">₹</span>
             <Input
               id="amount"
               type="number"
@@ -254,7 +255,13 @@ function ReviewForm({
               min="0.01"
               {...register("amount")}
               placeholder="0.00"
-              className={cn("flex-1", errors.amount && "border-warning/40")}
+              autoFocus={requiresConfirmation && !!extraction?.merchant}
+              onFocus={(e) => e.target.select()}
+              className={cn(
+                "flex-1",
+                errors.amount && "border-warning/40",
+                requiresConfirmation && "border-caution/50"
+              )}
             />
           </div>
           {errors.amount && (
@@ -327,7 +334,7 @@ function ReviewForm({
                   <span className="text-sm text-foreground/80">{item.itemName ?? "—"}</span>
                   <span className="text-sm text-muted-foreground tabular-nums">
                     {item.itemPrice != null
-                      ? `INR ${Number(item.itemPrice).toFixed(2)}`
+                      ? `₹${Number(item.itemPrice).toFixed(2)}`
                       : "—"}
                   </span>
                 </div>
