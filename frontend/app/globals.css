@@ -1,217 +1,8 @@
+@import "./tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer base {
-  /* ============================================================
-     LIGHT THEME — premium pastel palette
-     Direction: calm, modern, trustworthy. Soft lavender brand,
-     pastel teal/mint positives, warm peach cautions. Surfaces
-     carry a barely-cool tint so white cards lift naturally.
-     ============================================================ */
-  :root {
-    /* Surfaces — barely-cool off-white; cards stay pure white */
-    --background: 224 30% 99%;
-    --foreground: 224 24% 14%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 224 24% 14%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 24% 14%;
-
-    /* Primary — softened slate-indigo for dark filled buttons.
-       Less brutal than near-black, still high-contrast on light. */
-    --primary: 226 30% 18%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 226 30% 96.5%;
-    --secondary-foreground: 224 24% 16%;
-
-    --muted: 226 30% 96.5%;
-    --muted-foreground: 224 11% 46%;
-
-    --accent: 226 30% 96%;
-    --accent-foreground: 224 24% 16%;
-
-    --destructive: 358 58% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    /* Borders — very thin, faint cool-lavender tint */
-    --border: 224 22% 93%;
-    --input: 224 22% 90.5%;
-    --ring: 238 52% 60%;
-
-    /* 12px reads as "premium" */
-    --radius: 0.75rem;
-
-    /* Sidebar — slight warm cool, near-white */
-    --sidebar-bg: 226 32% 98.5%;
-    --sidebar-fg: 224 11% 42%;
-    --sidebar-fg-active: 224 24% 14%;
-    --sidebar-border: 224 22% 93%;
-
-    /* Brand — soft lavender-indigo. Pulled toward violet, low
-       saturation. Reads premium and approachable, not neon. */
-    --brand: 238 48% 60%;
-    --brand-soft: 240 60% 97%;
-    --brand-foreground: 0 0% 100%;
-
-    /* Semantic accents — pastel, restful */
-    --positive: 162 42% 42%;       /* pastel mint-teal */
-    --positive-soft: 162 50% 96%;
-    --caution: 28 72% 56%;         /* warm peach-amber */
-    --caution-soft: 32 86% 96%;
-    --warning: 358 55% 58%;
-    --warning-soft: 358 80% 96.5%;
-
-    /* ------------------------------------------------------------
-       AI SIGNAL LANGUAGE — semantic aliases for the intelligence
-       layer (behavioral signals, insights, predictions, anomalies).
-       These alias the base palette so they auto-adapt in dark mode
-       and never introduce a color that bypasses the token system.
-       `--signal` is the single "intelligence" accent (lavender-indigo).
-       Severity maps: HIGH→warning, MEDIUM→caution, LOW→signal.
-       ------------------------------------------------------------ */
-    --signal: var(--brand);
-    --signal-soft: var(--brand-soft);
-    --severity-high: var(--warning);
-    --severity-high-soft: var(--warning-soft);
-    --severity-medium: var(--caution);
-    --severity-medium-soft: var(--caution-soft);
-    --severity-low: var(--brand);
-    --severity-low-soft: var(--brand-soft);
-
-    /* ------------------------------------------------------------
-       Section accents — pastel, low-saturation, calm.
-       Used by the sidebar active indicator and per-page hero
-       accents. Pick *one* identity per surface area; never paint
-       the whole UI in section colors.
-       ------------------------------------------------------------ */
-    --accent-overview:     218 48% 60%;  /* soft blue        */
-    --accent-insights:     248 42% 66%;  /* soft lavender    */
-    --accent-reports:      28  28% 52%;  /* warm graphite    */
-    --accent-simulate:     180 32% 48%;  /* pastel teal      */
-    --accent-receipts:     215 24% 55%;  /* slate            */
-    --accent-transactions: 215 24% 55%;  /* slate            */
-    --accent-budgets:      162 32% 48%;  /* mint-sage        */
-    --accent-goals:        162 32% 48%;
-    --accent-recurring:    248 42% 66%;
-    --accent-leaks:        28  28% 52%;
-
-    /* ------------------------------------------------------------
-       Chart palette — coherent pastel family, calibrated for
-       readability on light surfaces. Categories desaturated and
-       lifted in lightness so they read as a single family rather
-       than competing primaries. Consumed by chart components.
-       ------------------------------------------------------------ */
-    --chart-spend:   238 48% 64%;  /* soft lavender (brand family) */
-    --chart-income:  168 36% 46%;  /* pastel teal                  */
-    --chart-grid:    224 22% 93%;  /* matches --border             */
-    --chart-axis:    224 12% 60%;  /* readable on light            */
-
-    --chart-1:  16  62% 70%;       /* soft coral       */
-    --chart-2:  152 32% 58%;       /* sage mint        */
-    --chart-3:  268 36% 70%;       /* soft plum        */
-    --chart-4:  212 48% 68%;       /* dusty blue       */
-    --chart-5:  220 12% 62%;       /* slate            */
-    --chart-6:  330 42% 72%;       /* muted rose       */
-    --chart-7:  6   52% 68%;       /* soft red         */
-    --chart-8:  238 48% 72%;       /* lavender         */
-    --chart-9:  42  56% 64%;       /* warm sand        */
-    --chart-10: 178 32% 56%;       /* pastel teal      */
-    --chart-11: 282 36% 72%;       /* lilac            */
-    --chart-12: 168 36% 50%;       /* mint             */
-    --chart-13: 196 36% 62%;       /* sky cyan         */
-    --chart-14: 224 14% 70%;       /* neutral          */
-    --chart-15: 224 16% 86%;       /* faint            */
-  }
-
-  /* ============================================================
-     DARK THEME — graphite with the pastel family lifted for
-     legibility. Same hues as light, raised lightness, kept calm.
-     ============================================================ */
-  .dark {
-    --background: 224 22% 9%;
-    --foreground: 224 20% 92%;
-
-    --card: 224 20% 12%;
-    --card-foreground: 224 20% 92%;
-
-    --popover: 224 22% 10%;
-    --popover-foreground: 224 20% 92%;
-
-    --primary: 224 20% 95%;
-    --primary-foreground: 224 22% 11%;
-
-    --secondary: 224 18% 15%;
-    --secondary-foreground: 224 20% 92%;
-
-    --muted: 224 18% 14%;
-    --muted-foreground: 215 14% 64%;
-
-    --accent: 224 18% 17%;
-    --accent-foreground: 224 20% 95%;
-
-    --destructive: 358 52% 58%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 224 16% 20%;
-    --input: 224 16% 20%;
-    --ring: 238 62% 70%;
-
-    --sidebar-bg: 224 22% 8%;
-    --sidebar-fg: 215 14% 62%;
-    --sidebar-fg-active: 224 20% 95%;
-    --sidebar-border: 224 18% 15%;
-
-    /* Brand — lifted lavender for graphite legibility */
-    --brand: 240 68% 74%;
-    --brand-soft: 240 30% 20%;
-    --brand-foreground: 224 22% 11%;
-
-    --positive: 162 46% 56%;
-    --positive-soft: 162 25% 17%;
-    --caution: 30 72% 66%;
-    --caution-soft: 30 24% 19%;
-    --warning: 358 60% 66%;
-    --warning-soft: 358 24% 19%;
-
-    /* Section accents — lifted to read on graphite */
-    --accent-overview:     218 58% 70%;
-    --accent-insights:     248 54% 76%;
-    --accent-reports:      28  36% 64%;
-    --accent-simulate:     180 42% 60%;
-    --accent-receipts:     215 36% 68%;
-    --accent-transactions: 215 36% 68%;
-    --accent-budgets:      162 42% 60%;
-    --accent-goals:        162 42% 60%;
-    --accent-recurring:    248 54% 76%;
-    --accent-leaks:        28  36% 64%;
-
-    /* Chart palette — lifted for dark legibility */
-    --chart-spend:   240 64% 74%;
-    --chart-income:  168 42% 58%;
-    --chart-grid:    224 16% 20%;
-    --chart-axis:    224 14% 62%;
-
-    --chart-1:  16  64% 72%;
-    --chart-2:  152 36% 64%;
-    --chart-3:  268 42% 76%;
-    --chart-4:  212 52% 72%;
-    --chart-5:  220 14% 66%;
-    --chart-6:  330 48% 76%;
-    --chart-7:  6   58% 72%;
-    --chart-8:  240 54% 78%;
-    --chart-9:  42  60% 68%;
-    --chart-10: 178 36% 60%;
-    --chart-11: 282 40% 76%;
-    --chart-12: 168 40% 56%;
-    --chart-13: 196 42% 66%;
-    --chart-14: 224 16% 74%;
-    --chart-15: 224 16% 36%;
-  }
-}
 
 @layer base {
   * {
@@ -289,59 +80,18 @@
 }
 
 @layer components {
-  /* ============================================================
-     CARDS — soft pastel surface: hairline ring + a low specular
-     drop tinted with a cool slate-lavender (47,55,90) so cards
-     feel light and lifted rather than harsh-bordered.
-     ============================================================ */
   .card-refined {
     @apply rounded-xl bg-card;
-    box-shadow:
-      0 1px 2px 0 rgba(47, 55, 90, 0.025),
-      0 4px 12px -4px rgba(47, 55, 90, 0.05),
-      0 0 0 1px rgba(47, 55, 90, 0.04);
-    transition: box-shadow 180ms ease, transform 180ms ease;
+    box-shadow: var(--elev-card);
+    transition: box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
   }
   .card-refined:hover {
-    box-shadow:
-      0 1px 2px 0 rgba(47, 55, 90, 0.03),
-      0 8px 20px -6px rgba(47, 55, 90, 0.07),
-      0 0 0 1px rgba(47, 55, 90, 0.055);
+    box-shadow: var(--elev-card-hover);
   }
 
-  /* Elevation utilities — graduated levels */
-  .elev-1 {
-    box-shadow:
-      0 1px 2px 0 rgba(47, 55, 90, 0.02),
-      0 0 0 1px rgba(47, 55, 90, 0.035);
-  }
-  .elev-2 {
-    box-shadow:
-      0 2px 8px -3px rgba(47, 55, 90, 0.05),
-      0 0 0 1px rgba(47, 55, 90, 0.04);
-  }
-  .elev-3 {
-    box-shadow:
-      0 20px 40px -16px rgba(47, 55, 90, 0.14),
-      0 6px 16px -6px rgba(47, 55, 90, 0.08),
-      0 0 0 1px rgba(47, 55, 90, 0.045);
-  }
-
-  /* Dark mode shadow tuning — rings tinted toward the surface, not black */
-  .dark .card-refined,
-  .dark .elev-1,
-  .dark .elev-2 {
-    box-shadow:
-      0 1px 1px 0 rgba(0, 0, 0, 0.20),
-      0 2px 6px -2px rgba(0, 0, 0, 0.30),
-      0 0 0 1px rgba(255, 255, 255, 0.05);
-  }
-  .dark .card-refined:hover {
-    box-shadow:
-      0 1px 1px 0 rgba(0, 0, 0, 0.24),
-      0 4px 12px -3px rgba(0, 0, 0, 0.40),
-      0 0 0 1px rgba(255, 255, 255, 0.07);
-  }
+  .elev-1 { box-shadow: var(--elev-1); }
+  .elev-2 { box-shadow: var(--elev-2); }
+  .elev-3 { box-shadow: var(--elev-3); }
 
   /* ============================================================
      TYPOGRAPHY SCALE — clearer hierarchy across the product
@@ -444,7 +194,7 @@
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .input-base:hover:not(:disabled):not(:focus) {
-    border-color: hsl(var(--border));
+    border-color: hsl(var(--foreground) / 0.45);
   }
   .input-base:focus {
     @apply outline-none;
@@ -469,61 +219,15 @@
      ============================================================ */
   .card-tactile {
     @apply rounded-xl bg-card;
-    box-shadow:
-      0 1px 2px 0 rgba(47, 55, 90, 0.025),
-      0 4px 12px -4px rgba(47, 55, 90, 0.05),
-      0 0 0 1px rgba(47, 55, 90, 0.04);
+    box-shadow: var(--elev-card);
     transition:
-      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform   220ms cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
     will-change: transform;
   }
   .card-tactile:hover {
     transform: translateY(-1px);
-    box-shadow:
-      0 1px 2px 0 rgba(47, 55, 90, 0.03),
-      0 12px 28px -10px rgba(47, 55, 90, 0.10),
-      0 0 0 1px rgba(99, 102, 145, 0.10);
-  }
-  .dark .card-tactile {
-    box-shadow:
-      0 1px 1px 0 rgba(0, 0, 0, 0.22),
-      0 2px 6px -2px rgba(0, 0, 0, 0.32),
-      0 0 0 1px rgba(255, 255, 255, 0.05);
-  }
-  .dark .card-tactile:hover {
-    box-shadow:
-      0 1px 1px 0 rgba(0, 0, 0, 0.28),
-      0 10px 24px -8px rgba(0, 0, 0, 0.50),
-      0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
-
-  /* ============================================================
-     ACCENT EDGE — pages opt in to expose section identity via a
-     single hairline accent rule on the top of a hero card.
-     Color follows --section-accent; if unset, falls back to brand.
-     Used sparingly: 1 per page, never on every card.
-     ============================================================ */
-  .accent-edge {
-    position: relative;
-    isolation: isolate;
-  }
-  .accent-edge::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 18px;
-    right: 18px;
-    height: 2px;
-    border-radius: 0 0 2px 2px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      hsl(var(--section-accent, var(--brand)) / 0.85) 22%,
-      hsl(var(--section-accent, var(--brand)) / 0.85) 78%,
-      transparent 100%
-    );
-    pointer-events: none;
+    box-shadow: var(--elev-card-lift);
   }
 
   /* ============================================================
@@ -546,36 +250,15 @@
     background-image: linear-gradient(
       90deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.55) 50%,
+      var(--skeleton-sheen) 50%,
       transparent 100%
     );
     animation: skeleton-shimmer 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
     will-change: transform;
   }
-  .dark .skeleton {
-    background-color: hsl(var(--muted));
-  }
-  .dark .skeleton::after {
-    background-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.06) 50%,
-      transparent 100%
-    );
-  }
   @keyframes skeleton-shimmer {
     100% { transform: translateX(100%); }
   }
-
-  /* ============================================================
-     HOVER LIFT — small, reusable utility for inline cards/links
-     that aren't full `.card-tactile` containers.
-     ============================================================ */
-  .hover-lift-sm {
-    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: transform;
-  }
-  .hover-lift-sm:hover { transform: translateY(-1px); }
 
   /* ============================================================
      SUBTLE GRADIENT for hero areas — adds visual richness
@@ -594,10 +277,13 @@
   }
 }
 
-/* Respect reduced motion preferences globally */
+/* Iteration count matters: a 0.01ms infinite shimmer or spinner strobes instead of stopping. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+  .skeleton::after { animation: none; }
 }

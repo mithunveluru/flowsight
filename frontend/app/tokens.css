@@ -1,0 +1,194 @@
+/* Design tokens: the single source for the web app and the desktop companion
+   (desktop/src/index.css imports this file). Plain CSS on purpose so both
+   Next and Vite can import it without Tailwind directives. Colors are HSL
+   channels so call sites can write hsl(var(--x) / alpha). */
+
+:root {
+  --radius: 0.75rem;
+
+  --duration-fast: 150ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+:root {
+  color-scheme: light;
+  --background: 224 30% 99%;
+  --foreground: 224 24% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 24% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 24% 14%;
+
+  --primary: 226 30% 18%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 226 30% 96.5%;
+  --secondary-foreground: 224 24% 16%;
+  --muted: 226 30% 96.5%;
+  --muted-foreground: 224 11% 46%;
+  --accent: 226 30% 96%;
+  --accent-foreground: 224 24% 16%;
+  --destructive: 358 58% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 224 22% 93%;
+  /* 3:1 against the page so text fields stay identifiable (WCAG 1.4.11) */
+  --input: 224 12% 59%;
+  --ring: 238 52% 60%;
+
+  --sidebar-bg: 226 32% 98.5%;
+  --sidebar-fg: 224 11% 42%;
+  --sidebar-fg-active: 224 24% 14%;
+  --sidebar-border: 224 22% 93%;
+
+  --brand: 238 48% 57%;
+  --brand-soft: 240 60% 97%;
+  --brand-foreground: 0 0% 100%;
+
+  /* Semantic text colors hold 4.5:1 on both card and their -soft surface */
+  --positive: 162 48% 33%;
+  --positive-soft: 162 50% 96%;
+  --caution: 26 80% 38%;
+  --caution-soft: 32 86% 96%;
+  --warning: 358 58% 50%;
+  --warning-soft: 358 80% 96.5%;
+
+  --signal: var(--brand);
+  --signal-soft: var(--brand-soft);
+  --severity-high: var(--warning);
+  --severity-high-soft: var(--warning-soft);
+  --severity-medium: var(--caution);
+  --severity-medium-soft: var(--caution-soft);
+  --severity-low: var(--brand);
+  --severity-low-soft: var(--brand-soft);
+
+  --accent-overview: 218 48% 60%;
+  --accent-insights: 248 42% 66%;
+  --accent-reports: 28 28% 52%;
+  --accent-simulate: 180 32% 48%;
+  --accent-receipts: 215 24% 55%;
+  --accent-transactions: 215 24% 55%;
+  --accent-budgets: 162 32% 48%;
+  --accent-goals: 162 32% 48%;
+  --accent-recurring: 248 42% 66%;
+  --accent-leaks: 28 28% 52%;
+
+  --chart-spend: 238 48% 64%;
+  --chart-income: 168 36% 46%;
+  --chart-grid: 224 22% 93%;
+  --chart-axis: 224 12% 46%;
+  --chart-1: 16 62% 70%;
+  --chart-2: 152 32% 58%;
+  --chart-3: 268 36% 70%;
+  --chart-4: 212 48% 68%;
+  --chart-5: 220 12% 62%;
+  --chart-6: 330 42% 72%;
+  --chart-7: 6 52% 68%;
+  --chart-8: 238 48% 72%;
+  --chart-9: 42 56% 64%;
+  --chart-10: 178 32% 56%;
+  --chart-11: 282 36% 72%;
+  --chart-12: 168 36% 50%;
+  --chart-13: 196 36% 62%;
+  --chart-14: 224 14% 70%;
+  --chart-15: 224 16% 86%;
+
+  --elev-1: 0 1px 2px 0 rgba(47, 55, 90, 0.02), 0 0 0 1px rgba(47, 55, 90, 0.035);
+  --elev-2: 0 2px 8px -3px rgba(47, 55, 90, 0.05), 0 0 0 1px rgba(47, 55, 90, 0.04);
+  --elev-3: 0 20px 40px -16px rgba(47, 55, 90, 0.14), 0 6px 16px -6px rgba(47, 55, 90, 0.08),
+    0 0 0 1px rgba(47, 55, 90, 0.045);
+  --elev-card: 0 1px 2px 0 rgba(47, 55, 90, 0.025), 0 4px 12px -4px rgba(47, 55, 90, 0.05),
+    0 0 0 1px rgba(47, 55, 90, 0.04);
+  --elev-card-hover: 0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 8px 20px -6px rgba(47, 55, 90, 0.07),
+    0 0 0 1px rgba(47, 55, 90, 0.055);
+  --elev-card-lift: 0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 12px 28px -10px rgba(47, 55, 90, 0.1),
+    0 0 0 1px rgba(99, 102, 145, 0.1);
+  --skeleton-sheen: rgba(255, 255, 255, 0.55);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 224 22% 9%;
+  --foreground: 224 20% 92%;
+  --card: 224 20% 12%;
+  --card-foreground: 224 20% 92%;
+  --popover: 224 22% 10%;
+  --popover-foreground: 224 20% 92%;
+
+  --primary: 224 20% 95%;
+  --primary-foreground: 224 22% 11%;
+  --secondary: 224 18% 15%;
+  --secondary-foreground: 224 20% 92%;
+  --muted: 224 18% 14%;
+  --muted-foreground: 215 14% 64%;
+  --accent: 224 18% 17%;
+  --accent-foreground: 224 20% 95%;
+  --destructive: 358 60% 66%;
+  --destructive-foreground: 224 22% 11%;
+
+  --border: 224 16% 20%;
+  --input: 224 12% 44%;
+  --ring: 238 62% 70%;
+
+  --sidebar-bg: 224 22% 8%;
+  --sidebar-fg: 215 14% 62%;
+  --sidebar-fg-active: 224 20% 95%;
+  --sidebar-border: 224 18% 15%;
+
+  --brand: 240 68% 74%;
+  --brand-soft: 240 30% 20%;
+  --brand-foreground: 224 22% 11%;
+
+  --positive: 162 46% 56%;
+  --positive-soft: 162 25% 17%;
+  --caution: 30 72% 66%;
+  --caution-soft: 30 24% 19%;
+  --warning: 358 60% 66%;
+  --warning-soft: 358 24% 19%;
+
+  --accent-overview: 218 58% 70%;
+  --accent-insights: 248 54% 76%;
+  --accent-reports: 28 36% 64%;
+  --accent-simulate: 180 42% 60%;
+  --accent-receipts: 215 36% 68%;
+  --accent-transactions: 215 36% 68%;
+  --accent-budgets: 162 42% 60%;
+  --accent-goals: 162 42% 60%;
+  --accent-recurring: 248 54% 76%;
+  --accent-leaks: 28 36% 64%;
+
+  --chart-spend: 240 64% 74%;
+  --chart-income: 168 42% 58%;
+  --chart-grid: 224 16% 20%;
+  --chart-axis: 224 14% 62%;
+  --chart-1: 16 64% 72%;
+  --chart-2: 152 36% 64%;
+  --chart-3: 268 42% 76%;
+  --chart-4: 212 52% 72%;
+  --chart-5: 220 14% 66%;
+  --chart-6: 330 48% 76%;
+  --chart-7: 6 58% 72%;
+  --chart-8: 240 54% 78%;
+  --chart-9: 42 60% 68%;
+  --chart-10: 178 36% 60%;
+  --chart-11: 282 40% 76%;
+  --chart-12: 168 40% 56%;
+  --chart-13: 196 42% 66%;
+  --chart-14: 224 16% 74%;
+  --chart-15: 224 16% 36%;
+
+  --elev-1: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --elev-2: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 2px 6px -2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  --elev-3: 0 24px 48px -16px rgba(0, 0, 0, 0.6), 0 8px 20px -8px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  --elev-card: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 2px 6px -2px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  --elev-card-hover: 0 1px 1px 0 rgba(0, 0, 0, 0.24), 0 4px 12px -3px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.07);
+  --elev-card-lift: 0 1px 1px 0 rgba(0, 0, 0, 0.28), 0 10px 24px -8px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  --skeleton-sheen: rgba(255, 255, 255, 0.06);
+}
