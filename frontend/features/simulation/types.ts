@@ -74,6 +74,8 @@ export interface ConsequenceInsight {
 export interface GoalImpact {
   goalName: string;
   delayMonths: number;
+  // false when the scenario leaves no savings for the goal; delayMonths is then 0
+  reachable?: boolean;
   description: string;
 }
 
