@@ -76,10 +76,20 @@ const config: Config = {
         },
       },
       boxShadow: {
-        "card-rest":
-          "0 1px 2px 0 rgba(47, 55, 90, 0.025), 0 4px 12px -4px rgba(47, 55, 90, 0.05), 0 0 0 1px rgba(47, 55, 90, 0.04)",
-        "card-hover":
-          "0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 8px 20px -6px rgba(47, 55, 90, 0.07), 0 0 0 1px rgba(47, 55, 90, 0.055)",
+        "elev-1": "var(--elev-1)",
+        "elev-2": "var(--elev-2)",
+        "elev-3": "var(--elev-3)",
+        "card-rest": "var(--elev-card)",
+        "card-hover": "var(--elev-card-hover)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        "out-quint": "var(--ease-out)",
+        "in-out-soft": "var(--ease-in-out)",
       },
       borderRadius: {
         lg: "var(--radius)",
