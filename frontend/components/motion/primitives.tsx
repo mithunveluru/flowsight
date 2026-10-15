@@ -256,5 +256,41 @@ export function PulseDot({
   );
 }
 
+// Collapse: height-auto disclosure body; renders or unmounts instantly under reduced motion.
+export function Collapse({
+  open,
+  children,
+  id,
+  className,
+}: {
+  open: boolean;
+  children: React.ReactNode;
+  // pair with aria-controls on the toggle button
+  id?: string;
+  className?: string;
+}) {
+  const reduced = useReducedMotion();
+  if (reduced) return open ? <div id={id} className={className}>{children}</div> : null;
+
+  return (
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div
+          key="collapse"
+          id={id}
+          className={className}
+          style={{ overflow: "hidden" }}
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: DURATION.base, ease: EASE_OUT }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export { motion, AnimatePresence };
 export type { MotionProps };

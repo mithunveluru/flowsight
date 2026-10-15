@@ -2,9 +2,10 @@
 
 // Shared primitives for the intelligence layer. Colors flow through --signal/--severity tokens.
 import * as React from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PulseDot } from "@/components/motion/primitives";
+import { formatPercentDelta, trendTone, type TrendIntent, type TrendTone } from "./signals-core";
 
 export type Severity = "HIGH" | "MEDIUM" | "LOW";
 
@@ -59,7 +60,7 @@ export function ConfidenceBadge({
       )}
       style={{ backgroundColor: `hsl(${soft})`, color: `hsl(${fg})` }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: `hsl(${fg})` }} />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: `hsl(${fg})` }} aria-hidden="true" />
       {label ?? defaultLabel}
     </span>
   );
@@ -265,6 +266,122 @@ export function SignalSectionHeader({
         {subtitle && <span className="truncate text-xs text-muted-foreground">· {subtitle}</span>}
       </div>
       {action}
+    </div>
+  );
+}
+
+export type { TrendIntent, TrendTone };
+
+const TONE_CLASS: Record<TrendTone, string> = {
+  good: "text-positive",
+  bad: "text-warning",
+  flat: "text-muted-foreground",
+  neutral: "text-foreground",
+};
+
+const TONE_WORD: Record<TrendTone, string> = {
+  good: "favourable",
+  bad: "unfavourable",
+  flat: "",
+  neutral: "",
+};
+
+// TrendDelta: signed percent change with arrow and color; intent decides whether up is good.
+export function TrendDelta({
+  percent,
+  intent = "neutral",
+  digits = 1,
+  suffix,
+  className,
+}: {
+  percent: number;
+  intent?: TrendIntent;
+  digits?: number;
+  // e.g. "vs last month"
+  suffix?: string;
+  className?: string;
+}) {
+  const tone = trendTone(percent, intent);
+  const Icon = tone === "flat" ? ArrowRight : percent > 0 ? ArrowUpRight : ArrowDownRight;
+  const direction = tone === "flat" ? "unchanged" : percent > 0 ? "up" : "down";
+  const spoken = [direction, tone === "flat" ? "" : `${Math.abs(percent).toFixed(digits)} percent`, TONE_WORD[tone], suffix]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-xs font-medium tabular-nums", TONE_CLASS[tone], className)}>
+      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+      <span aria-hidden="true">{formatPercentDelta(percent, digits)}</span>
+      {suffix && <span className="font-normal text-muted-foreground" aria-hidden="true">{suffix}</span>}
+      <span className="sr-only">{spoken}</span>
+    </span>
+  );
+}
+
+export type SignalSource = "rules" | "model" | "user" | "import" | "receipt";
+
+const SOURCE_LABEL: Record<SignalSource, string> = {
+  rules: "Rule-based",
+  model: "ML model",
+  user: "You",
+  import: "CSV import",
+  receipt: "Receipt scan",
+};
+
+// SourceTag: where a number or label came from, shown next to anything derived.
+export function SourceTag({
+  source,
+  version,
+  className,
+}: {
+  source: SignalSource;
+  // model version, shown only for source="model"
+  version?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground",
+        className
+      )}
+    >
+      <span className="sr-only">Source: </span>
+      {SOURCE_LABEL[source]}
+      {source === "model" && version && <span className="font-mono text-[10px]">{version}</span>}
+    </span>
+  );
+}
+
+const formatRupees = (v: number) => `₹${Math.round(v).toLocaleString("en-IN")}`;
+
+// ImpactFigure: monthly amount with its yearly equivalent, the standard for recoverable money.
+export function ImpactFigure({
+  monthly,
+  annual,
+  format = formatRupees,
+  size = "md",
+  className,
+}: {
+  monthly: number;
+  // defaults to monthly * 12; pass the backend figure when it has one
+  annual?: number;
+  format?: (value: number) => string;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
+  const yearly = annual ?? monthly * 12;
+  return (
+    <div className={cn("text-right tabular-nums", className)}>
+      <p
+        className={cn(
+          "font-semibold text-foreground",
+          size === "lg" ? "text-2xl" : size === "md" ? "text-base" : "text-sm"
+        )}
+      >
+        {format(monthly)}
+        <span className="text-xs font-normal text-muted-foreground">/mo</span>
+      </p>
+      <p className="text-xs text-muted-foreground">{format(yearly)}/yr</p>
     </div>
   );
 }
