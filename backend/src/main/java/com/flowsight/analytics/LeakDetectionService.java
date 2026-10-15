@@ -55,8 +55,9 @@ public class LeakDetectionService {
         Pattern.CASE_INSENSITIVE
     );
 
-    private final TransactionRepository      transactionRepository;
-    private final RecurringPatternRepository patternRepository;
+    private final TransactionRepository        transactionRepository;
+    private final RecurringPatternRepository   patternRepository;
+    private final MerchantNormalizationService merchantNormalizer;
 
     public LeakDetectionResponse detectLeaks(UUID userId) {
         LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
@@ -102,7 +103,7 @@ public class LeakDetectionService {
     ) {
         Map<TransactionCategory, List<RecurringPattern>> byCategory = new EnumMap<>(TransactionCategory.class);
         for (RecurringPattern p : patterns) {
-            TransactionCategory cat = merchantCategory.get(p.getMerchant());
+            TransactionCategory cat = merchantCategory.get(p.getNormalizedKey());
             if (cat == null || !DUPLICATE_DETECT_CATEGORIES.contains(cat)) continue;
             byCategory.computeIfAbsent(cat, k -> new ArrayList<>()).add(p);
         }
@@ -156,13 +157,13 @@ public class LeakDetectionService {
     private LeakInsight detectSubscriptionCreep(List<RecurringPattern> patterns, List<Transaction> allTxns) {
         Map<String, List<Transaction>> byMerchant = allTxns.stream()
             .filter(t -> t.getMerchant() != null)
-            .collect(Collectors.groupingBy(Transaction::getMerchant));
+            .collect(Collectors.groupingBy(t -> merchantNormalizer.normalizeKey(t.getMerchant())));
 
         List<LeakItem> crept = new ArrayList<>();
         BigDecimal totalImpact = BigDecimal.ZERO;
 
         for (RecurringPattern p : patterns) {
-            List<Transaction> txns = byMerchant.getOrDefault(p.getMerchant(), List.of());
+            List<Transaction> txns = byMerchant.getOrDefault(p.getNormalizedKey(), List.of());
             if (txns.size() < CREEP_MIN_OCCURRENCES) continue;
 
             // compare the last 2 payments vs the earlier average
@@ -312,11 +313,11 @@ public class LeakDetectionService {
     }
 
     private Map<String, TransactionCategory> buildMerchantCategoryMap(List<Transaction> txns) {
-        // last category wins per merchant
+        // keyed like RecurringPattern.normalizedKey; last category wins per merchant
         Map<String, TransactionCategory> map = new HashMap<>();
         for (Transaction tx : txns) {
             if (tx.getMerchant() == null || tx.getCategory() == null) continue;
-            map.put(tx.getMerchant(), tx.getCategory());
+            map.put(merchantNormalizer.normalizeKey(tx.getMerchant()), tx.getCategory());
         }
         return map;
     }
