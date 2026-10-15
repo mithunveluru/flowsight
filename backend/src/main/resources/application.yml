@@ -109,6 +109,39 @@ application:
     api-key: ${GROQ_API_KEY:}
   receipt-ocr:
     url: ${RECEIPT_OCR_URL:}
+  # ml-service. With the URL or token blank, or a capability flag off, every caller
+  # gets the existing rule-based result and nothing is sent or logged.
+  ml:
+    url: ${ML_SERVICE_URL:}
+    token: ${ML_SERVICE_TOKEN:}
+    connect-timeout: ${ML_CONNECT_TIMEOUT:250ms}
+    failure-threshold: ${ML_CIRCUIT_FAILURE_THRESHOLD:5}
+    open-duration: ${ML_CIRCUIT_OPEN_DURATION:30s}
+    capabilities:
+      categorizer:
+        enabled: ${ML_CATEGORIZER_ENABLED:false}
+        shadow: ${ML_CATEGORIZER_SHADOW:false}
+        timeout: ${ML_CATEGORIZER_TIMEOUT:400ms}
+      merchant-embeddings:
+        enabled: ${ML_MERCHANT_EMBEDDINGS_ENABLED:false}
+        shadow: ${ML_MERCHANT_EMBEDDINGS_SHADOW:false}
+        timeout: ${ML_MERCHANT_EMBEDDINGS_TIMEOUT:400ms}
+      recurring-scorer:
+        enabled: ${ML_RECURRING_SCORER_ENABLED:false}
+        shadow: ${ML_RECURRING_SCORER_SHADOW:false}
+        timeout: ${ML_RECURRING_SCORER_TIMEOUT:400ms}
+      forecaster:
+        enabled: ${ML_FORECASTER_ENABLED:false}
+        shadow: ${ML_FORECASTER_SHADOW:false}
+        timeout: ${ML_FORECASTER_TIMEOUT:400ms}
+      ocr:
+        enabled: ${ML_OCR_ENABLED:false}
+        shadow: ${ML_OCR_SHADOW:false}
+        timeout: ${ML_OCR_TIMEOUT:400ms}
+      narrative:
+        enabled: ${ML_NARRATIVE_ENABLED:false}
+        shadow: ${ML_NARRATIVE_SHADOW:false}
+        timeout: ${ML_NARRATIVE_TIMEOUT:400ms}
   receipt:
     # Default quota assigned to brand-new users for OCR receipt processing.
     # Admins can override per user (custom limit or unlimited) via /api/v1/admin/quota.
