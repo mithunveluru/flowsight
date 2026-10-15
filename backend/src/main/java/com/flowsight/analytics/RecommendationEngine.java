@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 // Fuses leaks, behaviors, and active goals into ranked recommendations (top 5 by monthly saving).
+// Behavior advice carries no saving estimate (null) and ranks after every quantified one.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -33,9 +34,12 @@ public class RecommendationEngine {
 
         // leaks -> cancel/reduce
         LeakDetectionResponse leaks = leakDetectionService.detectLeaks(userId);
+        BigDecimal recoverableMonthly = BigDecimal.ZERO;
         for (LeakInsight leak : leaks.getLeaks()) {
             Recommendation rec = fromLeak(leak);
-            if (rec != null) candidates.add(rec);
+            if (rec == null) continue;
+            candidates.add(rec);
+            recoverableMonthly = recoverableMonthly.add(rec.getPotentialMonthlySaving());
         }
 
         // behaviors -> habit shifts
@@ -44,19 +48,20 @@ public class RecommendationEngine {
             if (rec != null) candidates.add(rec);
         }
 
-        // active goal + leaks -> suggest redirecting recovered savings
+        // active goal + leak savings -> suggest redirecting what the leak recommendations recover
         List<FinancialGoal> activeGoals = goalRepository
             .findByUserIdAndStatusOrderByTargetDateAsc(userId, GoalStatus.ACTIVE);
-        if (!activeGoals.isEmpty() && leaks.getTotalMonthlyImpact().compareTo(NOISE_FLOOR) > 0) {
+        if (!activeGoals.isEmpty() && recoverableMonthly.compareTo(NOISE_FLOOR) > 0) {
             FinancialGoal nearestGoal = activeGoals.get(0);
-            candidates.add(buildRedirectRecommendation(nearestGoal, leaks.getTotalMonthlyImpact()));
+            candidates.add(buildRedirectRecommendation(nearestGoal, recoverableMonthly));
         }
 
-        // rank by saving, cap
+        // quantified savings above the noise floor rank first; unquantified behavior advice follows
         return candidates.stream()
-            .filter(r -> r.getPotentialMonthlySaving() != null
-                      && r.getPotentialMonthlySaving().compareTo(NOISE_FLOOR) >= 0)
-            .sorted(Comparator.comparing(Recommendation::getPotentialMonthlySaving).reversed())
+            .filter(r -> r.getPotentialMonthlySaving() == null
+                      || r.getPotentialMonthlySaving().compareTo(NOISE_FLOOR) >= 0)
+            .sorted(Comparator.comparing(Recommendation::getPotentialMonthlySaving,
+                Comparator.nullsLast(Comparator.reverseOrder())))
             .limit(MAX_RECOMMENDATIONS)
             .collect(Collectors.toList());
     }

@@ -25,7 +25,9 @@ public class InsightsService {
         List<Recommendation> recommendations = recommendationEngine.generate(userId, profile.getPatterns());
         List<ConsequenceProjection> consequences = consequenceCalculator.topProjections(userId);
 
+        // REDIRECT_SAVINGS re-spends the savings of the other recommendations; counting it would double them
         BigDecimal totalMonthly = recommendations.stream()
+            .filter(r -> !"REDIRECT_SAVINGS".equals(r.getType()))
             .map(Recommendation::getPotentialMonthlySaving)
             .filter(java.util.Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
