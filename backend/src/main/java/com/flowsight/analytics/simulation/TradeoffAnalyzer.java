@@ -21,6 +21,8 @@ import java.util.UUID;
 public class TradeoffAnalyzer {
 
     private static final double ASSUMED_ANNUAL_RETURN = 0.08;
+    private static final int    GOAL_HORIZON_MONTHS   = 120;
+    private static final double DAYS_PER_MONTH        = 365.25 / 12;
 
     private final FinancialGoalRepository goalRepository;
     private final ProjectionEngine        projectionEngine;
@@ -38,41 +40,76 @@ public class TradeoffAnalyzer {
         return tradeoffs;
     }
 
-    // goal impact for the user's nearest active goal, or null
-    public GoalImpact computeGoalImpact(UUID userId, BigDecimal monthlyImpact, FinancialBaseline baseline) {
+    // Goal impact for the user's nearest active goal, or null. Assumes the baseline's monthly net savings
+    // all go to the goal; impactMonths is how long the scenario's monthly cost lasts (null = open-ended).
+    public GoalImpact computeGoalImpact(
+        UUID userId, BigDecimal monthlyImpact, Integer impactMonths, FinancialBaseline baseline
+    ) {
         if (monthlyImpact.compareTo(BigDecimal.ZERO) >= 0) return null; // boost or neutral — no delay
+        if (!baseline.isHasEnoughData()) return null;
 
         List<FinancialGoal> goals = goalRepository
             .findByUserIdAndStatusOrderByTargetDateAsc(userId, GoalStatus.ACTIVE);
         if (goals.isEmpty()) return null;
 
         FinancialGoal goal = goals.get(0);
-        LocalDate today = LocalDate.now();
-        long daysToTarget = ChronoUnit.DAYS.between(today, goal.getTargetDate());
-        if (daysToTarget <= 0) return null;
-
         BigDecimal remaining = goal.getTargetAmount().subtract(goal.getCurrentAmount());
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) return null;
 
-        // monthly contribution needed to hit the goal on time
-        double monthsToTarget = daysToTarget / 30.0;
-        double originalMonthly = remaining.doubleValue() / monthsToTarget;
+        double need    = remaining.doubleValue();
+        double current = baseline.getMonthlyNetSavings().doubleValue();
+        double reduced = current + monthlyImpact.doubleValue();
 
-        // monthlyImpact is negative (a cost); flip to get the reduction in available savings
-        double reduction = -monthlyImpact.doubleValue();
-        double newMonthly = Math.max(1, originalMonthly - reduction);
+        if (reduced <= 0) {
+            return unreachable(goal, String.format(
+                "This takes your monthly savings from %s to %s, leaving nothing to put toward '%s'. "
+                    + "At this pace the goal can't be reached.",
+                signedINR(current), signedINR(reduced), goal.getName()));
+        }
 
-        double newMonthsToTarget = remaining.doubleValue() / newMonthly;
-        int delayMonths = Math.max(0, (int) Math.round(newMonthsToTarget - monthsToTarget));
+        Integer before = monthsToReach(need, current, current, null);
+        Integer after  = monthsToReach(need, current, reduced, impactMonths);
+        if (before == null || after == null) {
+            return unreachable(goal, String.format(
+                "At ₹%s/month of savings, '%s' would take more than %d years to reach.",
+                fmtINR(BigDecimal.valueOf(reduced)), goal.getName(), GOAL_HORIZON_MONTHS / 12));
+        }
 
+        int delayMonths = after - before;
         if (delayMonths == 0) return null;
+
+        String description = String.format(
+            "Pushes '%s' back by about %d %s: from %d to %d months at your current savings pace.",
+            goal.getName(), delayMonths, delayMonths == 1 ? "month" : "months", before, after);
+        double monthsToTarget = ChronoUnit.DAYS.between(LocalDate.now(), goal.getTargetDate()) / DAYS_PER_MONTH;
+        if (after > monthsToTarget) {
+            description += " That is later than its target date of " + goal.getTargetDate() + ".";
+        }
 
         return GoalImpact.builder()
             .goalName(goal.getName())
             .delayMonths(delayMonths)
-            .description(String.format(
-                "Delays your '%s' goal by approximately %d %s.",
-                goal.getName(), delayMonths, delayMonths == 1 ? "month" : "months"))
+            .reachable(true)
+            .description(description)
+            .build();
+    }
+
+    // First month in which cumulative savings cover the goal, or null beyond the planning horizon.
+    private static Integer monthsToReach(double need, double baseMonthly, double scenarioMonthly, Integer scenarioMonths) {
+        double saved = 0;
+        for (int m = 1; m <= GOAL_HORIZON_MONTHS; m++) {
+            saved += (scenarioMonths == null || m <= scenarioMonths) ? scenarioMonthly : baseMonthly;
+            if (saved >= need) return m;
+        }
+        return null;
+    }
+
+    private static GoalImpact unreachable(FinancialGoal goal, String description) {
+        return GoalImpact.builder()
+            .goalName(goal.getName())
+            .delayMonths(0)
+            .reachable(false)
+            .description(description)
             .build();
     }
 
@@ -171,5 +208,9 @@ public class TradeoffAnalyzer {
 
     private static String fmtINR(BigDecimal v) {
         return String.format("%,.0f", v.doubleValue());
+    }
+
+    private static String signedINR(double v) {
+        return (v < 0 ? "-₹" : "₹") + String.format("%,.0f", Math.abs(v));
     }
 }

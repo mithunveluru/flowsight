@@ -15,7 +15,7 @@ public class FinancialBaseline {
     private BigDecimal monthlyDiscretionary;
     private BigDecimal monthlyNetSavings;
     private double     savingsRate;             // 0–1
-    // Months of transaction data we averaged across (max 3, can be 1–3).
+    // Complete calendar months of history averaged across (0-3; 0 means no baseline yet).
     private int        dataMonths;
     // Top category by spend over the analysis window.
     private String     topCategoryName;

@@ -34,7 +34,7 @@ public class ConsequenceInsightGenerator {
             out.add(ConsequenceInsight.builder()
                 .code("GOAL_DELAY")
                 .severity("WARNING")
-                .title("Goal completion delayed")
+                .title(goalImpact.isReachable() ? "Goal completion delayed" : "Goal out of reach at this pace")
                 .description(goalImpact.getDescription())
                 .build());
         }

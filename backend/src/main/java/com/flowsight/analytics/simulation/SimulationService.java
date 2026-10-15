@@ -40,7 +40,8 @@ public class SimulationService {
         FlexibilityScore flexibility = flexibilityCalculator.compute(current, projected);
         Projection       projection  = projectionEngine.project(current, scenario, deltas.monthlyImpact());
         List<Tradeoff>   tradeoffs   = tradeoffAnalyzer.analyze(current, scenario);
-        GoalImpact       goalImpact  = tradeoffAnalyzer.computeGoalImpact(userId, deltas.monthlyImpact(), current);
+        GoalImpact       goalImpact  = tradeoffAnalyzer.computeGoalImpact(
+            userId, deltas.monthlyImpact(), impactMonths(scenario), current);
         List<ConsequenceInsight> insights = insightGenerator.generate(
             current, scenario, deltas.monthlyImpact(), deltas.recurringDelta(), flexibility, goalImpact);
 
@@ -94,15 +95,21 @@ public class SimulationService {
         };
     }
 
+    // how long the monthly impact lasts; null = open-ended
+    private static Integer impactMonths(ScenarioRequest scenario) {
+        return switch (scenario.getType()) {
+            case LOAN_EMI -> scenario.getTenureMonths();
+            case ONE_TIME_PURCHASE, RECURRING_EXPENSE, SAVINGS_ADJUSTMENT -> scenario.getDurationMonths();
+        };
+    }
+
     // projected baseline with deltas applied, for flexibility recomputation
     private FinancialBaseline applyDeltasToBaseline(FinancialBaseline current, Deltas deltas) {
         BigDecimal newRecurring   = current.getMonthlyRecurring().add(deltas.recurringDelta());
         BigDecimal newSpend       = current.getMonthlySpend()
             .add(deltas.recurringDelta().max(BigDecimal.ZERO));
         BigDecimal newNetSavings  = current.getMonthlyNetSavings().add(deltas.monthlyImpact());
-        BigDecimal newDiscretionary = current.getMonthlyIncome()
-            .subtract(newSpend).subtract(newRecurring.max(BigDecimal.ZERO))
-            .max(BigDecimal.ZERO);
+        BigDecimal newDiscretionary = current.getMonthlyIncome().subtract(newSpend).max(BigDecimal.ZERO);
 
         double newRate = current.getMonthlyIncome().compareTo(BigDecimal.ZERO) > 0
             ? newNetSavings.doubleValue() / current.getMonthlyIncome().doubleValue() : 0.0;
