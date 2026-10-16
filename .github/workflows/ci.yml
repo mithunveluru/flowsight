@@ -60,10 +60,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node 20
+      - name: Set up Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -72,6 +72,9 @@ jobs:
 
       - name: Type check
         run: npm run type-check
+
+      - name: Unit tests
+        run: npm test
 
       - name: Lint
         run: npm run lint
@@ -83,3 +86,57 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t flowsight-frontend:ci .
+
+  desktop:
+    name: Desktop - Type check & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            desktop/package-lock.json
+
+      # the desktop app compiles shared modules from ../frontend through the @ alias
+      - name: Install dependencies
+        run: |
+          npm ci --prefix frontend
+          npm ci --prefix desktop
+
+      - name: Type check
+        run: npm run type-check --prefix desktop
+
+      - name: Build
+        run: npm run build --prefix desktop
+
+  ml-service:
+    name: ML service - Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ml-service/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Test
+        run: python -m pytest -q
+
+      - name: Build Docker image
+        run: docker build -t flowsight-ml-service:ci .
