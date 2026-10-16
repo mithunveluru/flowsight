@@ -17,4 +17,7 @@ public class AccountResponse {
 
     // Per-user OCR receipt quota — the only artificial limit in the product.
     private ReceiptQuotaInfo receiptQuota;
+
+    // When false, predictions never use this user's own history or corrections.
+    private boolean personalizationEnabled;
 }
