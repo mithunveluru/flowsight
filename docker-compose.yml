@@ -55,6 +55,9 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3007,http://localhost:1420,tauri://localhost,http://tauri.localhost}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       RECEIPT_OCR_URL: ${RECEIPT_OCR_URL:-http://receipt-ocr:8000}
+      # ML stays off (rules only) until a token is set and a capability flag is enabled
+      ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:8000}
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
       # Email delivery. gmail (SMTP, local dev), brevo (HTTPS, works where SMTP
       # is blocked e.g. Render), or resend. Switch with EMAIL_PROVIDER.
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-gmail}
@@ -83,6 +86,25 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  ml-service:
+    build:
+      context: ./ml-service
+    container_name: flowsight-ml-service
+    environment:
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
+      ML_MODEL_DIR: /models
+    volumes:
+      - ml_models:/models
+    ports:
+      - "127.0.0.1:8002:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -98,3 +120,4 @@ services:
 
 volumes:
   postgres_data:
+  ml_models:
