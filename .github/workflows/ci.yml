@@ -140,3 +140,20 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t flowsight-ml-service:ci .
+
+  eval:
+    name: Eval - OCR, categorization and merchants
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: eval-m2-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: eval-m2-
+
+      # offline Tesseract mode; fails when any metric drops below its stored baseline
+      - name: Run eval
+        run: eval/run.sh
