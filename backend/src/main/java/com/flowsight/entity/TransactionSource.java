@@ -4,5 +4,6 @@ public enum TransactionSource {
     MANUAL,
     CSV,
     SMS,
-    OCR
+    OCR,
+    SAMPLE
 }
