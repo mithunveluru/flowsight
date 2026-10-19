@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Usage: eval/run.sh [--mode tesseract|llm|llm-http11] [--update-baseline]
+# Usage: eval/run.sh [--mode tesseract|llm|ml-service] [--update-baseline]
 #
 # tesseract (default): offline; scorer tests, receipt OCR via Tesseract, categorization, merchants.
-# llm:        receipt OCR through the receipt-ocr service exactly as the backend calls it.
-# llm-http11: diagnostic; same, but the client is forced to HTTP/1.1 (see CurrentReceiptPipeline).
-# LLM modes need RECEIPT_OCR_URL (default http://127.0.0.1:8001) and score synthetic receipts only.
+# llm:        receipt OCR through the receipt-ocr service exactly as the backend calls it
+#             (needs RECEIPT_OCR_URL, default http://127.0.0.1:8001).
+# ml-service: receipt OCR through ml-service's ocr capability (needs ML_SERVICE_URL and
+#             ML_SERVICE_TOKEN, ML_OCR_ENABLED=true on the service).
+# Non-default modes score synthetic receipts only.
 # Exit status: non-zero when any suite regresses against eval/baselines/ or a baseline is stale.
 set -euo pipefail
 
@@ -20,7 +22,7 @@ done
 case "$MODE" in
   tesseract) SUITE=ocr-tesseract ;;
   llm) SUITE=ocr-llm ;;
-  llm-http11) SUITE=ocr-llm-http11-diagnostic ;;
+  ml-service) SUITE=ocr-ml-service ;;
   *) echo "unknown mode: $MODE" >&2; exit 64 ;;
 esac
 
@@ -72,9 +74,11 @@ if [ "$MODE" = tesseract ]; then
               -Deval.categorization.output=/work/eval/out/pred-categorization.jsonl
               -Deval.merchants.input=/work/eval/merchants/cases.csv
               -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl)
+elif [ "$MODE" = ml-service ]; then
+  MVN_PROPS+=(-Deval.mlServiceUrl="${ML_SERVICE_URL:?ML_SERVICE_URL must be set}")
+  DOCKER_ENV=(-e GROQ_API_KEY= -e ML_SERVICE_TOKEN)
 else
   MVN_PROPS+=(-Deval.receiptOcrUrl="${RECEIPT_OCR_URL:-http://127.0.0.1:8001}" -Deval.delayMs="${EVAL_DELAY_MS:-2000}")
-  [ "$MODE" = llm-http11 ] && MVN_PROPS+=(-Deval.forceHttp11=true)
   # Like the compose stack, the Tesseract fallback may ask Groq about ambiguous merchants.
   DOCKER_ENV=(-e GROQ_API_KEY)
 fi

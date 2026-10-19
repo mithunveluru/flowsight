@@ -25,7 +25,8 @@ IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".webp"}
 DEFAULT_TOLERANCE = {
     "ocr-tesseract": {"overall": 0.01, "slice_items": 1},
     "ocr-llm": {"overall": 0.05, "slice_items": None},
-    "ocr-llm-http11-diagnostic": {"overall": 0.05, "slice_items": None},
+    # ml-service OCR with its LLM pass off is deterministic like the Java path
+    "ocr-ml-service": {"overall": 0.01, "slice_items": 1},
     "categorization": {"overall": 0.01, "slice_items": 1},
     "merchants": {"overall": 0.01, "slice_items": 1},
 }

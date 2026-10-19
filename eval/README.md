@@ -19,23 +19,23 @@ about 1.5 minutes on 8 cores; outputs land in `eval/out/` (ignored by git).
 Exit status is non-zero when a metric regresses, when the generated receipts no longer match
 `eval/receipts/truth.jsonl`, or when a baseline is missing.
 
-LLM modes call the receipt-ocr service and score synthetic receipts only:
+The other modes call a running service and score synthetic receipts only:
 
 ```
 RECEIPT_OCR_URL=http://127.0.0.1:8001 GROQ_API_KEY=... eval/run.sh --mode llm
-RECEIPT_OCR_URL=http://127.0.0.1:8001 GROQ_API_KEY=... eval/run.sh --mode llm-http11
+ML_SERVICE_URL=http://127.0.0.1:8000 ML_SERVICE_TOKEN=... eval/run.sh --mode ml-service
 ```
 
-`llm` calls the service exactly as the backend does. `llm-http11` is a diagnostic: the
-backend's `HttpClient` defaults to HTTP/2, whose cleartext upgrade the service rejects, so
-it never gets an LLM answer. The diagnostic forces HTTP/1.1 to measure the model itself.
-`EVAL_DELAY_MS` (default 2000) spaces out requests for the provider's rate limit.
+`llm` calls the receipt-ocr vision service exactly as the backend does (its answer is
+cross-checked by the Tesseract pipeline). `EVAL_DELAY_MS` (default 2000) spaces out requests
+for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml-service with
+`ML_OCR_ENABLED=true`).
 
 ## What is measured
 
 | Suite | Code under test | Data |
 |---|---|---|
-| `ocr-tesseract`, `ocr-llm` | `CurrentReceiptPipeline`, a copy of `ReceiptService.extractWithFallback` without the database: `ReceiptOcrClientService` + `ReceiptOcrMapper`, else `OcrService` + `ReceiptParserService` | 200 synthetic receipts from `receipts/generate.py`, plus private real receipts if present |
+| `ocr-tesseract`, `ocr-llm`, `ocr-ml-service` | `CurrentReceiptPipeline`: `ReceiptExtractionService` as `ReceiptService` calls it, without the database (ml-service OCR, else receipt-ocr cross-checked by Tesseract, else the multi-pass `TesseractReceiptPipeline`) | 200 synthetic receipts from `receipts/generate.py`, plus private real receipts if present |
 | `categorization` | `CategorizationService.categorize` with the inputs `TransactionIngestionPipeline.processCsvRow` gives it | `categorization/cases.csv` (476 rows, India / KSA / UAE / US) |
 | `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
 
@@ -52,7 +52,7 @@ Receipt metrics (fraction of receipts unless noted):
 - `line_item_f1`: micro F1 over items; a pair matches when names are at least 0.80 similar and
   the price equals the line amount or unit price.
 - `ece`: expected calibration error of `confidence` against total correctness, 10 equal-width
-  bins, with a reliability table. `n/a` when the pipeline returns no confidence (Tesseract).
+  bins, with a reliability table. `n/a` when the pipeline returns no confidence.
 
 Slices: currency, number format (`us` 1,234.50, `eu` 1.234,50, `indian` 1,23,456.00,
 `arabic_indic` ١٬٢٣٤٫٥٠), perturbation (`clean`, `background`, `rotation`, `perspective`,
