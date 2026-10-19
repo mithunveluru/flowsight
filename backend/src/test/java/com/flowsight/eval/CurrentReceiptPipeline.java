@@ -1,7 +1,9 @@
 package com.flowsight.eval;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowsight.analytics.MerchantNormalizationService;
 import com.flowsight.exception.OcrException;
+import com.flowsight.merchant.MerchantResolver;
 import com.flowsight.ml.MlCapability;
 import com.flowsight.ml.MlClient;
 import com.flowsight.ml.MlProperties;
@@ -17,6 +19,7 @@ import com.flowsight.ocr.ReceiptOcrClientService;
 import com.flowsight.ocr.ReceiptOcrMapper;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.ocr.TesseractReceiptPipeline;
+import com.flowsight.service.ReceiptService;
 import org.mockito.Mockito;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
@@ -27,10 +30,12 @@ import java.util.Map;
 // The production receipt path, ReceiptService's call to ReceiptExtractionService, without the
 // Receipt entity or the database: ml-service OCR when a URL and token are given, then the
 // receipt-ocr service when its URL is given (cross-checked by Tesseract), else Tesseract alone.
+// The merchant is then resolved as on the review screen, offline: built-in aliases, no user rules.
 // This is the only class to change when the eval should score a different pipeline.
 final class CurrentReceiptPipeline {
 
     private final ReceiptExtractionService extraction;
+    private final MerchantResolver merchants = MerchantResolver.offline(new MerchantNormalizationService());
 
     CurrentReceiptPipeline(String receiptOcrUrl, String groqApiKey, String mlServiceUrl, String mlServiceToken) {
         // same builder Spring Boot uses for the application ObjectMapper
@@ -50,7 +55,7 @@ final class CurrentReceiptPipeline {
     ReceiptPrediction extract(Path image) {
         try {
             ReceiptExtractionService.Extraction e = extraction.extract(image, "image/jpeg", PredictionContext.NONE);
-            return ReceiptPrediction.of(e.provider(), e.result());
+            return ReceiptPrediction.of(e.provider(), ReceiptService.withResolvedMerchant(merchants, e.result(), null));
         } catch (OcrException e) {
             return ReceiptPrediction.failed(e.getMessage());
         }

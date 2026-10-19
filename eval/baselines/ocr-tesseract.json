@@ -12,7 +12,7 @@
     "date": 0.885,
     "ece": 0.038,
     "line_item_f1": 0.848,
-    "merchant_exact": 0.835,
+    "merchant_exact": 0.975,
     "merchant_fuzzy": 0.985,
     "total": 0.805
   },
@@ -30,7 +30,7 @@
       "currency": 1.0,
       "date": 0.88,
       "line_item_f1": 0.9197,
-      "merchant_exact": 0.74,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 1.0,
       "n": 50,
       "total": 0.92
@@ -39,7 +39,7 @@
       "currency": 1.0,
       "date": 0.9,
       "line_item_f1": 0.7391,
-      "merchant_exact": 0.8,
+      "merchant_exact": 0.94,
       "merchant_fuzzy": 0.94,
       "n": 50,
       "total": 0.68
@@ -48,7 +48,7 @@
       "currency": 1.0,
       "date": 0.9,
       "line_item_f1": 0.9371,
-      "merchant_exact": 0.8,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 50,
       "total": 0.98
@@ -57,7 +57,7 @@
       "currency": 1.0,
       "date": 0.8667,
       "line_item_f1": 0.0,
-      "merchant_exact": 0.9,
+      "merchant_exact": 0.9333,
       "merchant_fuzzy": 0.9333,
       "n": 30,
       "total": 0.0
@@ -66,7 +66,7 @@
       "currency": 1.0,
       "date": 0.92,
       "line_item_f1": 0.9079,
-      "merchant_exact": 0.92,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 0.96,
       "n": 25,
       "total": 0.88
@@ -75,7 +75,7 @@
       "currency": 1.0,
       "date": 0.88,
       "line_item_f1": 0.9197,
-      "merchant_exact": 0.74,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 1.0,
       "n": 50,
       "total": 0.92
@@ -84,7 +84,7 @@
       "currency": 1.0,
       "date": 0.8842,
       "line_item_f1": 0.9382,
-      "merchant_exact": 0.8421,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 95,
       "total": 0.9789
@@ -93,7 +93,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.8774,
-      "merchant_exact": 0.92,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 0.76
@@ -102,7 +102,7 @@
       "currency": 1.0,
       "date": 0.8,
       "line_item_f1": 0.6765,
-      "merchant_exact": 0.76,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 0.96,
       "n": 25,
       "total": 0.76
@@ -111,7 +111,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.8742,
-      "merchant_exact": 0.76,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 0.84
@@ -120,7 +120,7 @@
       "currency": 1.0,
       "date": 0.32,
       "line_item_f1": 0.638,
-      "merchant_exact": 0.8,
+      "merchant_exact": 0.92,
       "merchant_fuzzy": 0.96,
       "n": 25,
       "total": 0.6
@@ -129,7 +129,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.987,
-      "merchant_exact": 0.92,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 0.96
@@ -138,7 +138,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.8148,
-      "merchant_exact": 0.84,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 0.76
@@ -147,7 +147,7 @@
       "currency": 1.0,
       "date": 0.96,
       "line_item_f1": 0.9701,
-      "merchant_exact": 0.8,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 0.96
@@ -156,7 +156,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.9231,
-      "merchant_exact": 0.88,
+      "merchant_exact": 0.96,
       "merchant_fuzzy": 0.96,
       "n": 25,
       "total": 0.8
@@ -165,7 +165,7 @@
       "currency": 1.0,
       "date": 0.9048,
       "line_item_f1": 0.7781,
-      "merchant_exact": 0.873,
+      "merchant_exact": 0.9683,
       "merchant_fuzzy": 0.9841,
       "n": 63,
       "total": 0.6667
@@ -174,7 +174,7 @@
       "currency": 1.0,
       "date": 0.873,
       "line_item_f1": 0.8179,
-      "merchant_exact": 0.873,
+      "merchant_exact": 0.9683,
       "merchant_fuzzy": 0.9841,
       "n": 63,
       "total": 0.7302
@@ -192,7 +192,7 @@
       "currency": 1.0,
       "date": 0.913,
       "line_item_f1": 0.9429,
-      "merchant_exact": 0.7826,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 23,
       "total": 0.9565
@@ -201,7 +201,7 @@
       "currency": 1.0,
       "date": 0.9091,
       "line_item_f1": 0.8571,
-      "merchant_exact": 0.6364,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 11,
       "total": 1.0
@@ -210,7 +210,7 @@
       "currency": 1.0,
       "date": 1.0,
       "line_item_f1": 0.9639,
-      "merchant_exact": 0.72,
+      "merchant_exact": 1.0,
       "merchant_fuzzy": 1.0,
       "n": 25,
       "total": 1.0
