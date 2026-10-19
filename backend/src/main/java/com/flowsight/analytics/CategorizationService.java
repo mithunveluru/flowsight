@@ -87,37 +87,33 @@ public class CategorizationService {
 
     public CategorizationResult categorize(String description, String merchant, BigDecimal amount) {
         String haystack = buildHaystack(description, merchant);
-        Map<TransactionCategory, Double> scores = new HashMap<>();
+        TransactionCategory best = null;
+        double bestScore = 0;
+        int bestLongest = 0;
 
+        // Ties go to the longer (more specific) matched keyword, then to declaration order.
         for (Map.Entry<TransactionCategory, List<String>> entry : KEYWORDS.entrySet()) {
-            TransactionCategory category = entry.getKey();
-            List<String> keywords = entry.getValue();
+            List<String> matched = entry.getValue().stream().filter(haystack::contains).toList();
+            if (matched.isEmpty()) continue;
 
-            long matchCount = keywords.stream()
-                .filter(haystack::contains)
-                .count();
+            // longer (brand-specific) keywords score higher
+            double base = 0.45;
+            double perMatch = 0.12;
+            double bonus = matched.stream().mapToDouble(k -> k.length() > 6 ? 0.08 : 0.0).sum();
+            double score = Math.min(base + (matched.size() * perMatch) + bonus, 0.95);
+            int longest = matched.stream().mapToInt(String::length).max().orElse(0);
 
-            if (matchCount > 0) {
-                // longer (brand-specific) keywords score higher
-                double base = 0.45;
-                double perMatch = 0.12;
-                double bonus = keywords.stream()
-                    .filter(haystack::contains)
-                    .mapToDouble(k -> k.length() > 6 ? 0.08 : 0.0)
-                    .sum();
-                double score = Math.min(base + (matchCount * perMatch) + bonus, 0.95);
-                scores.put(category, score);
+            if (best == null || score > bestScore || (score == bestScore && longest > bestLongest)) {
+                best = entry.getKey();
+                bestScore = score;
+                bestLongest = longest;
             }
         }
 
-        if (scores.isEmpty()) {
+        if (best == null) {
             return new CategorizationResult(TransactionCategory.UNCATEGORIZED, 0.25);
         }
-
-        return scores.entrySet().stream()
-            .max(Map.Entry.comparingByValue())
-            .map(e -> new CategorizationResult(e.getKey(), e.getValue()))
-            .orElse(new CategorizationResult(TransactionCategory.UNCATEGORIZED, 0.25));
+        return new CategorizationResult(best, bestScore);
     }
 
     private String buildHaystack(String description, String merchant) {
