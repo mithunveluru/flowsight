@@ -1,0 +1,74 @@
+{
+  "features": "merchant words, description words and word pairs, character 2-5-grams of both, direction",
+  "libraries": {
+    "numpy": "2.5.4",
+    "scikit-learn": "1.9.1"
+  },
+  "model": "sublinear tf-idf (min_df=2) + multinomial logistic regression (saga), C=8.0, softmax temperature 0.8542",
+  "training_data": {
+    "merchant_groups": 2322,
+    "per_category": {
+      "EDUCATION": 952,
+      "ENTERTAINMENT": 1128,
+      "FINANCE": 1248,
+      "FOOD_DINING": 1272,
+      "GROCERIES": 1007,
+      "HEALTHCARE": 976,
+      "INCOME": 816,
+      "OTHER": 962,
+      "SHOPPING": 1196,
+      "SUBSCRIPTIONS": 1512,
+      "TRANSFER": 739,
+      "TRANSPORTATION": 1008,
+      "TRAVEL": 1080,
+      "UTILITIES": 936
+    },
+    "per_region": {
+      "AE": 3366,
+      "IN": 4030,
+      "SA": 3358,
+      "US": 4078
+    },
+    "rows": 14832,
+    "seed": 7,
+    "sha256": "59436645a5134d6d274a6e49c2dcdb632174f6701a80e20ac6d1a091c8681666",
+    "source": "synthetic corpus (app/categorizer/corpus.py)"
+  },
+  "validation": {
+    "before_temperature": {
+      "accuracy": 0.6671,
+      "ece": 0.0394,
+      "macro_f1": 0.6859,
+      "nll": 1.0678
+    },
+    "c_grid": {
+      "2.0": {
+        "accuracy": 0.6657,
+        "ece": 0.0212,
+        "macro_f1": 0.6856,
+        "nll": 1.0614
+      },
+      "32.0": {
+        "accuracy": 0.6655,
+        "ece": 0.0275,
+        "macro_f1": 0.6832,
+        "nll": 1.0622
+      },
+      "8.0": {
+        "accuracy": 0.6671,
+        "ece": 0.025,
+        "macro_f1": 0.6859,
+        "nll": 1.0549
+      }
+    },
+    "chosen": {
+      "accuracy": 0.6671,
+      "ece": 0.025,
+      "macro_f1": 0.6859,
+      "nll": 1.0549
+    },
+    "method": "GroupKFold(5) over merchants on the synthetic corpus"
+  },
+  "version": "tfidf-lr-1",
+  "vocabulary_size": 32451
+}
