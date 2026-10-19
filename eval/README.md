@@ -43,6 +43,8 @@ for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml
 | `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
 | `recurring-rules` | `RecurringDetectionService.detect` and `LeakDetectionService.analyze` (the rules, the fallback) as of each user's date | `recurring/generate.py`: 120 synthetic users (30 each IN/US/AE/SA, 3-18 months, about 55k debits) |
 | `recurring-model` | the ml-service recurring-scorer artifact (`ml-service/app/recurring_scorer/artifact`, numpy only, via `recurring/predict_model.py`) on the requests `RecurringDetectionService.scorerRequest` builds, mapped by `fromScores`, then `LeakDetectionService.analyzeWithModel` with each user's personal baseline | same |
+| `forecast-current` | the trend forecast as `AnalyticsService` shipped it: mean of the last three trend points (current partial month included), per series | `forecast/generate.py`: 160 seeded synthetic users, rolling origins |
+| `budget-pace-current` | the month-end projection as `BudgetService` shipped it: spend so far * days in month / days elapsed | same |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
 scorer stay the same.
@@ -95,12 +97,30 @@ but both generators were written by the same hand, so expect real histories to s
 months is short), recall per recurring kind and false-positive rate per negative kind. The
 info table also has the share shown as detected (confidence >= 0.5), next-date MAE and,
 where a pattern has one, the coverage and width of its next-date interval.
+Forecasts: `ForecastEvalTest` replays each synthetic user's history. At every origin (one seeded
+day per month, written by the generator) only transactions up to that day are visible; the
+forecast for each of the next three calendar months is scored against what happened, for income,
+spend, net and every spending category the user has had. The budget pace suites score the
+projected month-end spend of the origin month (overall and per category). Users mix salaried,
+freelance and gig income, rent/EMI/subscriptions, festival, summer and school-fee seasonality,
+lifestyle drift and shocks (job loss, medical bills, bonuses, one-off purchases); a fifth of them
+have under five months of history, so every user also contributes short-history origins.
+
+- `wape`: sum of absolute errors over sum of actuals, for income, spend and categories.
+- `mape`: mean absolute percentage error of the income and spend totals (months with a positive actual).
+- `net_smae`: absolute error of net cash flow over the month's income plus spend.
+- `cov80`, `cov95`: share of actuals inside the 80% / 95% prediction intervals; `cov80_gap` and
+  `cov95_gap` are the distance to nominal (gated, lower is better). `n/a` without intervals.
+
+Slices: history at the origin (`history=0`, `1-3`, `4-11`, `12+` complete months), series kind,
+horizon `h`, and user tags (`seasonal`, `shock`, `volatile`, `drift`).
 
 ## Regression gate
 
 A run fails when an overall metric drops by more than the baseline's `tolerance.overall`
 (0.01 for the deterministic suites, 0.05 for LLM modes), or when any slice loses more than
-`tolerance.slice_items` cases (1; LLM modes do not gate slices). ECE and `alias_wrong` fail
+`tolerance.slice_items` cases (1; LLM modes do not gate slices) or, for the forecast suites,
+more than `tolerance.slice` (0.01) on a gated slice metric. ECE and `alias_wrong` fail
 when they rise. Real receipts are reported but never gated.
 
 ## Updating baselines

@@ -7,6 +7,7 @@
   score.py recurring      --suite S --cases C --pred P --baseline B [--update-baseline]
   score.py validator      --suite S --cases C --pred P --baseline B [--update-baseline]
   score.py intents        --suite S --cases C --pred P --baseline B [--update-baseline]
+  score.py forecast       --suite S --histories H --pred P --baseline B [--reference R] [--update-baseline]
 
 Exit status: 0 ok, 1 regression against the baseline, 2 baseline missing or stale.
 """
@@ -41,6 +42,9 @@ DEFAULT_TOLERANCE = {
     # both are pure functions of committed inputs: any change is a real change
     "insights-validator": {"overall": 0.0, "slice_items": 0},
     "assistant-intents": {"overall": 0.0, "slice_items": 0},
+    # forecasts are deterministic; slices are gated on an absolute drop, not a case count
+    "forecast-current": {"overall": 0.005, "slice": 0.01},
+    "budget-pace-current": {"overall": 0.005, "slice": 0.01},
 }
 
 
@@ -487,6 +491,109 @@ def cmd_intents(args):
     print(f"\n== {args.suite}: IntentMatcher (the assistant's no-LLM path) ==")
     print(format_table([{"set": "all", "n": len(cases), **metrics}], ["set", "n", *metrics]))
     print(format_table([{"slice": k, **v} for k, v in slices.items()], ["slice", "n", "intent_accuracy"]))
+# ---------------------------------------------------------------- forecasts
+
+FORECAST_SUITES = {
+    "forecast-current": "flat mean of the last three trend points (current month included), as AnalyticsService shipped",
+    "budget-pace-current": "linear month-end pace spend * days / elapsed, as BudgetService shipped",
+}
+FORECAST_METRICS = ("wape", "mape", "net_smae", "cov80_gap", "cov95_gap")
+
+
+def history_bucket(n):
+    return "history=0" if n == 0 else "history=1-3" if n <= 3 else "history=4-11" if n <= 11 else "history=12+"
+
+
+def monthly_actuals(histories):
+    """{user: {"YYYY-MM": {series: total}}} with income, spend, net and cat:<CATEGORY>."""
+    out = {}
+    for h in histories:
+        months = defaultdict(lambda: defaultdict(float))
+        for d, typ, cat, amount in h["tx"]:
+            m = months[d[:7]]
+            if typ == "CREDIT":
+                m["income"] += float(amount)
+            else:
+                m["spend"] += float(amount)
+                m["cat:" + cat] += float(amount)
+        for m in months.values():
+            m["net"] = m["income"] - m["spend"]
+        out[h["user"]] = months
+    return out
+
+
+def forecast_rows(histories, preds):
+    actuals = monthly_actuals(histories)
+    tags = {h["user"]: h["tags"] for h in histories}
+    rows = []
+    for p in preds:
+        month = actuals[p["user"]].get(p["target"], {})
+        row = {k: (float(v) if isinstance(v, Decimal) else v) for k, v in p.items()}
+        row.update(actual=month.get(p["series"], 0.0), income=month.get("income", 0.0),
+                   spend=month.get("spend", 0.0), tags=tags[p["user"]])
+        rows.append(row)
+    return rows
+
+
+def forecast_metrics(rows):
+    positive = [r for r in rows if r["series"] != "net"]
+    totals = [r for r in rows if r["series"] in ("income", "spend") and r["actual"] > 0]
+    net = [r for r in rows if r["series"] == "net"]
+    ranged = [r for r in rows if r.get("lo80") is not None]
+
+    def share(rs, lo, hi):
+        return round(sum(r[lo] <= r["actual"] <= r[hi] for r in rs) / len(rs), 4) if rs else None
+
+    abs_err = sum(abs(r["actual"] - r["point"]) for r in positive)
+    out = {
+        "wape": round(abs_err / sum(abs(r["actual"]) for r in positive), 4) if positive else None,
+        "mape": round(sum(abs(r["actual"] - r["point"]) / r["actual"] for r in totals) / len(totals), 4) if totals else None,
+        "net_smae": round(sum(abs(r["actual"] - r["point"]) for r in net) / sum(r["income"] + r["spend"] for r in net), 4)
+        if net and sum(r["income"] + r["spend"] for r in net) > 0 else None,
+        "cov80": share(ranged, "lo80", "hi80"),
+        "cov95": share(ranged, "lo95", "hi95"),
+    }
+    out["cov80_gap"] = round(abs(out["cov80"] - 0.80), 4) if out["cov80"] is not None else None
+    out["cov95_gap"] = round(abs(out["cov95"] - 0.95), 4) if out["cov95"] is not None else None
+    return out
+
+
+def forecast_slices(row):
+    kind = "category" if row["series"].startswith("cat:") else row["series"]
+    keys = [history_bucket(row["n"]), f"series={kind}", f"h={row['h']}"]
+    return keys + [f"tag={t}" for t in row["tags"] if t in ("seasonal", "shock", "volatile", "drift")]
+
+
+def cmd_forecast(args):
+    histories = [json.loads(line) for line in open(args.histories, encoding="utf-8") if line.strip()]
+    rows = forecast_rows(histories, read_jsonl(args.pred))
+    metrics = forecast_metrics(rows)
+    groups = defaultdict(list)
+    for r in rows:
+        for key in forecast_slices(r):
+            groups[key].append(r)
+    slices = {k: {"n": len(v), **forecast_metrics(v)} for k, v in sorted(groups.items())}
+    info = {"n": len(rows), "users": len(histories), "origins": len({(r["user"], r["origin"]) for r in rows}),
+            "cov80": metrics.pop("cov80"), "cov95": metrics.pop("cov95"),
+            "methods": dict(sorted(Counter(r.get("method", "n/a") for r in rows).items()))}
+    current = {"suite": args.suite, "truth_sha256": sha256(args.histories), "count": len(rows), "metrics": metrics,
+               "slices": slices, "slice_gated": ["wape", "net_smae", "cov80_gap"], "info": info}
+
+    columns = ["set", "n", "wape", "mape", "net_smae", "cov80", "cov95"]
+    table = [{"set": "all", "n": len(rows), **metrics, "cov80": info["cov80"], "cov95": info["cov95"]}]
+    table += [{"set": k, **v} for k, v in slices.items()]
+    print(f"\n== {args.suite}: {FORECAST_SUITES[args.suite]} ==")
+    print(f"{info['users']} users, {info['origins']} origins; methods {info['methods']}")
+    print(format_table(table, columns))
+    if args.reference and Path(args.reference).exists():
+        ref = json.loads(Path(args.reference).read_text())
+        print(f"against {ref['suite']}:")
+        rows_ref = [{"set": "all", **{f"{m}": metrics.get(m) for m in ("wape", "mape", "net_smae")},
+                     **{f"ref_{m}": ref["metrics"].get(m) for m in ("wape", "mape", "net_smae")}}]
+        rows_ref += [{"set": k, **{m: v.get(m) for m in ("wape", "mape", "net_smae")},
+                      **{f"ref_{m}": ref["slices"].get(k, {}).get(m) for m in ("wape", "mape", "net_smae")}}
+                     for k, v in slices.items()]
+        print(format_table(rows_ref, ["set", "wape", "ref_wape", "mape", "ref_mape", "net_smae", "ref_net_smae"]))
     return finish(args, current)
 
 
@@ -535,7 +642,7 @@ def main(argv=None):
     m.add_argument("--private", required=True)
     m.add_argument("--out", required=True)
     m.add_argument("--synthetic-only", action="store_true")
-    for name in ("receipts", "categorization", "merchants", "recurring", "validator", "intents"):
+    for name in ("receipts", "categorization", "merchants", "recurring", "validator", "intents", "forecast"):
         p = sub.add_parser(name)
         p.add_argument("--suite", required=True, choices=sorted(DEFAULT_TOLERANCE))
         p.add_argument("--pred", required=True)
@@ -544,12 +651,15 @@ def main(argv=None):
         if name == "receipts":
             p.add_argument("--truth", required=True)
             p.add_argument("--private-truth")
+        elif name == "forecast":
+            p.add_argument("--histories", required=True)
+            p.add_argument("--reference")
         else:
             p.add_argument("--cases", required=True)
     args = ap.parse_args(argv)
     return {"manifest": cmd_manifest, "receipts": cmd_receipts, "categorization": cmd_categorization,
             "merchants": cmd_merchants, "recurring": cmd_recurring, "validator": cmd_validator,
-            "intents": cmd_intents}[args.cmd](args)
+            "intents": cmd_intents, "forecast": cmd_forecast}[args.cmd](args)
 
 
 if __name__ == "__main__":

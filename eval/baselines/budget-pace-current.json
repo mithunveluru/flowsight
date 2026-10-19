@@ -1,0 +1,138 @@
+{
+  "count": 26373,
+  "info": {
+    "cov80": null,
+    "cov95": null,
+    "methods": {
+      "linear-pace": 26373
+    },
+    "n": 26373,
+    "origins": 2253,
+    "users": 160
+  },
+  "metrics": {
+    "cov80_gap": null,
+    "cov95_gap": null,
+    "mape": 0.6618,
+    "net_smae": null,
+    "wape": 0.8759
+  },
+  "slices": {
+    "h=0": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6618,
+      "n": 26373,
+      "net_smae": null,
+      "wape": 0.8759
+    },
+    "history=0": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.588,
+      "n": 1260,
+      "net_smae": null,
+      "wape": 0.7495
+    },
+    "history=1-3": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.7007,
+      "n": 4051,
+      "net_smae": null,
+      "wape": 0.9275
+    },
+    "history=12+": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6781,
+      "n": 11739,
+      "net_smae": null,
+      "wape": 0.9021
+    },
+    "history=4-11": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6385,
+      "n": 9323,
+      "net_smae": null,
+      "wape": 0.839
+    },
+    "series=category": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": null,
+      "n": 24120,
+      "net_smae": null,
+      "wape": 1.0529
+    },
+    "series=spend": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6618,
+      "n": 2253,
+      "net_smae": null,
+      "wape": 0.7028
+    },
+    "tag=drift": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.651,
+      "n": 15168,
+      "net_smae": null,
+      "wape": 0.8749
+    },
+    "tag=seasonal": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6846,
+      "n": 12909,
+      "net_smae": null,
+      "wape": 0.8699
+    },
+    "tag=shock": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6575,
+      "n": 8001,
+      "net_smae": null,
+      "wape": 0.8121
+    },
+    "tag=volatile": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.7047,
+      "n": 13011,
+      "net_smae": null,
+      "wape": 0.9337
+    }
+  },
+  "suite": "budget-pace-current",
+  "tolerance": {
+    "overall": 0.005,
+    "slice": 0.01
+  },
+  "truth_sha256": "a5bbdecfc0225c9197268181ba1c2cfab1eed5892a9a75175935461b37f26e4a"
+}

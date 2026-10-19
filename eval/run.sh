@@ -3,7 +3,8 @@
 #
 # tesseract (default): offline; scorer tests, receipt OCR via Tesseract, categorization, merchants,
 #             recurring payments and leaks, the insights grounding validator and the assistant's
-#             intent matcher.
+#             intent matcher,
+#             cash-flow forecasts and budget pace.
 # llm:        receipt OCR through the receipt-ocr service exactly as the backend calls it
 #             (needs RECEIPT_OCR_URL, default http://127.0.0.1:8001).
 # ml-service: receipt OCR through ml-service's ocr capability (needs ML_SERVICE_URL and
@@ -87,7 +88,8 @@ MVN_PROPS=(-Deval.input=/work/eval/out/manifest.jsonl -Deval.output=/work/eval/o
 TESTS=ReceiptEvalTest
 DOCKER_ENV=(-e GROQ_API_KEY=)
 if [ "$MODE" = tesseract ]; then
-  TESTS="ReceiptEvalTest,TextEvalTest,RecurringEvalTest,InsightsEvalTest"
+  in_image "$IMAGE" python3 /work/eval/forecast/generate.py --out /work/eval/out/forecast/histories.jsonl
+  TESTS="ReceiptEvalTest,TextEvalTest,RecurringEvalTest,InsightsEvalTest,ForecastEvalTest"
   MVN_PROPS+=(-Deval.insights.validator=/work/eval/insights/validator_cases.jsonl
               -Deval.insights.validatorOutput=/work/eval/out/pred-insights-validator.jsonl
               -Deval.insights.intents=/work/eval/insights/intents.csv
@@ -99,7 +101,9 @@ if [ "$MODE" = tesseract ]; then
               -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl
               -Deval.recurring.input=/work/eval/out/recurring/cases.jsonl
               -Deval.recurring.rulesOutput=/work/eval/out/pred-recurring-rules.jsonl
-              -Deval.recurring.modelInput=/work/eval/out/recurring-model-input.jsonl)
+              -Deval.recurring.modelInput=/work/eval/out/recurring-model-input.jsonl
+              -Deval.forecast.input=/work/eval/out/forecast/histories.jsonl
+              -Deval.forecast.outputDir=/work/eval/out)
 elif [ "$MODE" = ml-service ]; then
   MVN_PROPS+=(-Deval.mlServiceUrl="${ML_SERVICE_URL:?ML_SERVICE_URL must be set}")
   DOCKER_ENV=(-e GROQ_API_KEY= -e ML_SERVICE_TOKEN)
@@ -162,6 +166,10 @@ if [ "$MODE" = tesseract ]; then
     --pred out/pred-insights-validator.jsonl --baseline baselines/insights-validator.json
   score intents --suite assistant-intents --cases insights/intents.csv \
     --pred out/pred-assistant-intents.jsonl --baseline baselines/assistant-intents.json
+  for suite in forecast-current budget-pace-current; do
+    score forecast --suite "$suite" --histories out/forecast/histories.jsonl \
+      --pred "out/pred-$suite.jsonl" --baseline "baselines/$suite.json"
+  done
 fi
 
 echo "eval ($MODE) finished in $((SECONDS - START))s, exit $STATUS"

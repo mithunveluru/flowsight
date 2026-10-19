@@ -12,7 +12,8 @@ BINS = 10
 
 LEGAL_WORDS = {"pvt", "ltd", "llc", "inc", "co", "corp", "company", "the", "plc", "llp", "fze", "fzco", "est"}
 # Metrics where a smaller value is better; everything else is higher-is-better.
-LOWER_IS_BETTER = {"ece", "alias_wrong", "irregular_fp_rate", "fp_rate", "false_accept_rate", "false_reject_rate"}
+LOWER_IS_BETTER = {"ece", "alias_wrong", "irregular_fp_rate", "fp_rate", "false_accept_rate", "false_reject_rate",
+                   "wape", "mape", "net_smae", "cov80_gap", "cov95_gap"}
 
 
 def normalize_name(text) -> str:
@@ -111,6 +112,7 @@ def compare(current, baseline):
     tol = baseline.get("tolerance", {})
     overall_tol = tol.get("overall", 0.0)
     slice_items = tol.get("slice_items")
+    slice_abs = tol.get("slice")
     problems = []
 
     def check(scope, name, new, old, allowed):
@@ -124,7 +126,7 @@ def compare(current, baseline):
 
     for name, old in baseline["metrics"].items():
         check("overall", name, current["metrics"].get(name), old, overall_tol)
-    if slice_items is not None:
+    if slice_items is not None or slice_abs is not None:
         for key, old_slice in baseline.get("slices", {}).items():
             new_slice = current.get("slices", {}).get(key)
             if new_slice is None:
@@ -132,7 +134,8 @@ def compare(current, baseline):
                 continue
             for name in current.get("slice_gated", []):
                 if name in old_slice:
-                    check(f"slice {key}", name, new_slice.get(name), old_slice[name], slice_items / old_slice["n"])
+                    allowed = slice_abs if slice_abs is not None else slice_items / old_slice["n"]
+                    check(f"slice {key}", name, new_slice.get(name), old_slice[name], allowed)
     return problems
 
 

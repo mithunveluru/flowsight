@@ -1,0 +1,178 @@
+{
+  "count": 92637,
+  "info": {
+    "cov80": null,
+    "cov95": null,
+    "methods": {
+      "flat-mean-3": 92637
+    },
+    "n": 92637,
+    "origins": 2253,
+    "users": 160
+  },
+  "metrics": {
+    "cov80_gap": null,
+    "cov95_gap": null,
+    "mape": 0.724,
+    "net_smae": 0.2159,
+    "wape": 0.3378
+  },
+  "slices": {
+    "h=1": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.592,
+      "n": 30879,
+      "net_smae": 0.2122,
+      "wape": 0.3356
+    },
+    "h=2": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.7772,
+      "n": 30879,
+      "net_smae": 0.2196,
+      "wape": 0.3429
+    },
+    "h=3": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.8031,
+      "n": 30879,
+      "net_smae": 0.2158,
+      "wape": 0.3348
+    },
+    "history=0": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.854,
+      "n": 4704,
+      "net_smae": 0.2783,
+      "wape": 0.8038
+    },
+    "history=1-3": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.8674,
+      "n": 14313,
+      "net_smae": 0.2421,
+      "wape": 0.3841
+    },
+    "history=12+": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.8632,
+      "n": 40965,
+      "net_smae": 0.1975,
+      "wape": 0.2844
+    },
+    "history=4-11": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.4622,
+      "n": 32655,
+      "net_smae": 0.2152,
+      "wape": 0.302
+    },
+    "series=category": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": null,
+      "n": 72360,
+      "net_smae": null,
+      "wape": 0.4129
+    },
+    "series=income": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 1.1829,
+      "n": 6759,
+      "net_smae": null,
+      "wape": 0.3156
+    },
+    "series=net": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": null,
+      "n": 6759,
+      "net_smae": 0.2159,
+      "wape": null
+    },
+    "series=spend": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.284,
+      "n": 6759,
+      "net_smae": null,
+      "wape": 0.299
+    },
+    "tag=drift": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.6376,
+      "n": 53346,
+      "net_smae": 0.2047,
+      "wape": 0.3258
+    },
+    "tag=seasonal": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 0.8234,
+      "n": 45237,
+      "net_smae": 0.2375,
+      "wape": 0.3686
+    },
+    "tag=shock": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 1.0387,
+      "n": 28101,
+      "net_smae": 0.2583,
+      "wape": 0.4081
+    },
+    "tag=volatile": {
+      "cov80": null,
+      "cov80_gap": null,
+      "cov95": null,
+      "cov95_gap": null,
+      "mape": 1.1504,
+      "n": 45729,
+      "net_smae": 0.3038,
+      "wape": 0.4193
+    }
+  },
+  "suite": "forecast-current",
+  "tolerance": {
+    "overall": 0.005,
+    "slice": 0.01
+  },
+  "truth_sha256": "a5bbdecfc0225c9197268181ba1c2cfab1eed5892a9a75175935461b37f26e4a"
+}
