@@ -131,7 +131,7 @@ export default function TransactionsPage() {
             Import CSV
           </Button>
           <Button size="sm" asChild>
-            <Link href="/dashboard/transactions/new">
+            <Link href="/dashboard/capture/manual">
               <Plus className="h-4 w-4" />
               Add transaction
             </Link>
@@ -351,7 +351,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
         {!filtered && (
           <div className="mt-5 flex justify-center gap-2">
             <Button size="sm" asChild>
-              <Link href="/dashboard/transactions/new">
+              <Link href="/dashboard/capture/manual">
                 <Plus className="h-4 w-4" />
                 Add transaction
               </Link>
@@ -431,10 +431,10 @@ function ImportResultBanner({
             {/* CTA: view analytics for the imported date range */}
             {result.firstTransactionDate && result.lastTransactionDate && result.imported > 0 && (
               <Link
-                href={`/dashboard/analytics?from=${result.firstTransactionDate}&to=${result.lastTransactionDate}`}
+                href={`/dashboard/trends?from=${result.firstTransactionDate}&to=${result.lastTransactionDate}`}
                 className="mt-2 inline-flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline"
               >
-                View analytics for this period
+                View trends for this period
                 <ArrowUpRight className="h-3 w-3" />
               </Link>
             )}

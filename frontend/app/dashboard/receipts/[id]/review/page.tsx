@@ -207,7 +207,7 @@ function ReviewForm({
             <p className="text-sm font-medium text-foreground/80">A few details need your review</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Add the missing values below, or{" "}
-              <Link href="/dashboard/transactions/new" className="text-brand hover:underline">
+              <Link href="/dashboard/capture/manual" className="text-brand hover:underline">
                 enter the transaction manually
               </Link>
               .
@@ -367,7 +367,7 @@ function ReviewForm({
             )}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href="/dashboard/transactions/new">Enter manually instead</Link>
+            <Link href="/dashboard/capture/manual">Enter manually instead</Link>
           </Button>
         </div>
       </form>
@@ -402,13 +402,13 @@ function OcrFailureFallback({ receipt }: { receipt: Receipt }) {
 
       <div className="flex items-center gap-3">
         <Button asChild>
-          <Link href="/dashboard/transactions/new">
+          <Link href="/dashboard/capture/manual">
             Enter transaction manually
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link href="/dashboard/receipts/upload">Try uploading again</Link>
+          <Link href="/dashboard/capture/receipt">Try uploading again</Link>
         </Button>
       </div>
     </div>

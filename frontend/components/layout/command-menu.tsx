@@ -1,79 +1,78 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CornerDownLeft, Plus, Receipt, Search } from "lucide-react";
-import { navSections } from "./sidebar";
+import { CornerDownLeft, Monitor, Moon, Search, Settings, Sun } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { useTheme } from "@/components/ui/theme";
+import type { ThemePreference } from "@/components/ui/theme-core";
 import { cn } from "@/lib/utils";
+import { SETTINGS_ITEM, captureActions, navSections } from "./nav";
 
 interface Command {
+  id: string;
   label: string;
   hint?: string;
-  href: string;
   icon: React.ElementType;
   section: string;
+  href?: string;
+  theme?: ThemePreference;
 }
 
-// quick actions surface first; navigation follows
-const quickActions: Command[] = [
-  { label: "Add transaction", hint: "Record a purchase or income", href: "/dashboard/transactions/new", icon: Plus, section: "Actions" },
-  { label: "Scan receipt", hint: "Upload and extract a receipt", href: "/dashboard/receipts/upload", icon: Receipt, section: "Actions" },
+const THEMES: { value: ThemePreference; label: string; icon: React.ElementType }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "Match device", icon: Monitor },
 ];
 
+// capture first, then every destination, then appearance
 const allCommands: Command[] = [
-  ...quickActions,
+  ...captureActions.map((a) => ({ id: `capture:${a.href}`, label: a.label, hint: a.hint, icon: a.icon, href: a.href, section: "Capture" })),
   ...navSections.flatMap((s) =>
-    s.items.map((i) => ({ label: i.label, href: i.href, icon: i.icon, section: "Go to" }))
+    s.items
+      .filter((i) => !captureActions.includes(i))
+      .map((i) => ({ id: `go:${i.href}`, label: i.label, hint: i.hint, icon: i.icon, href: i.href, section: "Go to" }))
   ),
+  { id: `go:${SETTINGS_ITEM.href}`, label: SETTINGS_ITEM.label, icon: Settings, href: SETTINGS_ITEM.href, section: "Go to" },
+  ...THEMES.map((t) => ({ id: `theme:${t.value}`, label: `Theme: ${t.label}`, icon: t.icon, theme: t.value, section: "Appearance" })),
 ];
 
-// Lightweight command palette (⌘K). Pure keyboard-first navigation:
-// no network, no new dependencies — filters the app's own destinations.
-export function CommandMenu({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function filterCommands<T extends { label: string; hint?: string; section: string }>(commands: T[], query: string): T[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return commands;
+  return commands.filter(
+    (c) => c.label.toLowerCase().includes(q) || c.hint?.toLowerCase().includes(q) || c.section.toLowerCase().includes(q)
+  );
+}
+
+/** ⌘K palette over the app's own destinations and settings; no network. */
+export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const { preference, setPreference } = useTheme();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allCommands;
-    return allCommands.filter(
-      (c) =>
-        c.label.toLowerCase().includes(q) ||
-        c.hint?.toLowerCase().includes(q) ||
-        c.section.toLowerCase().includes(q)
-    );
-  }, [query]);
+  const results = useMemo(() => filterCommands(allCommands, query), [query]);
 
-  // reset + focus on open
   useEffect(() => {
     if (open) {
       setQuery("");
       setActive(0);
-      // focus after paint so the panel exists
-      requestAnimationFrame(() => inputRef.current?.focus());
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
     }
   }, [open]);
 
-  useEffect(() => { setActive(0); }, [query]);
+  useEffect(() => setActive(0), [query]);
 
-  const run = useCallback(
-    (cmd: Command) => {
-      onClose();
-      router.push(cmd.href);
-    },
-    [onClose, router]
-  );
+  useEffect(() => {
+    listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  const run = (cmd: Command) => {
+    onClose();
+    if (cmd.theme) setPreference(cmd.theme);
+    else if (cmd.href) router.push(cmd.href);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -82,82 +81,65 @@ export function CommandMenu({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActive((a) => Math.max(a - 1, 0));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setActive(Math.max(results.length - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
       const cmd = results[active];
       if (cmd) run(cmd);
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      onClose();
     }
   };
-
-  // keep the active row visible while arrowing
-  useEffect(() => {
-    listRef.current
-      ?.querySelector(`[data-index="${active}"]`)
-      ?.scrollIntoView({ block: "nearest" });
-  }, [active]);
-
-  if (!open) return null;
 
   let lastSection = "";
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[18vh]"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Command menu"
-    >
-      {/* backdrop */}
-      <div
-        className="animate-fade-in absolute inset-0 bg-foreground/25 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* panel */}
-      <div className="elev-3 animate-slide-up relative w-full max-w-lg overflow-hidden rounded-xl bg-popover">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        hideClose
+        className="top-[14vh] max-w-lg translate-y-0 overflow-hidden p-0"
+      >
+        <DialogTitle className="sr-only">Search and commands</DialogTitle>
+        <DialogDescription className="sr-only">
+          Type to filter, use the arrow keys to choose, Enter to run.
+        </DialogDescription>
         <div className="flex items-center gap-2.5 border-b border-border px-4">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground/70" strokeWidth={1.75} />
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
           <input
-            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Where to?"
+            aria-label="Search pages and commands"
             className="h-12 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             role="combobox"
             aria-expanded="true"
+            aria-autocomplete="list"
             aria-controls="command-menu-list"
             aria-activedescendant={results[active] ? `command-item-${active}` : undefined}
           />
           <kbd className="kbd-hint shrink-0">esc</kbd>
         </div>
 
-        <div
-          ref={listRef}
-          id="command-menu-list"
-          role="listbox"
-          className="max-h-[320px] overflow-y-auto p-2"
-        >
+        <div ref={listRef} id="command-menu-list" role="listbox" aria-label="Results" className="max-h-[min(360px,60dvh)] overflow-y-auto p-2">
           {results.length === 0 && (
-            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              Nothing matches &ldquo;{query}&rdquo;
-            </p>
+            <p className="px-3 py-8 text-center text-sm text-muted-foreground">Nothing matches &ldquo;{query}&rdquo;</p>
           )}
           {results.map((cmd, i) => {
             const showSection = cmd.section !== lastSection;
             lastSection = cmd.section;
+            const current = cmd.theme != null && cmd.theme === preference;
             return (
-              <div key={cmd.href + cmd.label}>
+              <div key={cmd.id} role="presentation">
                 {showSection && (
-                  <p className="px-3 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 first:pt-1.5">
+                  <p role="presentation" className="px-3 pb-1.5 pt-3 text-overline first:pt-1.5">
                     {cmd.section}
                   </p>
                 )}
-                <button
+                <div
                   id={`command-item-${i}`}
                   data-index={i}
                   role="option"
@@ -165,31 +147,21 @@ export function CommandMenu({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => run(cmd)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                    i === active
-                      ? "bg-muted text-foreground"
-                      : "text-foreground/80"
+                    "flex cursor-default items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                    i === active ? "bg-muted text-foreground" : "text-foreground/80"
                   )}
                 >
-                  <cmd.icon
-                    className="h-4 w-4 shrink-0 text-muted-foreground/70"
-                    strokeWidth={1.75}
-                  />
+                  <cmd.icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
                   <span className="flex-1 truncate font-medium">{cmd.label}</span>
-                  {cmd.hint && (
-                    <span className="hidden truncate text-xs text-muted-foreground/70 sm:block">
-                      {cmd.hint}
-                    </span>
-                  )}
-                  {i === active && (
-                    <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
-                  )}
-                </button>
+                  {current && <span className="text-xs text-muted-foreground">Current</span>}
+                  {cmd.hint && <span className="hidden truncate text-xs text-muted-foreground sm:block">{cmd.hint}</span>}
+                  {i === active && <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />}
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

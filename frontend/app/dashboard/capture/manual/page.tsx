@@ -92,7 +92,7 @@ export default function NewTransactionPage() {
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Add transaction</h1>
+        <h1 className="text-xl font-semibold text-foreground">Add manually</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           We will sort it into a category from what you write in the description.
         </p>

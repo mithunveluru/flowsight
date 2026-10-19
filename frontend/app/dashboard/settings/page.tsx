@@ -9,11 +9,13 @@ import {
   Infinity as InfinityIcon,
   LogOut,
   Mail,
+  Palette,
   Receipt,
   Shield,
   User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme";
 import { accountApi } from "@/features/account/api";
 import type {
   Account,
@@ -86,9 +88,11 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Your profile, receipt analysis usage, and recent account activity.
+          Your profile, appearance, receipt analysis usage, and recent account activity.
         </p>
       </div>
+
+      <AppearanceCard />
 
       {loading || !account ? (
         <LoadingSkeleton />
@@ -126,6 +130,18 @@ function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () =
           Sign out
         </Button>
       </div>
+    </Card>
+  );
+}
+
+function AppearanceCard() {
+  return (
+    <Card
+      icon={<Palette className="h-4 w-4" strokeWidth={1.75} />}
+      title="Appearance"
+      description="Light, dark, or follow your device setting."
+    >
+      <ThemeToggle />
     </Card>
   );
 }

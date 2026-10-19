@@ -14,10 +14,25 @@ const securityHeaders = [
   },
 ];
 
+// Routes renamed to match their navigation labels. Temporary (307) for one
+// release so the old names can still be reused if needed, then permanent.
+export const renamedRoutes: [from: string, to: string][] = [
+  ["/dashboard/transactions/new", "/dashboard/capture/manual"],
+  ["/dashboard/receipts/upload", "/dashboard/capture/receipt"],
+  ["/dashboard/analytics", "/dashboard/trends"],
+  ["/dashboard/insights", "/dashboard/habits"],
+  ["/dashboard/leaks", "/dashboard/drains"],
+  ["/dashboard/recurring", "/dashboard/subscriptions"],
+  ["/dashboard/simulate", "/dashboard/what-if"],
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  async redirects() {
+    return renamedRoutes.map(([source, destination]) => ({ source, destination, permanent: false }));
   },
 };
 

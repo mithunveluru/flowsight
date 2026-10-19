@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
       <FadeIn>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Spending trends</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Trends</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               How your money moves, where it goes, and the patterns behind it.
             </p>
@@ -602,7 +602,7 @@ function DataElsewhereHint({ bounds }: { bounds: ActivityBounds }) {
             Most recent activity was in <span className="font-medium text-foreground">{label}</span>.
           </p>
           <Link
-            href={`/dashboard/analytics?from=${fmt(monthStart)}&to=${fmt(monthEnd)}`}
+            href={`/dashboard/trends?from=${fmt(monthStart)}&to=${fmt(monthEnd)}`}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity"
           >
             View {label} <ArrowRight className="h-3 w-3" />
@@ -626,7 +626,7 @@ function CustomRangeBanner({ from, to }: { from: string; to: string }) {
         Viewing custom range: <span className="font-medium text-foreground">{fmt(from)} – {fmt(to)}</span>
       </span>
       <Link
-        href="/dashboard/analytics"
+        href="/dashboard/trends"
         className="font-medium text-foreground hover:underline"
       >
         Back to default
@@ -651,7 +651,7 @@ function EmptyState() {
           Add transactions
         </Link>
         <Link
-          href="/dashboard/receipts/upload"
+          href="/dashboard/capture/receipt"
           className="rounded-md border border-border px-4 py-2 text-xs font-medium text-foreground/80 hover:bg-muted/50 transition-colors"
         >
           Scan receipt

@@ -88,14 +88,14 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/dashboard/transactions/new"
+              href="/dashboard/capture/manual"
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={2} />
               Add transaction
             </Link>
             <Link
-              href="/dashboard/receipts/upload"
+              href="/dashboard/capture/receipt"
               className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
               style={{ borderColor: "hsl(var(--border))" }}
             >
@@ -140,7 +140,7 @@ function HeroMetric({
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/dashboard/transactions/new"
+            href="/dashboard/capture/manual"
             className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
             Add transaction
@@ -183,10 +183,10 @@ function HeroMetric({
         </div>
 
         <Link
-          href="/dashboard/analytics"
+          href="/dashboard/trends"
           className="inline-flex shrink-0 items-center gap-1 self-start rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          Full analytics
+          Trends
           <ArrowUpRight className="h-3 w-3" strokeWidth={2} />
         </Link>
       </div>
@@ -255,8 +255,8 @@ function WorthKnowing({
     <section>
       <SectionHeader
         title="Worth knowing"
-        href="/dashboard/insights"
-        hrefLabel="All observations"
+        href="/dashboard/habits"
+        hrefLabel="All habits"
       />
       <div className="grid gap-3 lg:grid-cols-2">
         {topRec && (
@@ -301,7 +301,7 @@ function WorthKnowing({
           >
             <p className="text-xs leading-relaxed text-muted-foreground">{topLeak.description}</p>
             <Link
-              href="/dashboard/leaks"
+              href="/dashboard/drains"
               className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
             >
               See what is recoverable

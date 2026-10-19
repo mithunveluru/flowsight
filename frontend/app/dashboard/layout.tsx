@@ -41,7 +41,7 @@ function DashboardSkeleton() {
   return (
     <div className="flex h-screen bg-background">
       <div
-        className="w-sidebar shrink-0 border-r"
+        className="hidden w-sidebar shrink-0 border-r lg:block"
         style={{
           backgroundColor: "hsl(var(--sidebar-bg))",
           borderColor: "hsl(var(--sidebar-border))",

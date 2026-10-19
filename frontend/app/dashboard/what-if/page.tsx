@@ -145,7 +145,7 @@ export default function SimulatePage() {
       <FadeIn>
         <header className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">What if?</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">What-if</h1>
             <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
               Thinking about a big purchase or a new commitment? See how it would affect your money, your breathing room, and your savings before you decide.
             </p>

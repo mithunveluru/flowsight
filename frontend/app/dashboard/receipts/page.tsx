@@ -58,7 +58,7 @@ export default function ReceiptsPage() {
           </p>
         </div>
         <Button size="sm" asChild>
-          <Link href="/dashboard/receipts/upload">
+          <Link href="/dashboard/capture/receipt">
             <Plus className="h-4 w-4" />
             Scan a receipt
           </Link>
@@ -111,7 +111,7 @@ export default function ReceiptsPage() {
                       Scan one to capture the merchant, amount, and date in seconds.
                     </p>
                     <Button size="sm" className="mt-4" asChild>
-                      <Link href="/dashboard/receipts/upload">Scan a receipt</Link>
+                      <Link href="/dashboard/capture/receipt">Scan a receipt</Link>
                     </Button>
                   </td>
                 </tr>

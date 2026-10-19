@@ -123,7 +123,7 @@ function Header({ summary }: { summary?: string }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-        Your money habits
+        Habits
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {summary
@@ -331,7 +331,7 @@ function EmptyState() {
           Add transactions
         </Link>
         <Link
-          href="/dashboard/analytics"
+          href="/dashboard/trends"
           className="rounded-md border px-4 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
           style={{ borderColor: "hsl(var(--border))" }}
         >

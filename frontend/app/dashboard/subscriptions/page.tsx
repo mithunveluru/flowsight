@@ -105,7 +105,7 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Subscriptions &amp; bills</h1>
+          <h1 className="text-xl font-semibold text-foreground">Subscriptions</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
             The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right.
           </p>

@@ -432,7 +432,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
           <Plus className="h-4 w-4" /> Create a budget
         </Button>
         <Button size="sm" variant="outline" asChild>
-          <Link href="/dashboard/analytics">Review your overview first</Link>
+          <Link href="/dashboard/trends">Review your overview first</Link>
         </Button>
       </div>
     </div>
