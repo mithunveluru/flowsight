@@ -36,7 +36,7 @@ def client(tmp_path: Path) -> tuple[TestClient, list[dict]]:
 
 
 def test_is_installed():
-    assert [c.name for c in load_installed()] == ["merchant-embeddings"]
+    assert "merchant-embeddings" in [c.name for c in load_installed()]
 
 
 @pytest.mark.parametrize("text,canonical", [

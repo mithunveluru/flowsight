@@ -5,9 +5,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     ML_MODEL_DIR=/models \
-    PORT=8000
+    PORT=8000 \
+    OMP_THREAD_LIMIT=1
 
 WORKDIR /srv
+
+# Tesseract (with orientation data) for the ocr capability's text passes
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-compile -r requirements.txt \
