@@ -17,12 +17,6 @@ public class NormalizationService {
     private static final Pattern EXTRA_WHITESPACE = Pattern.compile("\\s{2,}");
     private static final Pattern TRAILING_NOISE = Pattern.compile("[/@\\-_]+$");
 
-    // prefixes stripped when extracting merchant
-    private static final Pattern MERCHANT_PREFIX = Pattern.compile(
-        "^(UPI-|NEFT-|IMPS-|VPA-|POS-|ATM-|ACH-|SI-|ECS-|DD-|NACH-)",
-        Pattern.CASE_INSENSITIVE
-    );
-
     public String normalize(String raw) {
         if (raw == null) return "";
         String text = raw.trim();
@@ -31,24 +25,5 @@ public class NormalizationService {
         text = EXTRA_WHITESPACE.matcher(text).replaceAll(" ");
         text = TRAILING_NOISE.matcher(text).replaceAll("");
         return text.trim();
-    }
-
-    public String extractMerchant(String description) {
-        if (description == null || description.isBlank()) return null;
-
-        String text = description.trim();
-
-        text = MERCHANT_PREFIX.matcher(text).replaceFirst("");
-
-        // first token; bank descriptions are "MERCHANT/CITY/DATE"
-        String[] parts = text.split("[/|\\-]", 3);
-        String candidate = parts[0].trim();
-
-        // numeric candidates are reference IDs, not merchants
-        if (candidate.matches("[0-9\\s]+")) {
-            return parts.length > 1 ? parts[1].trim() : null;
-        }
-
-        return candidate.length() >= 3 ? candidate : null;
     }
 }

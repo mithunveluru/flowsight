@@ -6,6 +6,7 @@ import com.flowsight.dto.transaction.*;
 import com.flowsight.entity.*;
 import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.ResourceNotFoundException;
+import com.flowsight.merchant.MerchantResolver;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +76,11 @@ public class TransactionService {
         if (request.getCurrency() != null)         tx.setCurrency(request.getCurrency().toUpperCase());
         if (request.getTransactionDate() != null)  tx.setTransactionDate(request.getTransactionDate());
         if (request.getDescription() != null)      tx.setDescription(request.getDescription());
-        if (request.getMerchant() != null)          tx.setMerchant(request.getMerchant());
+        if (request.getMerchant() != null) {
+            // keep what the merchant was resolved from before the user's name replaces it
+            if (tx.getMerchantRaw() == null) tx.setMerchantRaw(tx.getMerchant());
+            tx.setMerchant(request.getMerchant().trim());
+        }
         if (request.getType() != null)              tx.setType(request.getType());
         if (request.getNotes() != null)             tx.setNotes(request.getNotes());
         if (request.getReviewed() != null)          tx.setReviewed(request.getReviewed());
@@ -106,12 +111,13 @@ public class TransactionService {
 
         List<Transaction> toSave = new ArrayList<>();
         List<String> errors = new ArrayList<>(parsed.getErrors());
+        MerchantResolver.Session merchants = ingestionPipeline.csvSession(user);
         int rowNum = 0;
 
         for (CsvParserService.CsvRow row : parsed.getRows()) {
             rowNum++;
             try {
-                Transaction tx = ingestionPipeline.processCsvRow(row, user);
+                Transaction tx = ingestionPipeline.processCsvRow(row, user, merchants);
                 toSave.add(tx);
             } catch (Exception e) {
                 errors.add("Row " + rowNum + ": " + e.getMessage());

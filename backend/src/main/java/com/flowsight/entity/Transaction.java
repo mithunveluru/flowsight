@@ -44,6 +44,10 @@ public class Transaction {
     @Column(length = 255)
     private String merchant;
 
+    // the merchant text as it arrived (statement descriptor, typed name); merchant holds the resolved name
+    @Column(name = "merchant_raw", length = 255)
+    private String merchantRaw;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 100)
     private TransactionCategory category;

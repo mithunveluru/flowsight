@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowsight.analytics.CategorizationService;
 import com.flowsight.analytics.MerchantNormalizationService;
 import com.flowsight.analytics.NormalizationService;
+import com.flowsight.analytics.TransactionIngestionPipeline;
+import com.flowsight.merchant.MerchantResolution;
+import com.flowsight.merchant.MerchantResolver;
+import com.flowsight.merchant.MerchantText;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.junit.jupiter.api.Test;
@@ -31,6 +35,8 @@ class TextEvalTest {
     private final NormalizationService normalization = new NormalizationService();
     private final CategorizationService categorization = new CategorizationService();
     private final MerchantNormalizationService merchantNormalization = new MerchantNormalizationService();
+    // what CSV import and manual entry use, minus the database, user rules, ML and LLM steps
+    private final MerchantResolver resolver = MerchantResolver.offline(merchantNormalization);
 
     @Test
     void writesCategorizationPredictions() throws Exception {
@@ -41,11 +47,13 @@ class TextEvalTest {
         int n = writeJsonl(Path.of(input), output, row -> {
             // same inputs as TransactionIngestionPipeline.processCsvRow
             String description = row.get("description");
-            String merchant = row.get("merchant").isBlank()
-                ? normalization.extractMerchant(description)
-                : row.get("merchant");
+            String merchantRaw = row.get("merchant").isBlank() ? description : row.get("merchant");
+            MerchantResolution resolved = resolver.resolve(null, merchantRaw);
+            String merchant = resolved.name();
             CategorizationService.CategorizationResult result = categorization.categorize(
-                normalization.normalize(description), merchant, new BigDecimal(row.get("amount")));
+                normalization.normalize(description),
+                TransactionIngestionPipeline.categorizationMerchant(resolved, merchantRaw),
+                new BigDecimal(row.get("amount")));
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("category", result.getCategory().name());
             out.put("confidence", result.getConfidence());
@@ -67,7 +75,10 @@ class TextEvalTest {
             out.put("canonical", normalized.getCanonicalName());
             out.put("key", normalized.getKey());
             out.put("expected_key", merchantNormalization.normalizeKey(row.get("expected")));
-            out.put("extracted", normalization.extractMerchant(row.get("raw")));
+            out.put("extracted", MerchantText.clean(row.get("raw")));
+            MerchantResolution resolved = resolver.resolve(null, row.get("raw"));
+            out.put("resolved", resolved.name());
+            out.put("resolved_step", resolved.step().name());
             return out;
         });
         System.out.printf("merchant eval: %d rows -> %s%n", n, output);

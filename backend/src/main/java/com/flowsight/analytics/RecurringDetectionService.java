@@ -65,8 +65,15 @@ public class RecurringDetectionService {
         LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
         List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, from);
 
-        Map<String, RecurringPattern> existing = patternRepository
-            .findByUserIdOrderByConfidenceDesc(userId).stream()
+        List<RecurringPattern> kept = patternRepository.findByUserIdOrderByConfidenceDesc(userId).stream()
+            .filter(p -> p.isUserConfirmed() || p.isDismissed())
+            .collect(Collectors.toList());
+
+        // keep user-confirmed and dismissed; replace the rest
+        patternRepository.deleteActiveNonConfirmedByUserId(userId);
+        realignKeys(kept);
+
+        Map<String, RecurringPattern> existing = kept.stream()
             .collect(Collectors.toMap(
                 p -> compositeKey(p.getNormalizedKey(), p.getPeriod()),
                 p -> p,
@@ -82,9 +89,6 @@ public class RecurringDetectionService {
             .filter(e -> e.getValue().isUserConfirmed())
             .map(Map.Entry::getKey)
             .collect(Collectors.toSet());
-
-        // keep user-confirmed and dismissed; replace the rest
-        patternRepository.deleteActiveNonConfirmedByUserId(userId);
 
         Map<String, MerchantGroup> groups = groupByNormalizedMerchant(txns);
         List<RecurringPattern> resultPatterns = new ArrayList<>();
@@ -174,6 +178,23 @@ public class RecurringDetectionService {
             .orElseThrow(() -> new com.flowsight.exception.ResourceNotFoundException("RecurringPattern", patternId));
         p.setUserConfirmed(false);
         return toResponse(patternRepository.save(p));
+    }
+
+    // Stored keys come from whichever MerchantNormalizationService version saved them; recompute
+    // them from the pattern's merchant so kept patterns line up with today's transaction keys.
+    private void realignKeys(List<RecurringPattern> kept) {
+        Set<String> taken = kept.stream()
+            .map(p -> compositeKey(p.getNormalizedKey(), p.getPeriod()))
+            .collect(Collectors.toSet());
+        for (RecurringPattern p : kept) {
+            String key = merchantNormalizer.normalizeKey(p.getMerchant());
+            if (key.length() < MIN_KEY_LENGTH || key.equals(p.getNormalizedKey())) continue;
+            String ck = compositeKey(key, p.getPeriod());
+            if (!taken.add(ck)) continue;
+            taken.remove(compositeKey(p.getNormalizedKey(), p.getPeriod()));
+            p.setNormalizedKey(key);
+            patternRepository.save(p);
+        }
     }
 
     private Map<String, MerchantGroup> groupByNormalizedMerchant(List<Transaction> txns) {

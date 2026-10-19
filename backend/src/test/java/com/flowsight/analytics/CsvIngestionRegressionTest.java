@@ -40,7 +40,8 @@ class CsvIngestionRegressionTest {
         // Wire real ingestion components so we exercise the actual pipeline behavior
         NormalizationService normalization = new NormalizationService();
         CategorizationService categorization = new CategorizationService();
-        pipeline = new TransactionIngestionPipeline(normalization, categorization);
+        pipeline = new TransactionIngestionPipeline(normalization, categorization,
+            com.flowsight.merchant.MerchantResolver.offline(new MerchantNormalizationService()));
         csvParserService = new CsvParserService(
             new StatementFormatDetector(),
             new BalanceDeltaCalculator(),
