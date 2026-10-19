@@ -7,6 +7,7 @@ import com.flowsight.entity.*;
 import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.ResourceNotFoundException;
 import com.flowsight.merchant.MerchantResolver;
+import com.flowsight.merchant.MerchantRuleService;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class TransactionService {
     private final UserService userService;
     private final AuditLogService    auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
+    private final MerchantRuleService merchantRules;
 
     // explicit CSV ceiling, below the global multipart limit
     private static final long MAX_CSV_BYTES = 5L * 1024 * 1024; // 5 MB
@@ -71,6 +73,7 @@ public class TransactionService {
     @Transactional
     public TransactionResponse update(UUID id, UUID userId, UpdateTransactionRequest request) {
         Transaction tx = findOwnedOrThrow(id, userId);
+        MerchantRuleService.Before before = MerchantRuleService.Before.of(tx);
 
         if (request.getAmount() != null)          tx.setAmount(request.getAmount());
         if (request.getCurrency() != null)         tx.setCurrency(request.getCurrency().toUpperCase());
@@ -92,7 +95,10 @@ public class TransactionService {
             tx.setReviewed(true);
         }
 
-        return toResponse(transactionRepository.save(tx));
+        Transaction saved = transactionRepository.save(tx);
+        TransactionResponse response = toResponse(saved);
+        response.setRuleSuggestion(merchantRules.recordCorrection(userId, saved, before));
+        return response;
     }
 
     @Transactional

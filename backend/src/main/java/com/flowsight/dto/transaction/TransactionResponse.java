@@ -1,5 +1,7 @@
 package com.flowsight.dto.transaction;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.flowsight.dto.merchant.MerchantRuleSuggestion;
 import com.flowsight.entity.TransactionCategory;
 import com.flowsight.entity.TransactionSource;
 import com.flowsight.entity.TransactionType;
@@ -28,4 +30,7 @@ public class TransactionResponse {
     private String notes;
     private boolean reviewed;
     private Instant createdAt;
+    // only on a merchant/category correction that saved a rule
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private MerchantRuleSuggestion ruleSuggestion;
 }

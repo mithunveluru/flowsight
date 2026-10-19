@@ -56,7 +56,7 @@ class CsvIngestionRegressionTest {
 
         transactionService = new TransactionService(
             transactionRepository, pipeline, csvParserService, userService,
-            auditStub, rateLimiterStub
+            auditStub, rateLimiterStub, org.mockito.Mockito.mock(com.flowsight.merchant.MerchantRuleService.class)
         );
 
         testUser = User.builder()
