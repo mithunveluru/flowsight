@@ -6,12 +6,14 @@ import com.flowsight.dto.transaction.CreateTransactionRequest;
 import com.flowsight.dto.transaction.TransactionResponse;
 import com.flowsight.dto.transaction.UpdateTransactionRequest;
 import com.flowsight.entity.Role;
+import com.flowsight.entity.Transaction;
 import com.flowsight.entity.TransactionCategory;
 import com.flowsight.entity.TransactionType;
 import com.flowsight.entity.User;
 import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.ResourceNotFoundException;
 import com.flowsight.ml.PersonalizationService;
+import com.flowsight.ml.categorization.CategorySource;
 import com.flowsight.repository.TransactionRepository;
 import com.flowsight.repository.UserRepository;
 import com.flowsight.service.TransactionService;
@@ -111,6 +113,20 @@ class MerchantRuleIntegrationTest {
         assertThat(ruleService.preview(ruleId, user).getMatchCount()).isZero();
         assertThat(jdbc.queryForList("SELECT action FROM audit_logs WHERE user_id = ?", String.class, user.getId()))
             .contains(MerchantRuleService.ACTION_RULE_PREVIEWED, MerchantRuleService.ACTION_RULE_APPLIED);
+    }
+
+    @Test
+    void applyMarksTheRuleCategoryAsPersonal() {
+        TransactionResponse first = create(user, "POS 4111XXXXXX1111 MOONLIGHT GRILL DUBAI", null);
+        TransactionResponse second = create(user, "POS 4111XXXXXX2222 MOONLIGHT GRILL DUBAI", null);
+        UUID ruleId = transactions.update(first.getId(), user.getId(),
+            edit("Moonlight Grill & Bar", TransactionCategory.FOOD_DINING)).getRuleSuggestion().getRuleId();
+
+        ruleService.apply(ruleId, user);
+
+        Transaction applied = transactionRepository.findById(second.getId()).orElseThrow();
+        assertThat(applied.getCategory()).isEqualTo(TransactionCategory.FOOD_DINING);
+        assertThat(applied.getCategorySource()).isEqualTo(CategorySource.USER);
     }
 
     @Test

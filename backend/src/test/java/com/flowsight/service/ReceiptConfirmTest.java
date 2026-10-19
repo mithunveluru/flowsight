@@ -4,14 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.flowsight.analytics.CategorizationService;
 import com.flowsight.analytics.NormalizationService;
+import com.flowsight.dto.receipt.OcrExtractionResult;
 import com.flowsight.dto.receipt.ReceiptConfirmRequest;
 import com.flowsight.dto.receipt.ReceiptResponse;
 import com.flowsight.entity.*;
 import com.flowsight.exception.ResourceNotFoundException;
+import com.flowsight.merchant.MerchantResolution;
+import com.flowsight.merchant.MerchantResolver;
+import com.flowsight.merchant.ResolutionStep;
 import com.flowsight.ml.FeedbackCorrection;
 import com.flowsight.ml.FeedbackService;
 import com.flowsight.ml.FeedbackSource;
 import com.flowsight.ml.SubjectType;
+import com.flowsight.ml.categorization.CategorySource;
+import com.flowsight.ml.categorization.TransactionCategorizer;
 import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
@@ -25,9 +31,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -49,6 +58,8 @@ class ReceiptConfirmTest {
     @Mock private NormalizationService   normalizationService;
     @Mock private ReceiptExtractionService extractionService;
     @Mock private FeedbackService        feedbackService;
+    @Mock private MerchantResolver       merchantResolver;
+    @Mock private TransactionCategorizer categorizer;
     private AuditLogService auditStub;
 
     private ReceiptService service;
@@ -70,8 +81,10 @@ class ReceiptConfirmTest {
             receiptRepository, transactionRepository, fileStorage,
             categorizationService, normalizationService, objectMapper,
             quotaStub, auditStub, rateLimiterStub,
-            extractionService, parser, feedbackService
+            extractionService, parser, feedbackService, merchantResolver, categorizer
         );
+        lenient().when(merchantResolver.resolveTyped(any(), any()))
+            .thenAnswer(inv -> typed(inv.getArgument(1), null));
 
         validator = Validation.buildDefaultValidatorFactory().getValidator();
 
@@ -394,7 +407,154 @@ class ReceiptConfirmTest {
         verify(transactionRepository).save(argThat(tx -> "SAR".equals(tx.getCurrency())));
     }
 
+    // Merchant and category resolved as in manual entry
+
+    @Test
+    void confirmReceipt_userCategory_isUserSourced_andNotRefined() {
+        UUID receiptId = testReceipt.getId();
+        testReceipt.setPredictedMerchantRaw("WAL-MART SUPERCENTER #1234");
+        stubConfirm(receiptId);
+        when(merchantResolver.resolveTyped(testUser.getId(), "walmart"))
+            .thenReturn(new MerchantResolution("Walmart", "walmart", ResolutionStep.ALIAS, 1.0, null));
+
+        ReceiptConfirmRequest req = validRequest();
+        req.setMerchant("walmart");
+        service.confirmReceipt(receiptId, req, testUser);
+
+        verify(transactionRepository).save(argThat(tx ->
+            "Walmart".equals(tx.getMerchant())
+                && "WAL-MART SUPERCENTER #1234".equals(tx.getMerchantRaw())
+                && tx.getCategory() == TransactionCategory.GROCERIES
+                && tx.getCategorySource() == CategorySource.USER
+                && tx.getConfidenceScore().compareTo(BigDecimal.ONE) == 0
+                && tx.isReviewed()));
+        verifyNoInteractions(categorizer, categorizationService);
+    }
+
+    @Test
+    void confirmReceipt_userRuleCategory_isPersonal() {
+        UUID receiptId = testReceipt.getId();
+        stubConfirm(receiptId);
+        when(merchantResolver.resolveTyped(testUser.getId(), "WALMART"))
+            .thenReturn(typed("Walmart", TransactionCategory.SHOPPING));
+
+        ReceiptConfirmRequest req = validRequest();
+        req.setCategory(null);
+        service.confirmReceipt(receiptId, req, testUser);
+
+        verify(transactionRepository).save(argThat(tx ->
+            "Walmart".equals(tx.getMerchant())
+                && "WALMART".equals(tx.getMerchantRaw())
+                && tx.getCategory() == TransactionCategory.SHOPPING
+                && tx.getCategorySource() == CategorySource.PERSONAL
+                && tx.getConfidenceScore().compareTo(new BigDecimal("0.95")) == 0
+                && !tx.isReviewed()));
+        verifyNoInteractions(categorizer, categorizationService);
+    }
+
+    @Test
+    void confirmReceipt_noCategory_usesRulesThenRefinesBeforeSaving() {
+        UUID receiptId = testReceipt.getId();
+        stubConfirm(receiptId);
+        when(merchantResolver.resolveTyped(testUser.getId(), "WALMART")).thenReturn(typed("Walmart", null));
+        when(categorizationService.categorize("WALMART", "Walmart", new BigDecimal("45.99")))
+            .thenReturn(new CategorizationService.CategorizationResult(TransactionCategory.GROCERIES, 0.7));
+
+        ReceiptConfirmRequest req = validRequest();
+        req.setCategory(null);
+        service.confirmReceipt(receiptId, req, testUser);
+
+        var order = inOrder(categorizer, transactionRepository);
+        order.verify(categorizer).refine(eq(testUser.getId()), argThat((List<Transaction> rows) ->
+            rows.size() == 1 && rows.get(0).getCategorySource() == CategorySource.RULES));
+        order.verify(transactionRepository).save(argThat(tx -> !tx.isReviewed()));
+    }
+
+    // Draft: the merchant is resolved before the review screen sees it
+
+    @Test
+    void processReceipt_draftShowsResolvedMerchant_andKeepsWhatOcrRead() throws Exception {
+        stubUpload(ocrResult());
+        when(merchantResolver.resolve(testUser.getId(), "DOMINOS PIZZA #4411"))
+            .thenReturn(new MerchantResolution("Domino's", "dominos", ResolutionStep.ALIAS, 1.0, null));
+
+        ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
+
+        assertThat(response.getExtraction().getMerchant()).isEqualTo("Domino's");
+        Receipt saved = lastSavedReceipt();
+        assertThat(saved.getExtractedMerchant()).isEqualTo("Domino's");
+        assertThat(saved.getPredictedMerchant()).isEqualTo("Domino's");
+        assertThat(saved.getPredictedMerchantRaw()).isEqualTo("DOMINOS PIZZA #4411");
+    }
+
+    @Test
+    void processReceipt_resolverFailure_keepsOcrMerchant() throws Exception {
+        stubUpload(ocrResult());
+        when(merchantResolver.resolve(any(), any())).thenThrow(new IllegalStateException("db down"));
+
+        ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
+
+        assertThat(response.getStatus()).isEqualTo(ReceiptStatus.COMPLETED);
+        assertThat(response.getExtraction().getMerchant()).isEqualTo("Dominos Pizza");
+        assertThat(lastSavedReceipt().getPredictedMerchant()).isEqualTo("Dominos Pizza");
+    }
+
+    @Test
+    void processReceipt_noResolvedName_keepsOcrMerchant_andFallsBackToCleanedText() throws Exception {
+        stubUpload(ocrResult().toBuilder().merchantRaw(null).build());
+        when(merchantResolver.resolve(testUser.getId(), "Dominos Pizza")).thenReturn(MerchantResolution.NONE);
+
+        ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
+
+        assertThat(response.getExtraction().getMerchant()).isEqualTo("Dominos Pizza");
+        assertThat(lastSavedReceipt().getPredictedMerchant()).isEqualTo("Dominos Pizza");
+    }
+
     // Helper
+
+    private void stubConfirm(UUID receiptId) {
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId())).thenReturn(Optional.of(testReceipt));
+        when(transactionRepository.findTopByReceiptId(receiptId)).thenReturn(Optional.empty());
+        when(normalizationService.normalize(any())).thenReturn("WALMART");
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    private void stubUpload(OcrExtractionResult result) throws Exception {
+        when(receiptRepository.save(any())).thenAnswer(inv -> {
+            Receipt r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(UUID.randomUUID());
+            return r;
+        });
+        when(fileStorage.store(any(), any(), any())).thenReturn(Path.of("/tmp/receipt.png"));
+        when(extractionService.extract(any(), any(), any()))
+            .thenReturn(new ReceiptExtractionService.Extraction("TESSERACT", null, result));
+    }
+
+    private Receipt lastSavedReceipt() {
+        var captor = org.mockito.ArgumentCaptor.forClass(Receipt.class);
+        verify(receiptRepository, atLeastOnce()).save(captor.capture());
+        return captor.getValue();
+    }
+
+    private static OcrExtractionResult ocrResult() {
+        return OcrExtractionResult.builder()
+            .merchant("Dominos Pizza")
+            .merchantRaw("DOMINOS PIZZA #4411")
+            .amount(new BigDecimal("450.00"))
+            .currency("INR")
+            .successful(true)
+            .build();
+    }
+
+    private static MockMultipartFile pngUpload() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
+        return new MockMultipartFile("file", "receipt.png", "image/png", png);
+    }
+
+    private static MerchantResolution typed(String name, TransactionCategory category) {
+        return new MerchantResolution(name, name.toLowerCase(), ResolutionStep.TYPED, 1.0, category);
+    }
+
 
     private ReceiptConfirmRequest validRequest() {
         ReceiptConfirmRequest req = new ReceiptConfirmRequest();

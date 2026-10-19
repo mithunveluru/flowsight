@@ -83,6 +83,8 @@ class ReceiptConfirmConcurrencyIntegrationTest {
         assertThat(ids).containsOnly(ids.get(0));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM transactions WHERE receipt_id = ?", Integer.class, receipt.getId()))
             .isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT category_source FROM transactions WHERE receipt_id = ?", String.class,
+            receipt.getId())).isEqualTo("USER");
         assertThat(jdbc.queryForObject(
             "SELECT COUNT(*) FROM user_feedback WHERE subject_id = ? AND field = 'amount'", Integer.class, receipt.getId()))
             .isEqualTo(1);

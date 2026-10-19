@@ -6,7 +6,9 @@ import com.flowsight.analytics.NormalizationService;
 import com.flowsight.entity.Role;
 import com.flowsight.entity.User;
 import com.flowsight.exception.FlowsightException;
+import com.flowsight.merchant.MerchantResolver;
 import com.flowsight.ml.FeedbackService;
+import com.flowsight.ml.categorization.TransactionCategorizer;
 import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
@@ -56,7 +58,9 @@ class ReceiptUploadSecurityTest {
             rateLimiter,
             mock(ReceiptExtractionService.class),
             mock(ReceiptParserService.class),
-            mock(FeedbackService.class));
+            mock(FeedbackService.class),
+            mock(MerchantResolver.class),
+            mock(TransactionCategorizer.class));
 
         user = User.builder()
             .id(UUID.randomUUID())

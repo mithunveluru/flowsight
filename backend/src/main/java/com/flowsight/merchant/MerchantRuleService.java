@@ -14,6 +14,7 @@ import com.flowsight.ml.FeedbackService;
 import com.flowsight.ml.FeedbackSource;
 import com.flowsight.ml.PersonalizationService;
 import com.flowsight.ml.SubjectType;
+import com.flowsight.ml.categorization.CategorySource;
 import com.flowsight.security.RateLimiter;
 import com.flowsight.service.AuditLogService;
 import jakarta.persistence.EntityManager;
@@ -141,6 +142,7 @@ public class MerchantRuleService {
             if (rule.getCategory() != null) {
                 tx.setCategory(rule.getCategory());
                 tx.setConfidenceScore(BigDecimal.ONE);
+                tx.setCategorySource(CategorySource.USER);
                 tx.setReviewed(true);
             }
         }

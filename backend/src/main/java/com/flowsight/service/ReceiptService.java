@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flowsight.analytics.CategorizationService;
 import com.flowsight.analytics.NormalizationService;
+import com.flowsight.analytics.TransactionIngestionPipeline;
 import com.flowsight.dto.receipt.OcrExtractionResult;
 import com.flowsight.dto.receipt.ReceiptConfirmRequest;
 import com.flowsight.dto.receipt.ReceiptLineItem;
@@ -14,10 +15,14 @@ import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.OcrException;
 import com.flowsight.exception.ResourceNotFoundException;
 import com.flowsight.dto.receipt.FieldAssessment;
+import com.flowsight.merchant.MerchantResolution;
+import com.flowsight.merchant.MerchantResolver;
 import com.flowsight.ml.FeedbackCorrection;
 import com.flowsight.ml.FeedbackService;
 import com.flowsight.ml.FeedbackSource;
 import com.flowsight.ml.SubjectType;
+import com.flowsight.ml.categorization.CategorySource;
+import com.flowsight.ml.categorization.TransactionCategorizer;
 import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
@@ -55,6 +60,9 @@ public class ReceiptService {
         List.of("image/jpeg", "image/png", "image/webp", "image/tiff", "image/bmp");
 
     private static final int MERCHANT_COLUMN = 255;
+    private static final BigDecimal FULL_CONFIDENCE = BigDecimal.ONE.setScale(4, RoundingMode.UNNECESSARY);
+    // a category from the user's own rule: their earlier choice, but not reviewed for this row
+    private static final BigDecimal RULE_CONFIDENCE = new BigDecimal("0.9500");
 
     private final ReceiptRepository    receiptRepository;
     private final TransactionRepository transactionRepository;
@@ -69,6 +77,8 @@ public class ReceiptService {
     // re-parses stored OCR text of receipts processed before structured extraction existed
     private final ReceiptParserService parser;
     private final FeedbackService      feedbackService;
+    private final MerchantResolver     merchantResolver;
+    private final TransactionCategorizer categorizer;
 
     // Not transactional on purpose: OCR can take tens of seconds (several Tesseract passes, or an
     // ml-service / vision-model call) and must not hold a pool connection. Each save is its own
@@ -120,8 +130,7 @@ public class ReceiptService {
             return toResponse(receipt, null, null);
         }
 
-        OcrExtractionResult result = extraction.result();
-        applyExtraction(receipt, extraction);
+        OcrExtractionResult result = applyExtraction(receipt, extraction, user.getId());
         // draft only; the transaction is created when the user confirms
         receipt.setStatus(ReceiptStatus.COMPLETED);
         if (!result.isSuccessful()) {
@@ -238,8 +247,9 @@ public class ReceiptService {
         receiptRepository.delete(receipt);
     }
 
-    private void applyExtraction(Receipt receipt, ReceiptExtractionService.Extraction extraction) {
-        OcrExtractionResult r = extraction.result();
+    // Returns the extraction as the review screen shows it, with the merchant resolved.
+    private OcrExtractionResult applyExtraction(Receipt receipt, ReceiptExtractionService.Extraction extraction, UUID userId) {
+        OcrExtractionResult r = withResolvedMerchant(merchantResolver, extraction.result(), userId);
         String merchant = truncate(r.getMerchant(), MERCHANT_COLUMN);
         receipt.setOcrText(r.getRawText());
         receipt.setOcrProvider(extraction.provider());
@@ -273,6 +283,21 @@ public class ReceiptService {
             receipt.setExtractionDetails(objectMapper.writeValueAsString(r.toBuilder().rawText(null).lineItems(null).build()));
         } catch (JsonProcessingException e) {
             log.debug("Could not serialize extraction details for receipt {}", receipt.getId());
+        }
+        return r;
+    }
+
+    // The draft shows the name manual entry and CSV import would store. Resolution must never
+    // fail the upload, so any error keeps OCR's merchant. Public so the receipt eval scores the same step.
+    public static OcrExtractionResult withResolvedMerchant(MerchantResolver merchantResolver, OcrExtractionResult r, UUID userId) {
+        String text = r.getMerchantRaw() != null && !r.getMerchantRaw().isBlank() ? r.getMerchantRaw() : r.getMerchant();
+        if (text == null || text.isBlank()) return r;
+        try {
+            String name = merchantResolver.resolve(userId, text).name();
+            return name == null || name.isBlank() ? r : r.toBuilder().merchant(name).build();
+        } catch (RuntimeException e) {
+            log.warn("Merchant resolution failed for a receipt draft: {}", e.getClass().getSimpleName());
+            return r;
         }
     }
 
@@ -335,42 +360,53 @@ public class ReceiptService {
         }
     }
 
-    // build a transaction from user-confirmed values (reviewed=true)
+    // build a transaction from user-confirmed values; merchant and category as in manual entry
     private Transaction buildTransactionFromConfirm(ReceiptConfirmRequest req, Receipt receipt, User user) {
         // notes override the normalized description
         String baseDescription = (req.getNotes() != null && !req.getNotes().isBlank())
             ? req.getNotes()
             : normalizationService.normalize(req.getMerchant());
 
-        TransactionCategory category;
-        BigDecimal confidenceScore;
+        MerchantResolution merchant = merchantResolver.resolveTyped(user.getId(), req.getMerchant());
 
-        if (req.getCategory() != null) {
-            category        = req.getCategory();
-            confidenceScore = BigDecimal.ONE.setScale(4, RoundingMode.HALF_UP); // user chose explicitly
-        } else {
-            CategorizationService.CategorizationResult cat =
-                categorizationService.categorize(baseDescription, req.getMerchant(), req.getAmount());
+        TransactionCategory category = req.getCategory();
+        BigDecimal confidenceScore = FULL_CONFIDENCE;
+        CategorySource categorySource = CategorySource.USER;
+
+        if (category == null && merchant.category() != null) {
+            category        = merchant.category();
+            confidenceScore = RULE_CONFIDENCE;
+            categorySource  = CategorySource.PERSONAL;
+        } else if (category == null) {
+            CategorizationService.CategorizationResult cat = categorizationService.categorize(baseDescription,
+                TransactionIngestionPipeline.categorizationMerchant(merchant, req.getMerchant()), req.getAmount());
             category        = cat.getCategory();
             confidenceScore = BigDecimal.valueOf(cat.getConfidence()).setScale(4, RoundingMode.HALF_UP);
+            categorySource  = CategorySource.RULES;
         }
 
-        return Transaction.builder()
+        String merchantRaw = receipt.getPredictedMerchantRaw() != null ? receipt.getPredictedMerchantRaw() : req.getMerchant().trim();
+        Transaction tx = Transaction.builder()
             .user(user)
             .amount(req.getAmount().setScale(4, RoundingMode.HALF_UP))
             .currency(currencyFor(req, receipt))
             .transactionDate(req.getDate())
             .description(baseDescription)
-            .merchant(req.getMerchant())
+            .merchant(merchant.name())
+            .merchantRaw(merchantRaw)
             .category(category)
             .type(TransactionType.DEBIT)
             .source(TransactionSource.OCR)
             .confidenceScore(confidenceScore)
+            .categorySource(categorySource)
             .notes(req.getNotes())
             .rawText(receipt.getOcrText())
             .receipt(receipt)
-            .reviewed(true) // user-confirmed
+            // reviewed means the category was; an auto-detected one stays open to the review queue
+            .reviewed(req.getCategory() != null)
             .build();
+        if (categorySource == CategorySource.RULES) categorizer.refine(user.getId(), List.of(tx));
+        return tx;
     }
 
     // the user's choice, else what OCR detected, else the column's historical default
