@@ -72,6 +72,7 @@ if [ "$MODE" = tesseract ]; then
   TESTS="ReceiptEvalTest,TextEvalTest"
   MVN_PROPS+=(-Deval.categorization.input=/work/eval/categorization/cases.csv
               -Deval.categorization.output=/work/eval/out/pred-categorization.jsonl
+              -Deval.categorization.modelInput=/work/eval/out/categorization-model-input.jsonl
               -Deval.merchants.input=/work/eval/merchants/cases.csv
               -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl)
 elif [ "$MODE" = ml-service ]; then
@@ -87,6 +88,20 @@ in_image "${DOCKER_ENV[@]}" -w /work/backend "$IMAGE" \
   mvn -q -B -Dmaven.repo.local=/m2/repository test -Dtest="$TESTS" -Dsurefire.failIfNoSpecifiedTests=false \
   "${MVN_PROPS[@]}"
 
+if [ "$MODE" = tesseract ]; then
+  # the ml-service categorizer on the items the backend would send it, then the personal layer on top
+  in_image -w /work/eval "$IMAGE" python3 categorization/predict_model.py \
+    --artifact /work/ml-service/app/categorizer/artifact \
+    --input out/categorization-model-input.jsonl --out out/pred-categorization-model.jsonl
+  in_image -w /work/backend "$IMAGE" \
+    mvn -q -B -Dmaven.repo.local=/m2/repository test -Dtest=PersonalLayerEvalTest -Dsurefire.failIfNoSpecifiedTests=false \
+    -Deval.categorization.input=/work/eval/categorization/cases.csv \
+    -Deval.categorization.modelInput=/work/eval/out/categorization-model-input.jsonl \
+    -Deval.categorization.modelPred=/work/eval/out/pred-categorization-model.jsonl \
+    -Deval.categorization.personalOutput=/work/eval/out/pred-categorization-personal.jsonl \
+    -Deval.categorization.personalRepeatOutput=/work/eval/out/pred-categorization-personal-repeat.jsonl
+fi
+
 STATUS=0
 score() { in_image -w /work/eval "$IMAGE" python3 score.py "$@" $UPDATE || STATUS=$(( $? > STATUS ? $? : STATUS )); }
 PRIVATE_ARGS=()
@@ -95,7 +110,13 @@ score receipts --suite "$SUITE" --truth receipts/truth.jsonl --pred "out/pred-$S
   --baseline "baselines/$SUITE.json" "${PRIVATE_ARGS[@]}"
 if [ "$MODE" = tesseract ]; then
   score categorization --suite categorization --cases categorization/cases.csv \
-    --pred out/pred-categorization.jsonl --baseline baselines/categorization.json
+    --pred out/pred-categorization-model.jsonl --baseline baselines/categorization.json
+  score categorization --suite categorization-rules --cases categorization/cases.csv \
+    --pred out/pred-categorization.jsonl --baseline baselines/categorization-rules.json
+  score categorization --suite categorization-personal --cases categorization/cases.csv \
+    --pred out/pred-categorization-personal.jsonl --baseline baselines/categorization-personal.json
+  score categorization --suite categorization-personal-repeat --cases categorization/cases.csv \
+    --pred out/pred-categorization-personal-repeat.jsonl --baseline baselines/categorization-personal-repeat.json
   score merchants --suite merchants --cases merchants/cases.csv \
     --pred out/pred-merchants.jsonl --baseline baselines/merchants.json
 fi

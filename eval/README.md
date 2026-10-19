@@ -36,7 +36,10 @@ for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml
 | Suite | Code under test | Data |
 |---|---|---|
 | `ocr-tesseract`, `ocr-llm`, `ocr-ml-service` | `CurrentReceiptPipeline`: `ReceiptExtractionService` as `ReceiptService` calls it, without the database (ml-service OCR, else receipt-ocr cross-checked by Tesseract, else the multi-pass `TesseractReceiptPipeline`) | 200 synthetic receipts from `receipts/generate.py`, plus private real receipts if present |
-| `categorization` | `CategorizationService.categorize` with the inputs `TransactionIngestionPipeline.processCsvRow` gives it | `categorization/cases.csv` (476 rows, India / KSA / UAE / US) |
+| `categorization` | the ml-service categorizer artifact (`ml-service/app/categorizer/artifact`, numpy only) on the items the backend sends it: normalized description and resolved merchant, no direction | `categorization/cases.csv` (476 rows, India / KSA / UAE / US) |
+| `categorization-rules` | `CategorizationService.categorize` (the fallback) with the inputs `TransactionIngestionPipeline.processCsvRow` gives it | same |
+| `categorization-personal` | categorizer + `PersonalBlend`; each region is one user split in two halves by resolved merchant, the other half is their reviewed history, so no row sees its own merchant's label | same |
+| `categorization-personal-repeat` | as above, split by row id: the user has already corrected other rows of the same merchant | same |
 | `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
@@ -62,6 +65,8 @@ names containing label words, Total Items / Tendered / Cash / Change lines, tip 
 are photos with the table visible around the paper.
 
 Categorization: accuracy, macro F1 over the labeled classes, ECE of the returned confidence.
+The categorizer is trained only on the synthetic corpus in `ml-service/app/categorizer/corpus.py`;
+this set is never used for training.
 Merchants: `alias_exact` (canonical name correct), `alias_wrong` (an alias fired and named the
 wrong merchant, lower is better), `fuzzy` (canonical name, or the grouping key when no alias
 matched, at least 0.85 similar), `key_match` (raw and expected strings get the same grouping

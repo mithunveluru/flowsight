@@ -28,6 +28,9 @@ DEFAULT_TOLERANCE = {
     # ml-service OCR with its LLM pass off is deterministic like the Java path
     "ocr-ml-service": {"overall": 0.01, "slice_items": 1},
     "categorization": {"overall": 0.01, "slice_items": 1},
+    "categorization-rules": {"overall": 0.01, "slice_items": 1},
+    "categorization-personal": {"overall": 0.01, "slice_items": 1},
+    "categorization-personal-repeat": {"overall": 0.01, "slice_items": 1},
     "merchants": {"overall": 0.01, "slice_items": 1},
 }
 
@@ -170,6 +173,14 @@ def read_csv(path):
         return [row for row in csv.DictReader(f) if row.get("id") and not row["id"].startswith("#")]
 
 
+CATEGORIZATION_SUITES = {
+    "categorization": "ml-service categorizer (global model), as served when ML_CATEGORIZER_ENABLED",
+    "categorization-rules": "CategorizationService keyword rules, the fallback",
+    "categorization-personal": "categorizer + personal layer; history = the region's other merchants (no label leak)",
+    "categorization-personal-repeat": "categorizer + personal layer; history = other rows, same merchants allowed",
+}
+
+
 def cmd_categorization(args):
     cases = read_csv(args.cases)
     preds = {p["id"]: p for p in read_jsonl(args.pred)}
@@ -195,7 +206,7 @@ def cmd_categorization(args):
     current = {"suite": args.suite, "truth_sha256": sha256(args.cases), "count": len(cases), "metrics": metrics,
                "slices": slices, "slice_gated": ["accuracy"], "info": info}
 
-    print(f"\n== {args.suite}: CategorizationService ==")
+    print(f"\n== {args.suite}: {CATEGORIZATION_SUITES[args.suite]} ==")
     print(format_table([{"set": "all", "n": len(cases), **metrics, "uncategorized": info["uncategorized_rate"]}],
                        ["set", "n", "accuracy", "macro_f1", "ece", "uncategorized"]))
     print(format_table([{"slice": k, **v} for k, v in slices.items()], ["slice", "n", "accuracy", "macro_f1"]))

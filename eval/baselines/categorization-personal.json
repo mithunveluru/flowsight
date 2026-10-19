@@ -1,0 +1,56 @@
+{
+  "count": 476,
+  "info": {
+    "n": 476,
+    "per_class_f1": {
+      "EDUCATION": 0.9787,
+      "ENTERTAINMENT": 0.9855,
+      "FINANCE": 0.9176,
+      "FOOD_DINING": 0.9899,
+      "GROCERIES": 0.95,
+      "HEALTHCARE": 1.0,
+      "INCOME": 0.8889,
+      "OTHER": 0.9333,
+      "SHOPPING": 0.8916,
+      "SUBSCRIPTIONS": 0.9655,
+      "TRANSFER": 1.0,
+      "TRANSPORTATION": 0.9655,
+      "TRAVEL": 1.0,
+      "UTILITIES": 0.9487
+    },
+    "uncategorized_rate": 0.0
+  },
+  "metrics": {
+    "accuracy": 0.958,
+    "ece": 0.0549,
+    "macro_f1": 0.9582
+  },
+  "slices": {
+    "region=AE": {
+      "accuracy": 0.9639,
+      "macro_f1": 0.9628,
+      "n": 83
+    },
+    "region=IN": {
+      "accuracy": 0.9617,
+      "macro_f1": 0.9646,
+      "n": 209
+    },
+    "region=SA": {
+      "accuracy": 0.962,
+      "macro_f1": 0.9552,
+      "n": 79
+    },
+    "region=US": {
+      "accuracy": 0.9429,
+      "macro_f1": 0.946,
+      "n": 105
+    }
+  },
+  "suite": "categorization-personal",
+  "tolerance": {
+    "overall": 0.01,
+    "slice_items": 1
+  },
+  "truth_sha256": "1601efd64b975b5cfdaeb66922ec131f5db130a7dd671277afc26564cc2b7cbf"
+}
