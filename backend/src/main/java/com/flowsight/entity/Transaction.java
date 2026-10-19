@@ -2,12 +2,17 @@ package com.flowsight.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.flowsight.ml.categorization.CategoryAlternative;
+import com.flowsight.ml.categorization.CategorySource;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -66,6 +71,18 @@ public class Transaction {
     // DECIMAL(5,4) in DB — BigDecimal matches the fixed-precision column; Double would fail @Column scale validation
     @Column(name = "confidence_score", precision = 5, scale = 4)
     private BigDecimal confidenceScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category_source", length = 20)
+    private CategorySource categorySource;
+
+    @Column(name = "category_model_version", length = 64)
+    private String categoryModelVersion;
+
+    // top three model categories with their probabilities, best first
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "category_alternatives", columnDefinition = "jsonb")
+    private List<CategoryAlternative> categoryAlternatives;
 
     @Column(name = "raw_text", columnDefinition = "TEXT")
     private String rawText;

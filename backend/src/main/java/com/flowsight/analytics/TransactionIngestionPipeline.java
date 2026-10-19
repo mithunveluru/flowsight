@@ -4,12 +4,15 @@ import com.flowsight.dto.transaction.CreateTransactionRequest;
 import com.flowsight.entity.*;
 import com.flowsight.merchant.MerchantResolution;
 import com.flowsight.merchant.MerchantResolver;
+import com.flowsight.ml.categorization.CategorySource;
+import com.flowsight.ml.categorization.TransactionCategorizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.List;
 
 // Ingestion pipeline: normalize, resolve the merchant, categorize, build entity.
 @Component
@@ -24,6 +27,7 @@ public class TransactionIngestionPipeline {
     private final NormalizationService normalization;
     private final CategorizationService categorization;
     private final MerchantResolver merchantResolver;
+    private final TransactionCategorizer categorizer;
 
     public Transaction processManual(CreateTransactionRequest request, User user) {
         String normalizedDesc = normalization.normalize(request.getDescription());
@@ -35,18 +39,21 @@ public class TransactionIngestionPipeline {
 
         TransactionCategory category = request.getCategory();
         BigDecimal confidence = FULL_CONFIDENCE;
+        CategorySource categorySource = CategorySource.USER;
 
         if (category == null && merchant.category() != null) {
             category = merchant.category();
             confidence = RULE_CONFIDENCE;
+            categorySource = CategorySource.PERSONAL;
         } else if (category == null) {
             CategorizationService.CategorizationResult result =
                 categorization.categorize(normalizedDesc, categorizationMerchant(merchant, merchantRaw), request.getAmount());
             category = result.getCategory();
             confidence = toDecimal(result.getConfidence());
+            categorySource = CategorySource.RULES;
         }
 
-        return Transaction.builder()
+        Transaction tx = Transaction.builder()
             .user(user)
             .amount(request.getAmount())
             .currency(request.getCurrency() != null ? request.getCurrency().toUpperCase() : "INR")
@@ -58,9 +65,12 @@ public class TransactionIngestionPipeline {
             .type(request.getType())
             .source(TransactionSource.MANUAL)
             .confidenceScore(confidence)
+            .categorySource(categorySource)
             .notes(request.getNotes())
             .reviewed(request.getCategory() != null)
             .build();
+        categorizer.refine(user.getId(), List.of(tx));
+        return tx;
     }
 
     /** merchants: one resolver session per import, so the user's rules are read once. */
@@ -71,14 +81,17 @@ public class TransactionIngestionPipeline {
 
         TransactionCategory category;
         BigDecimal confidence;
+        CategorySource categorySource;
         if (merchant.category() != null) {
             category = merchant.category();
             confidence = RULE_CONFIDENCE;
+            categorySource = CategorySource.PERSONAL;
         } else {
             CategorizationService.CategorizationResult result =
                 categorization.categorize(normalizedDesc, categorizationMerchant(merchant, merchantRaw), row.getAmount());
             category = result.getCategory();
             confidence = toDecimal(result.getConfidence());
+            categorySource = CategorySource.RULES;
         }
 
         return Transaction.builder()
@@ -93,9 +106,15 @@ public class TransactionIngestionPipeline {
             .type(row.isDebit() ? TransactionType.DEBIT : TransactionType.CREDIT)
             .source(TransactionSource.CSV)
             .confidenceScore(confidence)
+            .categorySource(categorySource)
             .rawText(row.getRawText())
             .reviewed(false)
             .build();
+    }
+
+    /** Rows from processCsvRow keep their rules category unless the categorizer answers for them. */
+    public void refineCategories(User user, List<Transaction> rows) {
+        categorizer.refine(user.getId(), rows);
     }
 
     // LLM naming is left out of imports: one slow call per unknown row would stall the upload.

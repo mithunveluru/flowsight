@@ -3,6 +3,7 @@ package com.flowsight.controller;
 import com.flowsight.dto.transaction.*;
 import com.flowsight.entity.TransactionCategory;
 import com.flowsight.entity.User;
+import com.flowsight.ml.categorization.CategoryReviewQueue;
 import com.flowsight.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +50,15 @@ public class TransactionController {
         return ResponseEntity.ok(
             transactionService.list(user.getId(), category, startDate, endDate, pageable)
         );
+    }
+
+    // unreviewed transactions with the least certain category first, for the review screen
+    @GetMapping("/review-queue")
+    public ResponseEntity<List<TransactionResponse>> reviewQueue(
+        @AuthenticationPrincipal User user,
+        @RequestParam(defaultValue = "" + CategoryReviewQueue.DEFAULT_LIMIT) int limit
+    ) {
+        return ResponseEntity.ok(transactionService.reviewQueue(user.getId(), limit));
     }
 
     @GetMapping("/{id}")

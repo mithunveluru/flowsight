@@ -41,7 +41,8 @@ class CsvIngestionRegressionTest {
         NormalizationService normalization = new NormalizationService();
         CategorizationService categorization = new CategorizationService();
         pipeline = new TransactionIngestionPipeline(normalization, categorization,
-            com.flowsight.merchant.MerchantResolver.offline(new MerchantNormalizationService()));
+            com.flowsight.merchant.MerchantResolver.offline(new MerchantNormalizationService()),
+            org.mockito.Mockito.mock(com.flowsight.ml.categorization.TransactionCategorizer.class));
         csvParserService = new CsvParserService(
             new StatementFormatDetector(),
             new BalanceDeltaCalculator(),
@@ -56,7 +57,8 @@ class CsvIngestionRegressionTest {
 
         transactionService = new TransactionService(
             transactionRepository, pipeline, csvParserService, userService,
-            auditStub, rateLimiterStub, org.mockito.Mockito.mock(com.flowsight.merchant.MerchantRuleService.class)
+            auditStub, rateLimiterStub, org.mockito.Mockito.mock(com.flowsight.merchant.MerchantRuleService.class),
+            org.mockito.Mockito.mock(com.flowsight.ml.categorization.CategoryReviewQueue.class)
         );
 
         testUser = User.builder()

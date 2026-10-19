@@ -8,6 +8,8 @@ import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.ResourceNotFoundException;
 import com.flowsight.merchant.MerchantResolver;
 import com.flowsight.merchant.MerchantRuleService;
+import com.flowsight.ml.categorization.CategoryReviewQueue;
+import com.flowsight.ml.categorization.CategorySource;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +41,7 @@ public class TransactionService {
     private final AuditLogService    auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
     private final MerchantRuleService merchantRules;
+    private final CategoryReviewQueue reviewQueue;
 
     // explicit CSV ceiling, below the global multipart limit
     private static final long MAX_CSV_BYTES = 5L * 1024 * 1024; // 5 MB
@@ -93,12 +96,21 @@ public class TransactionService {
             tx.setCategory(request.getCategory());
             tx.setConfidenceScore(BigDecimal.ONE);
             tx.setReviewed(true);
+            tx.setCategorySource(CategorySource.USER);
+            tx.setCategoryModelVersion(null);
+            tx.setCategoryAlternatives(null);
         }
 
         Transaction saved = transactionRepository.save(tx);
         TransactionResponse response = toResponse(saved);
         response.setRuleSuggestion(merchantRules.recordCorrection(userId, saved, before));
         return response;
+    }
+
+    /** The user's unreviewed transactions the categorizer is least sure about, least sure first. */
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> reviewQueue(UUID userId, int limit) {
+        return reviewQueue.mostUncertain(userId, limit).stream().map(this::toResponse).toList();
     }
 
     @Transactional
@@ -131,6 +143,7 @@ public class TransactionService {
             }
         }
 
+        ingestionPipeline.refineCategories(user, toSave);
         List<Transaction> saved = transactionRepository.saveAll(toSave);
 
         // imported range + total: UI links the user to the right analytics view
@@ -204,6 +217,9 @@ public class TransactionService {
             .type(tx.getType())
             .source(tx.getSource())
             .confidenceScore(tx.getConfidenceScore())
+            .categorySource(tx.getCategorySource())
+            .categoryModelVersion(tx.getCategoryModelVersion())
+            .categoryAlternatives(tx.getCategoryAlternatives())
             .notes(tx.getNotes())
             .reviewed(tx.isReviewed())
             .createdAt(tx.getCreatedAt())
