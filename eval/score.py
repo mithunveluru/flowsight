@@ -4,6 +4,7 @@
   score.py receipts       --suite S --truth T --pred P [--private-truth T2] --baseline B [--update-baseline]
   score.py categorization --suite S --cases C --pred P --baseline B [--update-baseline]
   score.py merchants      --suite S --cases C --pred P --baseline B [--update-baseline]
+  score.py recurring      --suite S --cases C --pred P --baseline B [--update-baseline]
 
 Exit status: 0 ok, 1 regression against the baseline, 2 baseline missing or stale.
 """
@@ -13,6 +14,7 @@ import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
@@ -32,6 +34,8 @@ DEFAULT_TOLERANCE = {
     "categorization-personal": {"overall": 0.01, "slice_items": 1},
     "categorization-personal-repeat": {"overall": 0.01, "slice_items": 1},
     "merchants": {"overall": 0.01, "slice_items": 1},
+    "recurring-rules": {"overall": 0.01, "slice_items": 1},
+    "recurring-model": {"overall": 0.01, "slice_items": 1},
 }
 
 
@@ -260,6 +264,157 @@ def cmd_merchants(args):
     return finish(args, current)
 
 
+RECURRING_SUITES = {
+    "recurring-rules": "RecurringDetectionService and LeakDetectionService rules (the fallback)",
+    "recurring-model": "recurring-scorer model with the model-path leak detectors",
+}
+RECURRING_METRICS = ("group_precision", "group_recall", "group_f1", "period_accuracy", "next_within_3d",
+                     "irregular_fp_rate", "creep_precision", "creep_recall", "creep_f1", "dup_precision",
+                     "dup_recall", "overlap_precision", "overlap_recall", "drain_precision", "drain_recall")
+OVERLAP_CATEGORIES = {"SUBSCRIPTIONS", "ENTERTAINMENT", "EDUCATION"}
+SHOWN_CONFIDENCE = 0.5  # the Subscriptions page lists POSSIBLE-tier patterns separately
+
+
+def ratio(num, den):
+    return round(num / den, 4) if den else None
+
+
+def overlap_truth(groups):
+    """The leak's definition applied to the truth: recurring subscriptions sharing the category
+    with the most of them (at least two)."""
+    by_category = defaultdict(list)
+    for g in groups:
+        if g["recurring"] and g["count"] >= 2 and g["category"] in OVERLAP_CATEGORIES:
+            by_category[g["category"]].append(g["id"])
+    best = sorted(by_category.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    return set(best[0][1]) if best and len(best[0][1]) >= 2 else set()
+
+
+def score_recurring_user(case, pred):
+    groups = case["groups"]
+    owner = {}
+    for key, idx in pred["keys"].items():
+        owner[key] = Counter(case["tx"][i][1] for i in idx).most_common(1)[0][0]
+
+    out = Counter()
+    matched, shown, flagged = {}, set(), set()
+    for p in pred["patterns"]:
+        g = owner.get(p["key"])
+        flagged.add(g)
+        hit = g is not None and groups[g]["recurring"] and g not in matched
+        out["pred"] += 1
+        out["tp"] += hit
+        conf = p.get("confidence")
+        is_shown = conf is not None and float(conf) >= SHOWN_CONFIDENCE
+        out["shown_pred"] += is_shown
+        if hit:
+            matched[g] = p
+            if is_shown:
+                shown.add(g)
+    detail = []
+    for g in groups:
+        if g["recurring"] and g["count"] >= 2:
+            out["true"] += 1
+            out["shown_tp"] += g["id"] in shown
+            detail.append(("recurring", g, g["id"] in matched))
+        elif not g["recurring"] and g["count"] >= 2:
+            detail.append(("negative", g, g["id"] in flagged))
+        if g.get("frequent_irregular"):
+            out["irregular"] += 1
+            out["irregular_fp"] += g["id"] in flagged
+    for g, p in matched.items():
+        truth = groups[g]
+        out["period_ok"] += p["period"] == truth["period"]
+        if truth["next_date"] and p.get("next"):
+            out["next_n"] += 1
+            err = abs((date.fromisoformat(p["next"]) - date.fromisoformat(truth["next_date"])).days)
+            out["next_abs"] += err
+            out["next_3d"] += err <= 3
+            if p.get("low") and p.get("high"):
+                out["interval_n"] += 1
+                out["interval_hit"] += p["low"] <= truth["next_date"] <= p["high"]
+                out["interval_width"] += (date.fromisoformat(p["high"]) - date.fromisoformat(p["low"])).days
+
+    def leak(kind, is_true, truth_ids):
+        flagged = {owner[k] for k in pred["leaks"].get(kind, []) if k in owner}
+        out[f"{kind}_pred"] += len(flagged)
+        out[f"{kind}_tp"] += sum(1 for g in flagged if is_true(g))
+        out[f"{kind}_true"] += len(truth_ids)
+        out[f"{kind}_hit"] += len(flagged & truth_ids)
+
+    leak("creep", lambda g: groups[g]["creep"] is not None, {g["id"] for g in groups if g["creep"]})
+    leak("duplicate", lambda g: groups[g]["series"] > 1, {g["id"] for g in groups if g["series"] > 1})
+    overlap = overlap_truth(groups)
+    leak("overlap", lambda g: g in overlap, overlap)
+    leak("drain", lambda g: groups[g]["drain"], {g["id"] for g in groups if g["drain"]})
+    return out, detail
+
+
+def recurring_metrics(c):
+    p, r = ratio(c["tp"], c["pred"]), ratio(c["tp"], c["true"])
+    m = {"group_precision": p, "group_recall": r,
+         "group_f1": round(2 * p * r / (p + r), 4) if p and r else 0.0,
+         "period_accuracy": ratio(c["period_ok"], c["tp"]), "next_within_3d": ratio(c["next_3d"], c["next_n"]),
+         "irregular_fp_rate": ratio(c["irregular_fp"], c["irregular"])}
+    for kind, name in (("creep", "creep"), ("duplicate", "dup"), ("overlap", "overlap"), ("drain", "drain")):
+        m[f"{name}_precision"] = ratio(c[f"{kind}_tp"], c[f"{kind}_pred"])
+        m[f"{name}_recall"] = ratio(c[f"{kind}_hit"], c[f"{kind}_true"])
+    cp, cr = m["creep_precision"], m["creep_recall"]
+    m["creep_f1"] = round(2 * cp * cr / (cp + cr), 4) if cp and cr else 0.0
+    return m
+
+
+def cmd_recurring(args):
+    cases = read_jsonl(args.cases)
+    preds = {p["user"]: p for p in read_jsonl(args.pred)}
+    total = Counter()
+    by_slice = defaultdict(Counter)
+    kinds = defaultdict(lambda: [0, 0])
+    for case in cases:
+        counts, detail = score_recurring_user(case, preds[case["user"]])
+        total += counts
+        by_slice[f"region={case['region']}"] += counts
+        by_slice["history=" + ("short" if case["months"] <= 6 else "long")] += counts
+        for role, g, hit in detail:
+            kinds[(role, g["kind"])][0] += 1
+            kinds[(role, g["kind"])][1] += hit
+
+    metrics = recurring_metrics(total)
+    slices = {}
+    for name, c in sorted(by_slice.items()):
+        sm = recurring_metrics(c)
+        slices[name] = {"n": c["true"], "group_precision": sm["group_precision"], "group_recall": sm["group_recall"],
+                        "group_f1": sm["group_f1"], "creep_recall": sm["creep_recall"]}
+    for (role, kind), (n, hit) in sorted(kinds.items()):
+        slices[f"{role}={kind}"] = {"n": n, ("recall" if role == "recurring" else "fp_rate"): ratio(hit, n)}
+    info = {"users": len(cases), "true_groups": total["true"], "stored_patterns": total["pred"],
+            "shown_precision": ratio(total["shown_tp"], total["shown_pred"]),
+            "shown_recall": ratio(total["shown_tp"], total["true"]),
+            "next_mae_days": ratio(total["next_abs"], total["next_n"]),
+            "next_interval_coverage": ratio(total["interval_hit"], total["interval_n"]),
+            "next_interval_width_days": ratio(total["interval_width"], total["interval_n"]),
+            "creep_true": total["creep_true"], "duplicate_true": total["duplicate_true"],
+            "overlap_true": total["overlap_true"], "drain_true": total["drain_true"]}
+    current = {"suite": args.suite, "truth_sha256": sha256(args.cases), "count": len(cases), "metrics": metrics,
+               "slices": slices, "slice_gated": ["group_precision", "group_recall", "recall", "fp_rate"],
+               "info": info}
+
+    print(f"\n== {args.suite}: {RECURRING_SUITES[args.suite]} ==")
+    print(format_table([{"set": "all", "n": total["true"], **metrics}],
+                       ["set", "n", "group_precision", "group_recall", "group_f1", "period_accuracy",
+                        "next_within_3d", "irregular_fp_rate"]))
+    print(format_table([{"leak": k, "true": total[f"{t}_true"], "precision": metrics[f"{k}_precision"],
+                         "recall": metrics[f"{k}_recall"]}
+                        for k, t in (("creep", "creep"), ("dup", "duplicate"), ("overlap", "overlap"),
+                                     ("drain", "drain"))], ["leak", "true", "precision", "recall"]))
+    print(format_table([{"slice": k, **v} for k, v in slices.items() if "group_f1" in v],
+                       ["slice", "n", "group_precision", "group_recall", "group_f1", "creep_recall"]))
+    print(format_table([{"slice": k, **v} for k, v in slices.items() if "group_f1" not in v],
+                       ["slice", "n", "recall", "fp_rate"]))
+    print(format_table([info], [k for k in info if k not in ("users",)]))
+    return finish(args, current)
+
+
 # ---------------------------------------------------------------- baseline gate
 
 def finish(args, current):
@@ -305,7 +460,7 @@ def main(argv=None):
     m.add_argument("--private", required=True)
     m.add_argument("--out", required=True)
     m.add_argument("--synthetic-only", action="store_true")
-    for name in ("receipts", "categorization", "merchants"):
+    for name in ("receipts", "categorization", "merchants", "recurring"):
         p = sub.add_parser(name)
         p.add_argument("--suite", required=True, choices=sorted(DEFAULT_TOLERANCE))
         p.add_argument("--pred", required=True)
@@ -318,7 +473,7 @@ def main(argv=None):
             p.add_argument("--cases", required=True)
     args = ap.parse_args(argv)
     return {"manifest": cmd_manifest, "receipts": cmd_receipts, "categorization": cmd_categorization,
-            "merchants": cmd_merchants}[args.cmd](args)
+            "merchants": cmd_merchants, "recurring": cmd_recurring}[args.cmd](args)
 
 
 if __name__ == "__main__":

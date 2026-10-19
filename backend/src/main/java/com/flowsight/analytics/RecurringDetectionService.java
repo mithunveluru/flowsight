@@ -90,13 +90,9 @@ public class RecurringDetectionService {
             .map(Map.Entry::getKey)
             .collect(Collectors.toSet());
 
-        Map<String, MerchantGroup> groups = groupByNormalizedMerchant(txns);
         List<RecurringPattern> resultPatterns = new ArrayList<>();
 
-        for (Map.Entry<String, MerchantGroup> entry : groups.entrySet()) {
-            RecurringPattern fresh = analyze(entry.getKey(), entry.getValue(), user);
-            if (fresh == null) continue;
-
+        for (RecurringPattern fresh : detect(txns, user)) {
             String ck = compositeKey(fresh.getNormalizedKey(), fresh.getPeriod());
 
             if (dismissedKeys.contains(ck)) {
@@ -137,6 +133,16 @@ public class RecurringDetectionService {
                     Comparator.nullsLast(Comparator.reverseOrder())))
             .map(this::toResponse)
             .collect(Collectors.toList());
+    }
+
+    // Rule-based detection over the given debits; nothing is read or persisted.
+    public List<RecurringPattern> detect(List<Transaction> txns, User user) {
+        List<RecurringPattern> found = new ArrayList<>();
+        for (Map.Entry<String, MerchantGroup> entry : groupByNormalizedMerchant(txns).entrySet()) {
+            RecurringPattern p = analyze(entry.getKey(), entry.getValue(), user);
+            if (p != null) found.add(p);
+        }
+        return found;
     }
 
     // stored patterns, no re-detection

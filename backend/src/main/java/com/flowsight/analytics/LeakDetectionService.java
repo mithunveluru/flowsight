@@ -60,11 +60,22 @@ public class LeakDetectionService {
     private final MerchantNormalizationService merchantNormalizer;
 
     public LeakDetectionResponse detectLeaks(UUID userId) {
-        LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
-
-        List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, from);
+        LocalDate asOf = LocalDate.now();
+        List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, asOf.minusMonths(LOOKBACK_MONTHS));
         List<RecurringPattern> patterns = patternRepository
             .findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(userId);
+        LeakDetectionResponse response = analyze(txns, patterns, asOf);
+        log.debug("Detected {} leaks for user {}: monthly={}, annual={}", response.getTotalLeaksFound(), userId,
+            response.getTotalMonthlyImpact(), response.getTotalAnnualImpact());
+        return response;
+    }
+
+    // Leaks in the debits up to asOf; patterns in the repository's order (largest amount first).
+    public LeakDetectionResponse analyze(List<Transaction> allTxns, List<RecurringPattern> patterns, LocalDate asOf) {
+        LocalDate from = asOf.minusMonths(LOOKBACK_MONTHS);
+        List<Transaction> txns = allTxns.stream()
+            .filter(t -> !t.getTransactionDate().isBefore(from))
+            .collect(Collectors.toList());
 
         Map<String, TransactionCategory> merchantCategory = buildMerchantCategoryMap(txns);
 
@@ -86,8 +97,6 @@ public class LeakDetectionService {
         BigDecimal totalAnnual = totalMonthly.multiply(BigDecimal.valueOf(12))
             .setScale(2, RoundingMode.HALF_UP);
 
-        log.debug("Detected {} leaks for user {}: monthly={}, annual={}",
-            leaks.size(), userId, totalMonthly, totalAnnual);
 
         return LeakDetectionResponse.builder()
             .totalLeaksFound(leaks.size())

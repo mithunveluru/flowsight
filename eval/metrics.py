@@ -12,7 +12,7 @@ BINS = 10
 
 LEGAL_WORDS = {"pvt", "ltd", "llc", "inc", "co", "corp", "company", "the", "plc", "llp", "fze", "fzco", "est"}
 # Metrics where a smaller value is better; everything else is higher-is-better.
-LOWER_IS_BETTER = {"ece", "alias_wrong"}
+LOWER_IS_BETTER = {"ece", "alias_wrong", "irregular_fp_rate", "fp_rate"}
 
 
 def normalize_name(text) -> str:

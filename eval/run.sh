@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Usage: eval/run.sh [--mode tesseract|llm|ml-service] [--update-baseline]
 #
-# tesseract (default): offline; scorer tests, receipt OCR via Tesseract, categorization, merchants.
+# tesseract (default): offline; scorer tests, receipt OCR via Tesseract, categorization, merchants,
+#             recurring payments and leaks.
 # llm:        receipt OCR through the receipt-ocr service exactly as the backend calls it
 #             (needs RECEIPT_OCR_URL, default http://127.0.0.1:8001).
 # ml-service: receipt OCR through ml-service's ocr capability (needs ML_SERVICE_URL and
@@ -60,6 +61,22 @@ if ! cmp -s "$OUT/receipts/truth.jsonl" "$ROOT/eval/receipts/truth.jsonl"; then
   fi
 fi
 
+if [ "$MODE" = tesseract ]; then
+  # Synthetic transaction histories for recurring and leak detection; only their hash is committed.
+  in_image "$IMAGE" python3 /work/eval/recurring/generate.py --out /work/eval/out/recurring >/dev/null
+  HASH=$(sha256sum "$OUT/recurring/cases.jsonl" | cut -d' ' -f1)
+  if [ "$HASH" != "$(cat "$ROOT/eval/recurring/cases.sha256")" ]; then
+    if [ -n "$UPDATE" ]; then
+      echo "$HASH" > "$ROOT/eval/recurring/cases.sha256"
+      echo "recurring cases updated: eval/recurring/cases.sha256"
+    else
+      echo "FAIL: generated recurring cases differ from eval/recurring/cases.sha256." >&2
+      echo "      Run with --update-baseline if the change is intended." >&2
+      exit 2
+    fi
+  fi
+fi
+
 MANIFEST_ARGS=()
 [ "$MODE" = tesseract ] || MANIFEST_ARGS=(--synthetic-only)
 in_image -w /work/eval "$IMAGE" python3 score.py manifest --truth out/receipts/truth.jsonl \
@@ -69,12 +86,14 @@ MVN_PROPS=(-Deval.input=/work/eval/out/manifest.jsonl -Deval.output=/work/eval/o
 TESTS=ReceiptEvalTest
 DOCKER_ENV=(-e GROQ_API_KEY=)
 if [ "$MODE" = tesseract ]; then
-  TESTS="ReceiptEvalTest,TextEvalTest"
+  TESTS="ReceiptEvalTest,TextEvalTest,RecurringEvalTest"
   MVN_PROPS+=(-Deval.categorization.input=/work/eval/categorization/cases.csv
               -Deval.categorization.output=/work/eval/out/pred-categorization.jsonl
               -Deval.categorization.modelInput=/work/eval/out/categorization-model-input.jsonl
               -Deval.merchants.input=/work/eval/merchants/cases.csv
-              -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl)
+              -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl
+              -Deval.recurring.input=/work/eval/out/recurring/cases.jsonl
+              -Deval.recurring.rulesOutput=/work/eval/out/pred-recurring-rules.jsonl)
 elif [ "$MODE" = ml-service ]; then
   MVN_PROPS+=(-Deval.mlServiceUrl="${ML_SERVICE_URL:?ML_SERVICE_URL must be set}")
   DOCKER_ENV=(-e GROQ_API_KEY= -e ML_SERVICE_TOKEN)
@@ -119,6 +138,8 @@ if [ "$MODE" = tesseract ]; then
     --pred out/pred-categorization-personal-repeat.jsonl --baseline baselines/categorization-personal-repeat.json
   score merchants --suite merchants --cases merchants/cases.csv \
     --pred out/pred-merchants.jsonl --baseline baselines/merchants.json
+  score recurring --suite recurring-rules --cases out/recurring/cases.jsonl \
+    --pred out/pred-recurring-rules.jsonl --baseline baselines/recurring-rules.json
 fi
 
 echo "eval ($MODE) finished in $((SECONDS - START))s, exit $STATUS"

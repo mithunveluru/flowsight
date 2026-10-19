@@ -7,7 +7,7 @@ baseline.
 ## Run
 
 ```
-eval/run.sh                    # offline: scorer tests, Tesseract OCR, categorization, merchants
+eval/run.sh                    # offline: scorer tests, Tesseract OCR, categorization, merchants, recurring
 eval/run.sh --update-baseline  # same, then rewrite eval/baselines/*.json from this run
 ```
 
@@ -41,6 +41,7 @@ for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml
 | `categorization-personal` | categorizer + `PersonalBlend`; each region is one user split in two halves by resolved merchant, the other half is their reviewed history, so no row sees its own merchant's label | same |
 | `categorization-personal-repeat` | as above, split by row id: the user has already corrected other rows of the same merchant | same |
 | `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
+| `recurring-rules` | `RecurringDetectionService.detect` and `LeakDetectionService.analyze` (the rules, the fallback) as of each user's date | `recurring/generate.py`: 120 synthetic users (30 each IN/US/AE/SA, 3-18 months, about 55k debits) |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
 scorer stay the same.
@@ -73,6 +74,23 @@ matched, at least 0.85 similar), `key_match` (raw and expected strings get the s
 key), `extract_exact` / `extract_fuzzy` for the descriptor cleaner `MerchantText.clean`, and
 `resolved_exact` / `resolved_fuzzy` for the name `MerchantResolver` stores on a transaction
 (built-in aliases, in-memory trigram matching, no user rules, ML or LLM steps).
+
+Recurring and leaks: the histories are regenerated on every run and checked against
+`recurring/cases.sha256`. Each merchant group has a truth record (recurring obligation or
+not, period, parallel charges, the first charge after the as-of date, price step, habit).
+A stored pattern is matched to the group that owns most of its key's transactions.
+`group_*` count stored patterns against recurring groups with at least two charges;
+`period_accuracy` and `next_within_3d` (next expected date within 3 days of the real next
+charge) are over matched groups; `irregular_fp_rate` (lower is better) is the share of
+frequent irregular merchants (food delivery, coffee, groceries, fuel, rides) stored as
+recurring. Leaks: `creep_*` against price steps (2-4 payments after the step), `dup_*`
+against one service billed on two accounts, `overlap_*` against the leak's own definition
+applied to the truth (recurring subscriptions in the category that has the most of them),
+`drain_*` against coffee habits with at least 8 visits in the 3-month window (that last
+definition is a judgment, read it as indicative). Slices: region, history length (<= 6
+months is short), recall per recurring kind and false-positive rate per negative kind. The
+info table also has the share shown as detected (confidence >= 0.5), next-date MAE and,
+where a pattern has one, the coverage and width of its next-date interval.
 
 ## Regression gate
 

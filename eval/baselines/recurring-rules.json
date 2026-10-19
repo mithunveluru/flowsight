@@ -1,0 +1,176 @@
+{
+  "count": 120,
+  "info": {
+    "creep_true": 145,
+    "drain_true": 75,
+    "duplicate_true": 16,
+    "next_interval_coverage": null,
+    "next_interval_width_days": null,
+    "next_mae_days": 1.3116,
+    "overlap_true": 321,
+    "shown_precision": 0.6429,
+    "shown_recall": 0.9973,
+    "stored_patterns": 1731,
+    "true_groups": 1112,
+    "users": 120
+  },
+  "metrics": {
+    "creep_f1": 0.0193,
+    "creep_precision": 0.018,
+    "creep_recall": 0.0207,
+    "drain_precision": 0.4375,
+    "drain_recall": 0.28,
+    "dup_precision": null,
+    "dup_recall": 0.0,
+    "group_f1": 0.7802,
+    "group_precision": 0.6407,
+    "group_recall": 0.9973,
+    "irregular_fp_rate": 0.5469,
+    "next_within_3d": 0.9487,
+    "overlap_precision": 0.8946,
+    "overlap_recall": 0.9252,
+    "period_accuracy": 0.9865
+  },
+  "slices": {
+    "history=long": {
+      "creep_recall": 0.0169,
+      "group_f1": 0.776,
+      "group_precision": 0.6346,
+      "group_recall": 0.9985,
+      "n": 687
+    },
+    "history=short": {
+      "creep_recall": 0.037,
+      "group_f1": 0.787,
+      "group_precision": 0.6508,
+      "group_recall": 0.9953,
+      "n": 425
+    },
+    "negative=cinema": {
+      "fp_rate": 0.6341,
+      "n": 41
+    },
+    "negative=coffee": {
+      "fp_rate": 0.0267,
+      "n": 75
+    },
+    "negative=delivery": {
+      "fp_rate": 0.2695,
+      "n": 167
+    },
+    "negative=dining": {
+      "fp_rate": 0.7989,
+      "n": 174
+    },
+    "negative=fuel": {
+      "fp_rate": 1.0,
+      "n": 59
+    },
+    "negative=grocery": {
+      "fp_rate": 0.925,
+      "n": 200
+    },
+    "negative=pharmacy": {
+      "fp_rate": 0.5972,
+      "n": 72
+    },
+    "negative=rides": {
+      "fp_rate": 0.303,
+      "n": 66
+    },
+    "negative=shopping": {
+      "fp_rate": 0.6131,
+      "n": 168
+    },
+    "recurring=cleaning_biweekly": {
+      "n": 20,
+      "recall": 1.0
+    },
+    "recurring=electricity": {
+      "n": 120,
+      "recall": 1.0
+    },
+    "recurring=emi": {
+      "n": 48,
+      "recall": 1.0
+    },
+    "recurring=gas": {
+      "n": 42,
+      "recall": 1.0
+    },
+    "recurring=gym": {
+      "n": 47,
+      "recall": 0.9787
+    },
+    "recurring=insurance_annual": {
+      "n": 6,
+      "recall": 1.0
+    },
+    "recurring=internet": {
+      "n": 68,
+      "recall": 1.0
+    },
+    "recurring=music": {
+      "n": 145,
+      "recall": 0.9931
+    },
+    "recurring=rent": {
+      "n": 88,
+      "recall": 1.0
+    },
+    "recurring=school_quarterly": {
+      "n": 32,
+      "recall": 1.0
+    },
+    "recurring=software": {
+      "n": 81,
+      "recall": 1.0
+    },
+    "recurring=telecom": {
+      "n": 159,
+      "recall": 0.9937
+    },
+    "recurring=tuition_weekly": {
+      "n": 36,
+      "recall": 1.0
+    },
+    "recurring=video": {
+      "n": 220,
+      "recall": 1.0
+    },
+    "region=AE": {
+      "creep_recall": 0.0312,
+      "group_f1": 0.7773,
+      "group_precision": 0.6372,
+      "group_recall": 0.9963,
+      "n": 268
+    },
+    "region=IN": {
+      "creep_recall": 0.0208,
+      "group_f1": 0.7809,
+      "group_precision": 0.6435,
+      "group_recall": 0.9929,
+      "n": 280
+    },
+    "region=SA": {
+      "creep_recall": 0.0,
+      "group_f1": 0.7761,
+      "group_precision": 0.6341,
+      "group_recall": 1.0,
+      "n": 279
+    },
+    "region=US": {
+      "creep_recall": 0.0278,
+      "group_f1": 0.7862,
+      "group_precision": 0.6477,
+      "group_recall": 1.0,
+      "n": 285
+    }
+  },
+  "suite": "recurring-rules",
+  "tolerance": {
+    "overall": 0.01,
+    "slice_items": 1
+  },
+  "truth_sha256": "d3643370e5787de436f5aaadd2fe336b220cba6211b06781d4177e20d1c9c6bd"
+}
