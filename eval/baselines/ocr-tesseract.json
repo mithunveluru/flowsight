@@ -1,219 +1,219 @@
 {
   "count": 200,
   "info": {
-    "confidence_coverage": 0.0,
+    "confidence_coverage": 1.0,
     "n": 200,
     "providers": {
-      "TESSERACT_FALLBACK": 200
+      "TESSERACT": 200
     }
   },
   "metrics": {
-    "currency": 0.23,
-    "date": 0.52,
-    "ece": null,
-    "line_item_f1": 0.0,
-    "merchant_exact": 0.655,
-    "merchant_fuzzy": 0.8,
-    "total": 0.18
+    "currency": 1.0,
+    "date": 0.885,
+    "ece": 0.038,
+    "line_item_f1": 0.848,
+    "merchant_exact": 0.835,
+    "merchant_fuzzy": 0.985,
+    "total": 0.805
   },
   "slices": {
     "currency=AED": {
-      "currency": 0.0,
-      "date": 0.74,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.86,
-      "merchant_fuzzy": 0.88,
+      "currency": 1.0,
+      "date": 0.86,
+      "line_item_f1": 0.7557,
+      "merchant_exact": 1.0,
+      "merchant_fuzzy": 1.0,
       "n": 50,
-      "total": 0.1
+      "total": 0.64
     },
     "currency=INR": {
-      "currency": 0.92,
-      "date": 0.68,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.56,
-      "merchant_fuzzy": 0.72,
+      "currency": 1.0,
+      "date": 0.88,
+      "line_item_f1": 0.9197,
+      "merchant_exact": 0.74,
+      "merchant_fuzzy": 1.0,
       "n": 50,
-      "total": 0.34
+      "total": 0.92
     },
     "currency=SAR": {
-      "currency": 0.0,
-      "date": 0.66,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.76,
-      "merchant_fuzzy": 0.9,
+      "currency": 1.0,
+      "date": 0.9,
+      "line_item_f1": 0.7391,
+      "merchant_exact": 0.8,
+      "merchant_fuzzy": 0.94,
       "n": 50,
-      "total": 0.06
+      "total": 0.68
     },
     "currency=USD": {
-      "currency": 0.0,
-      "date": 0.0,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.44,
-      "merchant_fuzzy": 0.7,
+      "currency": 1.0,
+      "date": 0.9,
+      "line_item_f1": 0.9371,
+      "merchant_exact": 0.8,
+      "merchant_fuzzy": 1.0,
       "n": 50,
-      "total": 0.22
+      "total": 0.98
     },
     "number_format=arabic_indic": {
-      "currency": 0.0,
-      "date": 0.6667,
+      "currency": 1.0,
+      "date": 0.8667,
       "line_item_f1": 0.0,
-      "merchant_exact": 0.8333,
-      "merchant_fuzzy": 0.8667,
+      "merchant_exact": 0.9,
+      "merchant_fuzzy": 0.9333,
       "n": 30,
       "total": 0.0
     },
     "number_format=eu": {
-      "currency": 0.0,
-      "date": 0.72,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.8,
-      "merchant_fuzzy": 0.88,
+      "currency": 1.0,
+      "date": 0.92,
+      "line_item_f1": 0.9079,
+      "merchant_exact": 0.92,
+      "merchant_fuzzy": 0.96,
       "n": 25,
-      "total": 0.0
+      "total": 0.88
     },
     "number_format=indian": {
-      "currency": 0.92,
-      "date": 0.68,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.56,
-      "merchant_fuzzy": 0.72,
+      "currency": 1.0,
+      "date": 0.88,
+      "line_item_f1": 0.9197,
+      "merchant_exact": 0.74,
+      "merchant_fuzzy": 1.0,
       "n": 50,
-      "total": 0.34
+      "total": 0.92
     },
     "number_format=us": {
-      "currency": 0.0,
-      "date": 0.3368,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.6105,
-      "merchant_fuzzy": 0.8,
+      "currency": 1.0,
+      "date": 0.8842,
+      "line_item_f1": 0.9382,
+      "merchant_exact": 0.8421,
+      "merchant_fuzzy": 1.0,
       "n": 95,
-      "total": 0.2
+      "total": 0.9789
     },
     "perturbation=background": {
-      "currency": 0.2,
-      "date": 0.68,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.76,
-      "merchant_fuzzy": 0.88,
-      "n": 25,
-      "total": 0.08
-    },
-    "perturbation=blur": {
-      "currency": 0.24,
-      "date": 0.56,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.56,
-      "merchant_fuzzy": 0.76,
-      "n": 25,
-      "total": 0.28
-    },
-    "perturbation=clean": {
-      "currency": 0.32,
-      "date": 0.68,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.68,
-      "merchant_fuzzy": 0.88,
-      "n": 25,
-      "total": 0.32
-    },
-    "perturbation=crumple": {
-      "currency": 0.36,
-      "date": 0.24,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.68,
-      "merchant_fuzzy": 0.84,
-      "n": 25,
-      "total": 0.24
-    },
-    "perturbation=glare": {
-      "currency": 0.16,
-      "date": 0.6,
-      "line_item_f1": 0.0,
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.8774,
       "merchant_exact": 0.92,
       "merchant_fuzzy": 1.0,
       "n": 25,
-      "total": 0.16
+      "total": 0.76
     },
-    "perturbation=low_contrast": {
-      "currency": 0.16,
-      "date": 0.56,
-      "line_item_f1": 0.0,
+    "perturbation=blur": {
+      "currency": 1.0,
+      "date": 0.8,
+      "line_item_f1": 0.6765,
       "merchant_exact": 0.76,
       "merchant_fuzzy": 0.96,
       "n": 25,
-      "total": 0.12
+      "total": 0.76
+    },
+    "perturbation=clean": {
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.8742,
+      "merchant_exact": 0.76,
+      "merchant_fuzzy": 1.0,
+      "n": 25,
+      "total": 0.84
+    },
+    "perturbation=crumple": {
+      "currency": 1.0,
+      "date": 0.32,
+      "line_item_f1": 0.638,
+      "merchant_exact": 0.8,
+      "merchant_fuzzy": 0.96,
+      "n": 25,
+      "total": 0.6
+    },
+    "perturbation=glare": {
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.987,
+      "merchant_exact": 0.92,
+      "merchant_fuzzy": 1.0,
+      "n": 25,
+      "total": 0.96
+    },
+    "perturbation=low_contrast": {
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.8148,
+      "merchant_exact": 0.84,
+      "merchant_fuzzy": 1.0,
+      "n": 25,
+      "total": 0.76
     },
     "perturbation=perspective": {
-      "currency": 0.36,
-      "date": 0.64,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.68,
-      "merchant_fuzzy": 0.84,
+      "currency": 1.0,
+      "date": 0.96,
+      "line_item_f1": 0.9701,
+      "merchant_exact": 0.8,
+      "merchant_fuzzy": 1.0,
       "n": 25,
-      "total": 0.24
+      "total": 0.96
     },
     "perturbation=rotation": {
-      "currency": 0.04,
-      "date": 0.2,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.2,
-      "merchant_fuzzy": 0.24,
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.9231,
+      "merchant_exact": 0.88,
+      "merchant_fuzzy": 0.96,
       "n": 25,
-      "total": 0.0
+      "total": 0.8
     },
     "trap=cash_change_lines": {
-      "currency": 0.2381,
-      "date": 0.7302,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.7302,
-      "merchant_fuzzy": 0.8095,
+      "currency": 1.0,
+      "date": 0.9048,
+      "line_item_f1": 0.7781,
+      "merchant_exact": 0.873,
+      "merchant_fuzzy": 0.9841,
       "n": 63,
-      "total": 0.0794
+      "total": 0.6667
     },
     "trap=header_above_merchant": {
-      "currency": 0.254,
-      "date": 0.7143,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.746,
-      "merchant_fuzzy": 0.7937,
+      "currency": 1.0,
+      "date": 0.873,
+      "line_item_f1": 0.8179,
+      "merchant_exact": 0.873,
+      "merchant_fuzzy": 0.9841,
       "n": 63,
-      "total": 0.127
+      "total": 0.7302
     },
     "trap=merchant_contains_label_word": {
-      "currency": 0.0,
-      "date": 0.0,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.0,
-      "merchant_fuzzy": 0.0,
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.8571,
+      "merchant_exact": 1.0,
+      "merchant_fuzzy": 1.0,
       "n": 11,
-      "total": 0.0909
+      "total": 1.0
     },
     "trap=tendered_cash_change_lines": {
-      "currency": 0.0,
-      "date": 0.0,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.4348,
-      "merchant_fuzzy": 0.7391,
+      "currency": 1.0,
+      "date": 0.913,
+      "line_item_f1": 0.9429,
+      "merchant_exact": 0.7826,
+      "merchant_fuzzy": 1.0,
       "n": 23,
-      "total": 0.2609
+      "total": 0.9565
     },
     "trap=tip_after_total": {
-      "currency": 0.0,
-      "date": 0.0,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.0,
-      "merchant_fuzzy": 0.6364,
+      "currency": 1.0,
+      "date": 0.9091,
+      "line_item_f1": 0.8571,
+      "merchant_exact": 0.6364,
+      "merchant_fuzzy": 1.0,
       "n": 11,
-      "total": 0.1818
+      "total": 1.0
     },
     "trap=total_items_line": {
-      "currency": 0.0,
-      "date": 0.0,
-      "line_item_f1": 0.0,
-      "merchant_exact": 0.36,
-      "merchant_fuzzy": 0.72,
+      "currency": 1.0,
+      "date": 1.0,
+      "line_item_f1": 0.9639,
+      "merchant_exact": 0.72,
+      "merchant_fuzzy": 1.0,
       "n": 25,
-      "total": 0.24
+      "total": 1.0
     }
   },
   "suite": "ocr-tesseract",

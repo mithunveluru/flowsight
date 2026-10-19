@@ -4,11 +4,13 @@ import lombok.Builder;
 import lombok.Value;
 
 // Heuristic merchant result: score + ambiguous flag (competing candidate within AMBIGUITY_MARGIN).
+// rawText is the receipt line as read; name is the cleaned form of it.
 @Value
 @Builder
 public class MerchantCandidate {
 
     String  name;
+    String  rawText;
     double  score;
     boolean ambiguous;
 

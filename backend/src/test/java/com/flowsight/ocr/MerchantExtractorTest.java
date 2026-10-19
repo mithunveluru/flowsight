@@ -226,4 +226,64 @@ class MerchantExtractorTest {
         );
         assertThat(extractor.extract(d)).isEqualTo("WHOLE FOODS");
     }
+
+    // Audit reproductions M05-M07: label words inside names, copy headers, store numbers
+
+    @Test
+    void merchantNamedAfterALabelWordIsKept() {
+        OcrDocument d = doc(
+            line("TOTAL WINE & MORE",     0.93, 10,  1000),
+            line("#0042 ANNAPOLIS MD",    0.90, 40,  1000),
+            line("2101 Somerville Rd",    0.90, 70,  1000),
+            line("Cabernet 750ML 19.99",  0.92, 300, 1000),
+            line("TOTAL $21.19",          0.95, 700, 1000));
+        assertThat(extractor.extract(d)).isEqualTo("TOTAL WINE & MORE");
+    }
+
+    @Test
+    void keyValueLinesAreNotMerchants() {
+        OcrDocument d = doc(
+            line("BILL'S DINER",          0.88, 10,  1000),
+            line("Tel: (410) 555-0100",   0.90, 40,  1000),
+            line("Server: Mike",          0.95, 70,  1000),
+            line("Burger 12.00",          0.92, 300, 1000));
+        assertThat(extractor.extract(d)).isEqualTo("BILL'S DINER");
+        assertThat(extractor.isExcluded("Cashier! Priya")).isTrue();
+    }
+
+    @Test
+    void copyHeadersAboveTheMerchantAreSkipped() {
+        OcrDocument d = doc(
+            line("ORIGINAL FOR RECIPIENT",   0.97, 5,   1000),
+            line("Haldiram's Snacks Pvt Ltd", 0.90, 30, 1000),
+            line("MG Road, Bengaluru 560001", 0.90, 60, 1000),
+            line("GSTIN: 29AAACH1234F1Z5",   0.90, 90,  1000));
+        MerchantCandidate c = extractor.extractWithScore(d);
+        assertThat(c.getName()).isEqualTo("Haldiram's Snacks");
+        assertThat(c.getRawText()).isEqualTo("Haldiram's Snacks Pvt Ltd");
+        assertThat(extractor.isHeading("TAX INVOICE")).isTrue();
+        assertThat(extractor.isHeading("SIMPLIFIED TAX INVOICE")).isTrue();
+        assertThat(extractor.isHeading("DUPLICATE COPY")).isTrue();
+        assertThat(extractor.isHeading("BILL'S DINER")).isFalse();
+    }
+
+    @Test
+    void largerPrintWinsOverSmallerHeaderText() {
+        OcrDocument d = doc(
+            OcrLine.builder().text("Welcome Customer Care").confidence(0.95).topPx(5).documentHeightPx(1000).heightPx(20).build(),
+            OcrLine.builder().text("KUDU").confidence(0.80).topPx(40).documentHeightPx(1000).heightPx(34).build(),
+            OcrLine.builder().text("Tahlia St, Jeddah").confidence(0.90).topPx(80).documentHeightPx(1000).heightPx(20).build(),
+            OcrLine.builder().text("Chicken Meal 22.00").confidence(0.90).topPx(200).documentHeightPx(1000).heightPx(20).build());
+        assertThat(extractor.extract(d)).isEqualTo("KUDU");
+    }
+
+    @Test
+    void cleaningDropsStoreNumbersAndLegalForms() {
+        assertThat(extractor.normalize("STARBUCKS COFFEE #12345")).isEqualTo("STARBUCKS");
+        assertThat(extractor.normalize("PANDA RETAIL CO.")).isEqualTo("PANDA RETAIL");
+        assertThat(extractor.normalize("Haldiram's Snacks Pvt Ltd")).isEqualTo("Haldiram's Snacks");
+        assertThat(extractor.isExcluded("Store #0042")).isTrue();
+        assertThat(extractor.isExcluded("Al Qasba, Sharjah")).isTrue();
+        assertThat(extractor.isExcluded("Pizza Place")).isFalse();
+    }
 }

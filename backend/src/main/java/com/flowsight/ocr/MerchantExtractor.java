@@ -8,50 +8,78 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 // Heuristic merchant-name extractor for OCR receipts: scores each line (position,
-// OCR confidence, caps, length, letter density), hard-excludes noise, normalizes via aliases.
+// OCR confidence, print size, caps, length, letter density), hard-excludes noise, cleans the name.
+// Words are matched as whole tokens, so "TOTAL WINE & MORE" and "BILL'S DINER" stay candidates
+// while "GRAND TOTAL", copy headers such as "ORIGINAL FOR RECIPIENT" and "Server: Mike" do not.
 @Component
 @Slf4j
 public class MerchantExtractor {
 
-    private static final Set<String> EXCLUDED_SUBSTRINGS = Set.of(
-        // greeting / header noise
-        "welcome to", "welcome", "thank you for shopping",
-        // financial / receipt metadata
-        "total", "subtotal", "grand total", "net total", "balance due", "balance",
-        "tax", "vat", "gst", "hst", "pst", "sgst", "cgst", "igst", "service charge",
-        "receipt", "invoice", "bill", "order #", "order no", "order number",
-        "store #", "store no", "store number", "register", "terminal",
-        "thank you", "thanks for", "come again", "have a nice", "please come back",
+    // a line made only of these words is a heading, label or boilerplate, never a merchant
+    private static final Set<String> NON_MERCHANT_WORDS = Set.of(
+        // copy headers
+        "tax", "invoice", "simplified", "retail", "original", "recipient", "duplicate", "triplicate", "copy",
+        "customer", "merchant", "memo", "supply", "receipt", "sales", "estimate", "kot", "order", "token",
+        "proforma", "quotation", "challan", "statement", "abbreviated", "note", "bill", "cash", "credit", "debit",
+        // amount labels
+        "total", "grand", "sub", "subtotal", "net", "amount", "payable", "due", "balance", "vat", "gst", "cgst",
+        "sgst", "igst", "hst", "pst", "change", "tendered", "tender", "paid", "payment", "discount", "savings",
+        "service", "charge", "round", "off", "tip",
         // payment instruments
-        "visa", "mastercard", "american express", "amex", "discover",
-        "debit", "credit card", "credit", "cash", "change", "payment", "paid", "tender",
-        "contactless", "chip & pin", "approved",
-        // transaction identifiers
-        "date", "time", "cashier", "transaction", "approval", "auth code",
-        "reference", "ref no", "ticket", "sequence",
-        // item / price headers
-        "item", "qty", "quantity", "price", "amount", "discount", "savings",
-        "description", "unit", "each",
-        // contact / web
-        "phone", "tel:", "fax:", "email:", "www.", "http", "contact us",
-        // nutrition / product info
-        "calories", "carbs", "protein"
+        "visa", "mastercard", "amex", "card", "upi", "mada", "approved", "contactless", "chip", "pin",
+        // transaction metadata
+        "date", "time", "cashier", "server", "table", "cover", "guest", "guests", "terminal", "register", "reg",
+        "transaction", "approval", "auth", "code", "reference", "ref", "no", "number", "ticket", "sequence",
+        "item", "items", "qty", "quantity", "price", "rate", "description", "unit", "each",
+        // contact and courtesy
+        "phone", "tel", "fax", "email", "mobile", "ph", "thank", "thanks", "you", "welcome", "visit", "visiting",
+        "again", "come", "please", "shopping", "have", "nice", "day",
+        "for", "to", "the", "of", "by", "at", "our", "your", "and", "a", "with", "us"
     );
+
+    private static final List<String> NOISE_PHRASES = List.of(
+        "thank you", "thanks for", "visit again", "come again", "www.", "http", "e-mail", "email:", "tel:",
+        "ph:", "fax:", "phone:", "calories", "carbs", "protein", "contact us");
 
     // street-address tokens: any match means the line is an address
     private static final Pattern STREET_ADDRESS = Pattern.compile(
-        "\\b(st|ave|rd|blvd|dr|ln|ct|pl|way|hwy|pkwy|suite|ste|fl|floor|unit|apt|po\\s+box)\\b",
+        "\\b(st|ave|rd|blvd|dr|ln|ct|pl|way|hwy|pkwy|suite|ste|fl|floor|unit|apt|po\\s+box|bldg)\\b",
         Pattern.CASE_INSENSITIVE
+    );
+    // spelled-out street words count only next to a comma or a number ("MG Road, ..."), not in "Street Food Co"
+    private static final Pattern STREET_WORD = Pattern.compile(
+        "(?i)\\b(road|street|avenue|lane|nagar|marg|chowk|bazaar)\\b.*[,\\d]|[,\\d].*\\b(road|street|avenue|lane|nagar|marg)\\b");
+
+    // "City, ..." / "..., City" for the markets the app serves, plus 6-digit PIN and US state + ZIP
+    private static final Pattern PLACE = Pattern.compile(
+        "(?i:\\b(?:dubai|abu\\s+dhabi|sharjah|ajman|fujairah|riyadh|jeddah|khobar|dammam|makkah|madinah|"
+            + "mumbai|bengaluru|bangalore|delhi|chennai|kolkata|hyderabad|pune|gurgaon|gurugram|noida|"
+            + "new\\s+york|chicago|san\\s+francisco|los\\s+angeles)\\b)"
+            + "|\\b\\d{6}\\b|\\b[A-Z]{2}\\s+\\d{5}(?:-\\d{4})?\\b"
     );
 
     // structured noise: GST/phone/email/URL
     private static final Pattern NOISE_PATTERN = Pattern.compile(
-        "GSTIN|GTIN|\\bGST\\b|\\bCIN\\b|\\bPAN\\b|\\bTIN\\b|\\bEIN\\b|" +
-        "VAT\\s+REG|Tel\\s*:|Ph\\s*:|Fax\\s*:|@|www\\.|http|" +
+        "GSTIN|GTIN|\\bGST\\b|\\bCIN\\b|\\bPAN\\b|\\bTIN\\b|\\bEIN\\b|\\bTRN\\b|" +
+        "VAT\\s+(?:REG|NO)|Tel\\s*:|Ph\\s*:|Fax\\s*:|@|www\\.|http|" +
         "[0-9]{10,}|" +                               // long digit runs (phone/ref)
         "\\b\\d{2}[A-Z]{5}\\d{4}[A-Z][A-Z\\d]Z[A-Z\\d]\\b",  // Indian GSTIN format
         Pattern.CASE_INSENSITIVE
     );
+
+    // "Server: Mike", "Cashier: Anil", "Bill No: 4521"
+    private static final Pattern KEY_VALUE = Pattern.compile("^\\s*[\\p{L}][\\p{L} .#]{0,18}[:!]\\s*\\S");
+    // "Store #0042", "#0042 ANNAPOLIS MD", "Branch 12"
+    private static final Pattern STORE_NUMBER_LINE = Pattern.compile(
+        "^\\W*(?:#|(?:store|str|branch|outlet|shop|location)\\b\\s*(?:#|no\\.?|number)?\\s*\\d)",
+        Pattern.CASE_INSENSITIVE);
+    private static final Pattern MONEY = Pattern.compile("\\d[.,]\\d{2}(?!\\d)");
+
+    private static final Pattern STORE_NUMBER_SUFFIX = Pattern.compile(
+        "\\s*(?:\\b(?:store|str|branch)\\s*)?(?:#|\\bno\\.?\\s*)\\s*\\d+\\s*$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LEGAL_SUFFIX = Pattern.compile(
+        "(?:[\\s,]+(?:pvt\\.?|private|ltd\\.?|limited|llc|l\\.l\\.c\\.?|inc\\.?|co\\.|corp\\.?|llp|fze|fzco|plc|est\\.?))+\\s*$",
+        Pattern.CASE_INSENSITIVE);
 
     // alias table, longest-pattern-first so partial matches don't shadow full ones
     private static final List<Map.Entry<Pattern, String>> ALIASES = List.of(
@@ -93,14 +121,7 @@ public class MerchantExtractor {
 
     // best candidate + score; ambiguous when the runner-up is within AMBIGUITY_MARGIN (AI-adjudication signal)
     public MerchantCandidate extractWithScore(OcrDocument document) {
-        record Scored(OcrLine line, double score) {}
-
-        List<Scored> ranked = document.getLines().stream()
-            .map(l -> new Scored(l, scoreLine(l)))
-            .filter(s -> s.score() > 0.0)
-            .sorted(Comparator.comparingDouble(Scored::score).reversed())
-            .toList();
-
+        List<Scored> ranked = rank(document);
         if (ranked.isEmpty()) {
             log.debug("MerchantExtractor: no candidate survived exclusions");
             return null;
@@ -113,8 +134,7 @@ public class MerchantExtractor {
         String name = normalize(best.line().getText());
         if (name.isEmpty()) return null;
 
-        log.debug("MerchantExtractor: '{}' score={} conf={} relTop={} ambiguous={}",
-            name,
+        log.debug("MerchantExtractor: score={} conf={} relTop={} ambiguous={}",
             String.format("%.3f", best.score()),
             String.format("%.2f", best.line().getConfidence()),
             String.format("%.3f", best.line().relativeTop()),
@@ -122,6 +142,7 @@ public class MerchantExtractor {
 
         return MerchantCandidate.builder()
             .name(name)
+            .rawText(best.line().getText().trim())
             .score(best.score())
             .ambiguous(ambiguous)
             .build();
@@ -129,17 +150,42 @@ public class MerchantExtractor {
 
     // top-N candidates by score, for AI fallback context
     public List<String> findCandidates(OcrDocument document, int limit) {
-        return document.getLines().stream()
-            .filter(l -> scoreLine(l) > 0.0)
-            .sorted(Comparator.comparingDouble(l -> -scoreLine(l)))
+        return rank(document).stream()
             .limit(limit)
-            .map(l -> normalize(l.getText()))
+            .map(s -> normalize(s.line().getText()))
             .filter(n -> !n.isEmpty())
             .distinct()
             .collect(Collectors.toList());
     }
 
+    private record Scored(OcrLine line, double score) {}
+
+    private List<Scored> rank(OcrDocument document) {
+        List<OcrLine> lines = document.getLines();
+        double medianHeight = medianHeight(lines);
+        int firstAmountLine = lines.size();
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).getText() != null && MONEY.matcher(lines.get(i).getText()).find()) {
+                firstAmountLine = i;
+                break;
+            }
+        }
+        List<Scored> scored = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            double s = scoreLine(lines.get(i), medianHeight);
+            // the merchant heads the receipt; lines below the first priced line rarely are it
+            if (i > firstAmountLine) s *= 0.5;
+            if (s > 0.0) scored.add(new Scored(lines.get(i), s));
+        }
+        scored.sort(Comparator.comparingDouble(Scored::score).reversed());
+        return scored;
+    }
+
     double scoreLine(OcrLine line) {
+        return scoreLine(line, 0.0);
+    }
+
+    double scoreLine(OcrLine line, double medianHeight) {
         String text = line.getText() == null ? "" : line.getText().trim();
         if (text.length() < 2) return 0.0;
         if (isExcluded(text)) return 0.0;
@@ -154,6 +200,11 @@ public class MerchantExtractor {
 
         // OCR confidence
         score += Math.min(1.0, line.getConfidence()) * 0.30;
+
+        // printed larger than the body text (merchant names usually are)
+        if (medianHeight > 0 && line.getHeightPx() >= 1.2 * medianHeight) {
+            score += 0.15;
+        }
 
         // capitalisation
         if (isAllCaps(text)) {
@@ -184,20 +235,35 @@ public class MerchantExtractor {
     boolean isExcluded(String text) {
         String lower = text.toLowerCase(Locale.ROOT);
 
-        for (String kw : EXCLUDED_SUBSTRINGS) {
-            if (lower.contains(kw)) return true;
+        for (String phrase : NOISE_PHRASES) {
+            if (lower.contains(phrase)) return true;
         }
-
-        if (STREET_ADDRESS.matcher(text).find()) return true;
-        if (NOISE_PATTERN.matcher(text).find())  return true;
-
         if (Character.isDigit(text.charAt(0))) return true;
 
         // majority digits
         long digits = text.chars().filter(Character::isDigit).count();
         if ((double) digits / text.length() > 0.5) return true;
 
-        return false;
+        if (MONEY.matcher(text).find()) return true;
+        if (KEY_VALUE.matcher(text).find()) return true;
+        if (STORE_NUMBER_LINE.matcher(text).find()) return true;
+        if (STREET_ADDRESS.matcher(text).find()) return true;
+        if (STREET_WORD.matcher(text).find()) return true;
+        if (PLACE.matcher(text).find()) return true;
+        if (NOISE_PATTERN.matcher(text).find()) return true;
+
+        List<String> words = ReceiptLabels.tokens(text).stream().filter(w -> w.length() > 1 || w.equals("a")).toList();
+        return words.isEmpty() || NON_MERCHANT_WORDS.containsAll(words);
+    }
+
+    /** True when the text is only heading, label or boilerplate words, e.g. "TAX INVOICE". */
+    public boolean isHeading(String text) {
+        List<String> words = ReceiptLabels.tokens(text).stream().filter(w -> w.length() > 1).toList();
+        return words.isEmpty() || NON_MERCHANT_WORDS.containsAll(words);
+    }
+
+    public String clean(String raw) {
+        return normalize(raw);
     }
 
     String normalize(String raw) {
@@ -208,12 +274,21 @@ public class MerchantExtractor {
             result = alias.getKey().matcher(result).replaceAll(alias.getValue()).trim();
         }
 
+        result = STORE_NUMBER_SUFFIX.matcher(result).replaceAll("").trim();
+        String withoutLegal = LEGAL_SUFFIX.matcher(result).replaceAll("").trim();
+        if (!withoutLegal.isEmpty()) result = withoutLegal;
+
         // strip leading/trailing punctuation
         result = result.replaceAll("^[^\\w]+|[^\\w)]+$", "").trim();
 
         result = result.replaceAll("\\s{2,}", " ");
 
         return result;
+    }
+
+    private static double medianHeight(List<OcrLine> lines) {
+        double[] h = lines.stream().mapToDouble(OcrLine::getHeightPx).filter(v -> v > 0).sorted().toArray();
+        return h.length == 0 ? 0.0 : h[h.length / 2];
     }
 
     private boolean isAllCaps(String text) {

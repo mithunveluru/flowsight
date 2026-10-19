@@ -3,6 +3,7 @@ package com.flowsight.ocr;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,6 @@ public class GroqAIProvider implements AITransactionInterpreter {
 
     static final int     MAX_OCR_LINES  = 20;
     private static final String  GROQ_URL      = "https://api.groq.com/openai/v1/chat/completions";
-    private static final String  MODEL         = "llama-3.1-8b-instant";
     private static final String  CATEGORIES    =
         "FOOD_DINING, GROCERIES, SHOPPING, TRANSPORTATION, UTILITIES, " +
         "ENTERTAINMENT, HEALTHCARE, FINANCE, EDUCATION, TRAVEL, " +
@@ -38,18 +38,27 @@ public class GroqAIProvider implements AITransactionInterpreter {
         "Ignore: addresses, phone numbers, totals, tax lines, receipt numbers, dates.";
 
     private final String     apiKey;
+    private final String     model;
     private final ObjectMapper mapper;
     private final HttpClient  httpClient;
 
+    @Autowired
     public GroqAIProvider(
         @Value("${application.groq.api-key:}") String apiKey,
+        @Value("${application.groq.merchant-model:llama-3.1-8b-instant}") String model,
         ObjectMapper mapper
     ) {
         this.apiKey = apiKey.trim();
+        this.model = model == null || model.isBlank() ? "llama-3.1-8b-instant" : model.trim();
         this.mapper = mapper;
         this.httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(5))
             .build();
+    }
+
+    public GroqAIProvider(String apiKey, ObjectMapper mapper) {
+        this(apiKey, null, mapper);
     }
 
     @Override
@@ -65,20 +74,21 @@ public class GroqAIProvider implements AITransactionInterpreter {
             String response = post(body);
             return parseResponse(response);
         } catch (Exception e) {
-            log.warn("Groq AI fallback failed: {}", e.getMessage());
+            log.warn("Groq AI fallback failed: {}", e.getClass().getSimpleName());
             return Optional.empty();
         }
     }
 
     String buildUserMessage(String rawOcrText, List<String> candidates) {
-        String limitedText = limitLines(rawOcrText);
+        // receipt text leaves the backend here: mask phones, card tails, tax IDs and emails first
+        String limitedText = PiiRedactor.redact(limitLines(rawOcrText));
 
         StringBuilder sb = new StringBuilder("Receipt OCR text:\n");
         sb.append(limitedText).append("\n");
 
         if (!candidates.isEmpty()) {
             sb.append("\nHeuristic merchant candidates (ranked): ")
-              .append(String.join(", ", candidates));
+              .append(PiiRedactor.redact(String.join(", ", candidates)));
         }
 
         sb.append("\n\nExtract the actual business or merchant name. Return JSON only.");
@@ -87,7 +97,7 @@ public class GroqAIProvider implements AITransactionInterpreter {
 
     String buildRequestBody(String userMessage) throws Exception {
         Map<String, Object> body = Map.of(
-            "model",   MODEL,
+            "model",   model,
             "messages", List.of(
                 Map.of("role", "system", "content", SYSTEM_PROMPT),
                 Map.of("role", "user",   "content", userMessage)

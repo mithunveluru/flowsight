@@ -1,41 +1,50 @@
 package com.flowsight.ocr;
 
+import com.flowsight.dto.receipt.FieldAssessment;
 import com.flowsight.dto.receipt.OcrExtractionResult;
+import com.flowsight.dto.receipt.ReceiptAmountOption;
+import com.flowsight.dto.receipt.ReceiptDecision;
 import com.flowsight.dto.receipt.ReceiptLineItem;
 import com.flowsight.dto.receipt.ReceiptOcrResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 // Maps the receipt-ocr response to OcrExtractionResult: validates the total (VAT/subtotal
 // correction), strips control chars, rejects non-positive amounts and future dates.
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class ReceiptOcrMapper {
 
     private final ReceiptAmountValidator amountValidator;
+    private final MerchantExtractor merchantExtractor;
 
-    private static final List<DateTimeFormatter> DATE_FORMATS = List.of(
-        DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-        DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-        DateTimeFormatter.ofPattern("MM/dd/yyyy"),
-        DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-        DateTimeFormatter.ofPattern("d/M/yyyy"),
-        DateTimeFormatter.ofPattern("d MMM yyyy"),
-        DateTimeFormatter.ofPattern("dd MMM yyyy"),
-        DateTimeFormatter.ofPattern("dd MMMM yyyy")
-    );
+    @Autowired
+    public ReceiptOcrMapper(ReceiptAmountValidator amountValidator, MerchantExtractor merchantExtractor) {
+        this.amountValidator = amountValidator;
+        this.merchantExtractor = merchantExtractor;
+    }
+
+    public ReceiptOcrMapper(ReceiptAmountValidator amountValidator) {
+        this(amountValidator, new MerchantExtractor());
+    }
 
     private static final int MAX_MERCHANT_LENGTH = 200;
     private static final int MAX_ADDRESS_LENGTH  = 500;
+
+    // The vision model's accuracy has not been measured (no usable model in development), so its
+    // fields are never ACCEPT on its word alone; agreement with the Tesseract pass raises them.
+    private static final double LLM_HIGH = 0.80;
+    private static final double LLM_MEDIUM = 0.60;
+    private static final double LLM_LOW = 0.30;
+    private static final double LLM_MERCHANT = 0.75;
 
     public OcrExtractionResult map(ReceiptOcrResponse response) {
         List<ReceiptLineItem> items =
@@ -46,32 +55,48 @@ public class ReceiptOcrMapper {
         // correct VAT/subtotal misidentification against the line items
         AmountCandidate bestAmount = amountValidator.validate(rawAmount, items);
 
-        if (bestAmount.getLabel() != null && !bestAmount.getLabel().isEmpty()) {
-            log.debug("Amount corrected: total_amount={} -> '{}' {} (score={})",
-                rawAmount, bestAmount.getLabel(), bestAmount.getAmount(),
-                String.format("%.2f", bestAmount.getScore()));
-        }
-
         BigDecimal amount  = bestAmount.getAmount();
-        LocalDate  date    = parseDate(response.getTransactionDate());
-        String  merchant   = sanitizeText(response.getMerchantName(), MAX_MERCHANT_LENGTH);
+        String  rawMerchant = sanitizeText(response.getMerchantName(), MAX_MERCHANT_LENGTH);
+        String  merchant    = rawMerchant == null || merchantExtractor.isHeading(rawMerchant) ? null : merchantExtractor.clean(rawMerchant);
         String  address    = sanitizeText(response.getMerchantAddress(), MAX_ADDRESS_LENGTH);
-        double  confidence = bestAmount.getConfidence().getNumericValue();
+        String  rawText    = buildRawText(response);
 
-        boolean successful            = amount != null && amount.compareTo(BigDecimal.ZERO) > 0;
-        boolean requiresConfirmation  = bestAmount.getConfidence() == AmountConfidence.LOW;
+        CurrencyDetector.Guess currency = CurrencyDetector.detect(MoneyParser.normalizeDigits(rawText));
+        ReceiptDates.Guess date = response.getTransactionDate() == null ? ReceiptDates.Guess.NONE
+            : ReceiptDates.find(List.of(response.getTransactionDate()), currency.code());
+
+        double amountConfidence = switch (bestAmount.getConfidence()) {
+            case HIGH -> LLM_HIGH;
+            case MEDIUM -> LLM_MEDIUM;
+            case LOW -> LLM_LOW;
+        };
+        Map<String, FieldAssessment> fields = new LinkedHashMap<>();
+        fields.put(ReceiptParserService.FIELD_MERCHANT, merchant == null ? FieldAssessment.missing() : FieldAssessment.of(LLM_MERCHANT, "llm"));
+        fields.put(ReceiptParserService.FIELD_AMOUNT, amount == null ? FieldAssessment.missing() : FieldAssessment.of(amountConfidence, "llm"));
+        fields.put(ReceiptParserService.FIELD_DATE, date.date() == null ? FieldAssessment.missing()
+            : FieldAssessment.of(date.ambiguous() ? 0.65 : LLM_HIGH, date.ambiguous() ? "llm-day-month-order" : "llm"));
+        fields.put(ReceiptParserService.FIELD_CURRENCY, currency.code() == null ? FieldAssessment.missing()
+            : FieldAssessment.of(currency.confidence(), currency.cue()));
+        ReceiptDecision decision = ReceiptDecision.ACCEPT;
+        for (FieldAssessment f : fields.values()) decision = decision.worst(f.decision());
+
+        boolean successful = amount != null && amount.compareTo(BigDecimal.ZERO) > 0;
 
         return OcrExtractionResult.builder()
             .amount(amount)
-            .date(date)
+            .date(date.date())
             .merchant(merchant)
+            .merchantRaw(rawMerchant)
             .merchantAddress(address)
-            .currency("INR")
+            .currency(currency.code())
             .successful(successful)
-            .rawText(buildRawText(response))
+            .rawText(rawText)
             .lineItems(items)
-            .confidence(confidence)
-            .requiresConfirmation(requiresConfirmation)
+            .confidence(fields.get(ReceiptParserService.FIELD_AMOUNT).confidence())
+            .requiresConfirmation(decision == ReceiptDecision.ASK_USER)
+            .amountCandidates(amount == null ? List.of() : List.of(new ReceiptAmountOption(amount, bestAmount.getLabel(), "llm")))
+            .fields(fields)
+            .decision(decision)
             .build();
     }
 
@@ -94,15 +119,9 @@ public class ReceiptOcrMapper {
 
     LocalDate parseDate(String raw) {
         if (raw == null || raw.isBlank()) return null;
-        String cleaned = raw.strip();
-        for (DateTimeFormatter fmt : DATE_FORMATS) {
-            try {
-                LocalDate d = LocalDate.parse(cleaned, fmt);
-                return d.isAfter(LocalDate.now()) ? null : d;
-            } catch (DateTimeParseException ignored) {}
-        }
-        log.debug("receipt-ocr date unparseable: '{}'", raw);
-        return null;
+        LocalDate d = ReceiptDates.find(List.of(raw.strip()), null).date();
+        if (d == null) log.debug("receipt-ocr date unparseable");
+        return d;
     }
 
     Double clampConfidence(Double raw) {

@@ -2,6 +2,8 @@ package com.flowsight.dto.receipt;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.flowsight.ocr.LenientAmountDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,5 +25,6 @@ public class ReceiptLineItem {
     private String itemQuantity;
 
     @JsonProperty("item_price")
+    @JsonDeserialize(using = LenientAmountDeserializer.class)
     private BigDecimal itemPrice;
 }

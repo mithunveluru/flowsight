@@ -12,6 +12,7 @@ public class OcrLine {
     double confidence;      // 0.0–1.0
     int    topPx;           // y-pixel position from image top
     int    documentHeightPx;
+    int    heightPx;        // tallest word box; 0 when unknown (plain-text input)
 
     // how far down the document [0,1]
     public double relativeTop() {

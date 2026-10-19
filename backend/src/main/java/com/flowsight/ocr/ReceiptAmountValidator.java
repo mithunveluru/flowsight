@@ -16,19 +16,15 @@ import java.util.Set;
 @Slf4j
 public class ReceiptAmountValidator {
 
-    // labels preferred as the final payable total
-    private static final Set<String> PREFERRED = Set.of(
-        "grand total", "total due", "amount paid", "net total", "final total",
-        "total payable", "amount payable", "net payable", "balance due",
-        "amount due", "total amount", "net amount", "payable amount", "total"
-    );
-
-    // labels that are never the final total
-    private static final Set<String> DEPRIORITIZED = Set.of(
-        "vat", "tax", "cgst", "sgst", "igst", "service tax", "gst",
-        "subtotal", "sub total", "sub-total", "subtot", "discount", "savings",
-        "round off", "rounding", "coupon", "cashback", "cash back"
-    );
+    // labels are classified by whole tokens (ReceiptLabels), so "Total Items" and "Total Tendered"
+    // are not totals and "Subtotal" is not "Total"
+    private static final Set<ReceiptLabels.Kind> DEPRIORITIZED = Set.of(
+        ReceiptLabels.Kind.SUBTOTAL, ReceiptLabels.Kind.TAX, ReceiptLabels.Kind.TAX_TOTAL, ReceiptLabels.Kind.DISCOUNT,
+        ReceiptLabels.Kind.SAVINGS, ReceiptLabels.Kind.ROUND_OFF, ReceiptLabels.Kind.ITEM_COUNT,
+        ReceiptLabels.Kind.TENDERED, ReceiptLabels.Kind.CHANGE, ReceiptLabels.Kind.SERVICE_CHARGE, ReceiptLabels.Kind.TIP);
+    private static final Set<ReceiptLabels.Kind> CHARGES = Set.of(
+        ReceiptLabels.Kind.TAX, ReceiptLabels.Kind.TAX_TOTAL, ReceiptLabels.Kind.SERVICE_CHARGE);
+    private static final BigDecimal CENT = new BigDecimal("0.01");
 
     private static final double HIGH_THRESHOLD   = 0.65;
     private static final double MEDIUM_THRESHOLD = 0.40;
@@ -49,10 +45,11 @@ public class ReceiptAmountValidator {
 
         BigDecimal regularSum     = sumRegularItems(items);
         BigDecimal maxItemPrice   = maxRegularItemPrice(items);
+        BigDecimal expected       = expectedTotal(items, regularSum);
 
         List<AmountCandidate> candidates = new ArrayList<>();
-        candidates.add(scorePrimary(totalAmount, regularSum, maxItemPrice));
-        candidates.addAll(scoreLineItemCandidates(items, totalAmount, regularSum));
+        candidates.add(scorePrimary(totalAmount, regularSum, maxItemPrice, expected, hasCharges(items)));
+        candidates.addAll(scoreLineItemCandidates(items, totalAmount, regularSum, expected));
 
         AmountCandidate best = candidates.stream()
             .max(Comparator.comparingDouble(AmountCandidate::getScore))
@@ -64,12 +61,15 @@ public class ReceiptAmountValidator {
     }
 
     private AmountCandidate scorePrimary(
-        BigDecimal total, BigDecimal regularSum, BigDecimal maxItemPrice
+        BigDecimal total, BigDecimal regularSum, BigDecimal maxItemPrice, BigDecimal expected, boolean hasCharges
     ) {
         double score = 0.50;
         StringBuilder reason = new StringBuilder("primary total_amount");
 
-        if (regularSum != null && regularSum.compareTo(BigDecimal.ZERO) > 0) {
+        if (expected != null && total.subtract(expected).abs().compareTo(CENT.multiply(BigDecimal.valueOf(2))) <= 0) {
+            score += 0.25;
+            reason.append("; equals items + charges - discounts");
+        } else if (regularSum != null && regularSum.compareTo(BigDecimal.ZERO) > 0) {
             double ratio = total.doubleValue() / regularSum.doubleValue();
 
             if (ratio < 0.30) {
@@ -79,8 +79,9 @@ public class ReceiptAmountValidator {
                 score -= 0.10;
                 reason.append("; ratio=").append(f2(ratio)).append(" < item sum (possible subtotal/discount)");
             } else if (ratio <= 1.05) {
-                score += 0.15;
-                reason.append("; ratio=").append(f2(ratio)).append(" ≈ item sum (subtotal)");
+                // close to the item sum but not equal to it: a subtotal when taxes exist, a misread otherwise
+                score -= hasCharges ? 0.15 : 0.05;
+                reason.append("; ratio=").append(f2(ratio)).append(" ≈ item sum but not equal (subtotal?)");
             } else if (ratio <= 1.35) {
                 score += 0.25;
                 reason.append("; ratio=").append(f2(ratio)).append(" ≈ subtotal+tax (good)");
@@ -109,7 +110,7 @@ public class ReceiptAmountValidator {
     }
 
     private List<AmountCandidate> scoreLineItemCandidates(
-        List<ReceiptLineItem> items, BigDecimal primaryTotal, BigDecimal regularSum
+        List<ReceiptLineItem> items, BigDecimal primaryTotal, BigDecimal regularSum, BigDecimal expected
     ) {
         List<AmountCandidate> result = new ArrayList<>();
         for (ReceiptLineItem item : items) {
@@ -136,8 +137,12 @@ public class ReceiptAmountValidator {
                 score += 0.05;
             }
 
-            // cross-check against the item sum
-            if (regularSum != null && regularSum.compareTo(BigDecimal.ZERO) > 0) {
+            if (expected != null && containsPreferred(label)
+                && item.getItemPrice().subtract(expected).abs().compareTo(CENT.multiply(BigDecimal.valueOf(2))) <= 0) {
+                score += 0.20;
+                reason.append(" [equals items + charges - discounts]");
+            } else if (regularSum != null && regularSum.compareTo(BigDecimal.ZERO) > 0) {
+                // cross-check against the item sum
                 double ratio = item.getItemPrice().doubleValue() / regularSum.doubleValue();
                 if (ratio >= 0.85 && ratio <= 1.35) {
                     score += 0.15;
@@ -186,11 +191,29 @@ public class ReceiptAmountValidator {
     }
 
     boolean containsPreferred(String label) {
-        return PREFERRED.stream().anyMatch(label::contains);
+        return ReceiptLabels.classify(label).isTotal() || ReceiptLabels.tokens(label).containsAll(List.of("amount", "paid"));
     }
 
     boolean containsDeprioritized(String label) {
-        return DEPRIORITIZED.stream().anyMatch(label::contains);
+        return DEPRIORITIZED.contains(ReceiptLabels.classify(label));
+    }
+
+    private boolean hasCharges(List<ReceiptLineItem> items) {
+        return items.stream().anyMatch(i -> i.getItemName() != null && CHARGES.contains(ReceiptLabels.classify(i.getItemName())));
+    }
+
+    // items + taxes/service - discounts, when the LLM returned the charge lines; null otherwise
+    private BigDecimal expectedTotal(List<ReceiptLineItem> items, BigDecimal regularSum) {
+        if (regularSum == null) return null;
+        BigDecimal total = regularSum;
+        boolean any = false;
+        for (ReceiptLineItem i : items) {
+            if (i.getItemName() == null || i.getItemPrice() == null) continue;
+            ReceiptLabels.Kind kind = ReceiptLabels.classify(i.getItemName());
+            if (CHARGES.contains(kind)) { total = total.add(i.getItemPrice().abs()); any = true; }
+            else if (kind == ReceiptLabels.Kind.DISCOUNT) { total = total.subtract(i.getItemPrice().abs()); any = true; }
+        }
+        return any ? total : regularSum;
     }
 
     private AmountConfidence toConfidence(double score) {

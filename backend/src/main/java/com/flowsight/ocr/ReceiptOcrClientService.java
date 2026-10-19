@@ -38,7 +38,9 @@ public class ReceiptOcrClientService {
     ) {
         this.receiptOcrUrl = receiptOcrUrl.trim();
         this.objectMapper  = objectMapper;
+        // uvicorn rejects the h2c upgrade Java sends by default on plain http:// (HTTP 422)
         this.httpClient    = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(CONNECT_TIMEOUT)
             .build();
     }
@@ -65,7 +67,7 @@ public class ReceiptOcrClientService {
                 httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                log.warn("receipt-ocr returned HTTP {} for {}", response.statusCode(), imagePath.getFileName());
+                log.warn("receipt-ocr returned HTTP {}", response.statusCode());
                 return Optional.empty();
             }
 
@@ -73,10 +75,10 @@ public class ReceiptOcrClientService {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("receipt-ocr call interrupted for {}", imagePath.getFileName());
+            log.warn("receipt-ocr call interrupted");
             return Optional.empty();
         } catch (Exception e) {
-            log.warn("receipt-ocr call failed for {}: {}", imagePath.getFileName(), e.getMessage());
+            log.warn("receipt-ocr call failed: {}", e.getClass().getSimpleName());
             return Optional.empty();
         }
     }

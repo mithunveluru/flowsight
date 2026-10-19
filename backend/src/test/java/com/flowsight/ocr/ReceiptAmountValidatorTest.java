@@ -41,8 +41,8 @@ class ReceiptAmountValidatorTest {
     }
 
     @Test
-    void vatReceipt_primaryIsCorrectWhenRatioIsGood() {
-        // total_amount = 118 which is consistent with item sum (130) + tax
+    void vatReceipt_totalThatDoesNotAddUpIsNotHighConfidence() {
+        // 85 + 45 + VAT 18 = 148, so a total of 118 is a misread or a different bill
         List<ReceiptLineItem> items = List.of(
             item("Coffee", "85.00"),
             item("Croissant", "45.00"),
@@ -52,8 +52,52 @@ class ReceiptAmountValidatorTest {
         AmountCandidate result = validator.validate(new BigDecimal("118.00"), items);
 
         assertThat(result.getAmount()).isEqualByComparingTo("118.00");
-        assertThat(result.getConfidence()).isEqualTo(AmountConfidence.HIGH);
+        assertThat(result.getConfidence()).isNotEqualTo(AmountConfidence.HIGH);
         assertThat(result.getLabel()).isNull(); // came from primary
+    }
+
+    @Test
+    void vatReceipt_primaryIsHighWhenItAddsUp() {
+        List<ReceiptLineItem> items = List.of(
+            item("Coffee", "85.00"),
+            item("Croissant", "45.00"),
+            item("VAT 18%", "18.00")
+        );
+
+        AmountCandidate result = validator.validate(new BigDecimal("148.00"), items);
+
+        assertThat(result.getAmount()).isEqualByComparingTo("148.00");
+        assertThat(result.getConfidence()).isEqualTo(AmountConfidence.HIGH);
+    }
+
+    @Test
+    void subtotalPickedDespiteVatLine_isNotHigh() {
+        List<ReceiptLineItem> items = List.of(item("Latte", "60.00"), item("Sandwich", "40.00"), item("VAT 5%", "5.00"));
+
+        AmountCandidate result = validator.validate(new BigDecimal("100.00"), items);
+
+        assertThat(result.getConfidence()).isNotEqualTo(AmountConfidence.HIGH);
+    }
+
+    @Test
+    void transposedTotalWithoutTax_isNotHigh() {
+        List<ReceiptLineItem> items = List.of(item("Headphones", "999.00"), item("Case", "199.00"));
+
+        AmountCandidate result = validator.validate(new BigDecimal("1189.00"), items);
+
+        assertThat(result.getConfidence()).isNotEqualTo(AmountConfidence.HIGH);
+    }
+
+    @Test
+    void totalItemsAndTenderedLines_areNotTotals() {
+        List<ReceiptLineItem> items = List.of(
+            item("Burger", "45.00"), item("Fries", "30.00"), item("Shake", "90.00"),
+            item("Total Items", "3"), item("Tax", "8.25"), item("Total Tendered", "200.00"));
+
+        AmountCandidate result = validator.validate(new BigDecimal("173.25"), items);
+
+        assertThat(result.getAmount()).isEqualByComparingTo("173.25");
+        assertThat(result.getConfidence()).isEqualTo(AmountConfidence.HIGH);
     }
 
     @Test

@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Runs the receipt golden set through {@link CurrentReceiptPipeline} and writes one JSON line
  * of predictions per receipt. Skipped unless -Deval.input points at a manifest (JSONL with
  * "id" and "image", image paths relative to the manifest). Driven by eval/run.sh.
+ * -Deval.mlServiceUrl (token from env ML_SERVICE_TOKEN) scores ml-service OCR.
  */
 class ReceiptEvalTest {
 
@@ -41,18 +42,21 @@ class ReceiptEvalTest {
         Path output = Path.of(System.getProperty("eval.output", "target/eval/receipt-predictions.jsonl"));
         String receiptOcrUrl = System.getProperty("eval.receiptOcrUrl", "");
         String groqApiKey = System.getenv().getOrDefault("GROQ_API_KEY", "");
+        String mlServiceUrl = System.getProperty("eval.mlServiceUrl", "");
+        String mlServiceToken = System.getenv().getOrDefault("ML_SERVICE_TOKEN", "");
         boolean llm = !receiptOcrUrl.isBlank();
-        // receipt-ocr is rate limited upstream, so LLM mode runs one receipt at a time
-        int threads = llm ? 1 : Integer.getInteger("eval.threads", Runtime.getRuntime().availableProcessors());
+        // receipt-ocr is rate limited upstream, so LLM mode runs one receipt at a time;
+        // ml-service runs a single worker
+        int threads = llm ? 1 : !mlServiceUrl.isBlank() ? 2
+            : Integer.getInteger("eval.threads", Runtime.getRuntime().availableProcessors());
         long delayMs = Long.getLong("eval.delayMs", 0L);
-        boolean forceHttp11 = Boolean.getBoolean("eval.forceHttp11");
 
         List<JsonNode> rows = new ArrayList<>();
         for (String line : Files.readAllLines(manifest, StandardCharsets.UTF_8)) {
             if (!line.isBlank()) rows.add(JSON.readTree(line));
         }
 
-        CurrentReceiptPipeline pipeline = new CurrentReceiptPipeline(receiptOcrUrl, groqApiKey, forceHttp11);
+        CurrentReceiptPipeline pipeline = new CurrentReceiptPipeline(receiptOcrUrl, groqApiKey, mlServiceUrl, mlServiceToken);
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         List<Future<ObjectNode>> futures = new ArrayList<>();
         for (JsonNode row : rows) {

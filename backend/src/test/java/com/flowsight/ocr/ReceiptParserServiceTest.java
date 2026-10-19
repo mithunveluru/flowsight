@@ -51,9 +51,11 @@ class ReceiptParserServiceTest {
     }
 
     @Test
-    void extractTotal_fallbackToLargestAmount() {
+    void extractTotal_noTotalLine_isNotGuessedFromLargestAmount() {
         String text = "Small item 5.00\nLarge item 95.50\nAnother 12.00";
-        assertThat(parser.extractTotal(text)).isEqualByComparingTo("95.50");
+        assertThat(parser.extractTotal(text)).isNull();
+        assertThat(parser.parse(text).getFields().get("amount").decision())
+            .isEqualTo(com.flowsight.dto.receipt.ReceiptDecision.ASK_USER);
     }
 
     @Test
@@ -206,6 +208,7 @@ class ReceiptParserServiceTest {
         // only line is mid-document, mixed-case, short — scores < 0.40
         OcrDocument doc = OcrDocument.builder().lines(java.util.List.of(
             OcrLine.builder().text("cafe").confidence(0.40).topPx(500).documentHeightPx(1000).build(),
+            OcrLine.builder().text("blue bottle coffee co 4.50").confidence(0.40).topPx(600).documentHeightPx(1000).build(),
             OcrLine.builder().text("TOTAL 12.00").confidence(0.95).topPx(900).documentHeightPx(1000).build()
         )).build();
 
@@ -213,6 +216,18 @@ class ReceiptParserServiceTest {
         OcrExtractionResult result = aiParser.parse(doc);
 
         assertThat(result.getMerchant()).isEqualTo("BLUE BOTTLE COFFEE");
+        assertThat(result.getFields().get("merchant").basis()).isEqualTo("llm-verified");
+    }
+
+    @Test
+    void aiMerchant_notPrintedOnReceipt_isRejected() {
+        OcrDocument doc = OcrDocument.builder().lines(java.util.List.of(
+            OcrLine.builder().text("cafe").confidence(0.40).topPx(500).documentHeightPx(1000).build(),
+            OcrLine.builder().text("TOTAL 12.00").confidence(0.95).topPx(900).documentHeightPx(1000).build()
+        )).build();
+
+        ReceiptParserService aiParser = new ReceiptParserService(new MerchantExtractor(), stubbedAI("BLUE BOTTLE COFFEE"));
+        assertThat(aiParser.parse(doc).getMerchant()).isEqualTo("cafe");
     }
 
     @Test
@@ -270,7 +285,7 @@ class ReceiptParserServiceTest {
     @Test
     void corrupted_triggersFallbackToAI() {
         // Corrupted OCR text should invoke AI even if heuristic found something
-        String corruptedText = "AAAAAAAAA BBBBBBB\nCCCCC DDDDD\nTotal 99.00";
+        String corruptedText = "AAAAAAAAA BBBBBBB\nBESTBUY CCCCC\nTotal 99.00";
         OcrDocument doc = OcrDocument.fromPlainText(corruptedText);
 
         ReceiptParserService aiParser = new ReceiptParserService(new MerchantExtractor(), stubbedAI("BESTBUY"));

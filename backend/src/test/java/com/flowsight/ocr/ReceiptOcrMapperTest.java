@@ -212,4 +212,42 @@ class ReceiptOcrMapperTest {
         assertThat(result.isSuccessful()).isFalse();
         assertThat(result.getLineItems()).isEmpty();
     }
+
+    // Audit reproductions M02-M04
+
+    @Test
+    void map_rejectsCopyHeaderAsMerchant() {
+        OcrExtractionResult r = mapper.map(ReceiptOcrResponse.builder()
+            .merchantName("TAX INVOICE").totalAmount(new BigDecimal("45.00")).build());
+        assertThat(r.getMerchant()).isNull();
+        assertThat(r.getFields().get("merchant").decision()).isEqualTo(com.flowsight.dto.receipt.ReceiptDecision.ASK_USER);
+    }
+
+    @Test
+    void map_detectsCurrencyFromAddressInsteadOfAssumingInr() {
+        OcrExtractionResult r = mapper.map(ReceiptOcrResponse.builder()
+            .merchantName("Panda").merchantAddress("King Fahd Rd, Riyadh").totalAmount(new BigDecimal("45.00")).build());
+        assertThat(r.getCurrency()).isEqualTo("SAR");
+        OcrExtractionResult unknown = mapper.map(ReceiptOcrResponse.builder()
+            .merchantName("Corner Shop").totalAmount(new BigDecimal("45.00")).build());
+        assertThat(unknown.getCurrency()).isNull();
+    }
+
+    @Test
+    void map_readsUsDatesMonthFirst() {
+        OcrExtractionResult r = mapper.map(ReceiptOcrResponse.builder()
+            .merchantName("Target").merchantAddress("233 S Wacker Dr, Chicago IL 60606")
+            .transactionDate("03/04/2025").totalAmount(new BigDecimal("10.00")).build());
+        assertThat(r.getCurrency()).isEqualTo("USD");
+        assertThat(r.getDate()).isEqualTo(LocalDate.of(2025, 3, 4));
+        assertThat(r.getFields().get("date").decision()).isEqualTo(com.flowsight.dto.receipt.ReceiptDecision.ACCEPT_WITH_HIGHLIGHT);
+    }
+
+    @Test
+    void map_cleansStoreNumberFromMerchantAndKeepsRaw() {
+        OcrExtractionResult r = mapper.map(ReceiptOcrResponse.builder()
+            .merchantName("STARBUCKS COFFEE #12345").totalAmount(new BigDecimal("5.45")).build());
+        assertThat(r.getMerchant()).isEqualTo("STARBUCKS");
+        assertThat(r.getMerchantRaw()).isEqualTo("STARBUCKS COFFEE #12345");
+    }
 }

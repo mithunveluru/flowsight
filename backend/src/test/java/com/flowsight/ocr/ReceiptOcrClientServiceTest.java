@@ -175,4 +175,56 @@ class ReceiptOcrClientServiceTest {
 
         assertThat(bodyStr).endsWith("--BND--\r\n");
     }
+
+    // string-typed and locale-formatted amounts must not void the whole response
+
+    @Test
+    void parseAndValidate_acceptsStringAmountWithThousandsSeparator() {
+        String json = "{\"merchant_name\":\"Lulu Hypermarket\",\"total_amount\":\"1,234.50\"}";
+        Optional<ReceiptOcrResponse> result = client().parseAndValidate(json);
+        assertThat(result).isPresent();
+        assertThat(result.get().getMerchantName()).isEqualTo("Lulu Hypermarket");
+        assertThat(result.get().getTotalAmount()).isEqualByComparingTo("1234.50");
+    }
+
+    @Test
+    void parseAndValidate_acceptsArabicIndicAmountAndKeepsMerchantWhenUnreadable() {
+        assertThat(client().parseAndValidate("{\"merchant_name\":\"Panda\",\"total_amount\":\"١٢٣٫٥٠\"}").get().getTotalAmount())
+            .isEqualByComparingTo("123.50");
+        Optional<ReceiptOcrResponse> garbled = client().parseAndValidate(
+            "{\"merchant_name\":\"Panda\",\"total_amount\":\"about forty\",\"line_items\":[{\"item_name\":\"Dates\",\"item_price\":\"12,50\"}]}");
+        assertThat(garbled).isPresent();
+        assertThat(garbled.get().getTotalAmount()).isNull();
+        assertThat(garbled.get().getLineItems().get(0).getItemPrice()).isEqualByComparingTo("12.50");
+    }
+
+    @Test
+    void extract_usesHttp11WithoutAnH2cUpgrade(@TempDir Path tempDir) throws Exception {
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+            new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        java.util.concurrent.atomic.AtomicReference<String> upgrade = new java.util.concurrent.atomic.AtomicReference<>("unset");
+        server.createContext("/ocr/", exchange -> {
+            upgrade.set(String.valueOf(exchange.getRequestHeaders().getFirst("Upgrade")));
+            exchange.getRequestBody().readAllBytes();
+            byte[] body = "{\"merchant_name\":\"Panda\",\"total_amount\":45.0}".getBytes();
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        try {
+            Path image = Files.write(tempDir.resolve("r.jpg"), new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+            ReceiptOcrClientService client = new ReceiptOcrClientService(
+                "http://127.0.0.1:" + server.getAddress().getPort(), mapper);
+
+            assertThat(client.extract(image)).isPresent();
+            assertThat(upgrade.get()).isEqualTo("null");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private ReceiptOcrClientService client() {
+        return new ReceiptOcrClientService("", mapper);
+    }
 }
