@@ -7,17 +7,18 @@ import com.flowsight.analytics.NormalizationService;
 import com.flowsight.dto.receipt.OcrExtractionResult;
 import com.flowsight.dto.receipt.ReceiptConfirmRequest;
 import com.flowsight.dto.receipt.ReceiptLineItem;
-import com.flowsight.dto.receipt.ReceiptOcrResponse;
 import com.flowsight.dto.receipt.ReceiptResponse;
 import com.flowsight.dto.transaction.TransactionResponse;
 import com.flowsight.entity.*;
 import com.flowsight.exception.FlowsightException;
 import com.flowsight.exception.OcrException;
 import com.flowsight.exception.ResourceNotFoundException;
-import com.flowsight.ocr.OcrDocument;
-import com.flowsight.ocr.OcrService;
-import com.flowsight.ocr.ReceiptOcrClientService;
-import com.flowsight.ocr.ReceiptOcrMapper;
+import com.flowsight.dto.receipt.FieldAssessment;
+import com.flowsight.ml.FeedbackCorrection;
+import com.flowsight.ml.FeedbackService;
+import com.flowsight.ml.FeedbackSource;
+import com.flowsight.ml.SubjectType;
+import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
@@ -35,9 +36,13 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -49,6 +54,8 @@ public class ReceiptService {
     private static final List<String> ALLOWED_MIME_TYPES =
         List.of("image/jpeg", "image/png", "image/webp", "image/tiff", "image/bmp");
 
+    private static final int MERCHANT_COLUMN = 255;
+
     private final ReceiptRepository    receiptRepository;
     private final TransactionRepository transactionRepository;
     private final FileStorageService   fileStorage;
@@ -58,16 +65,14 @@ public class ReceiptService {
     private final ReceiptQuotaService   quotaService;
     private final AuditLogService       auditLogService;
     private final com.flowsight.security.RateLimiter rateLimiter;
-
-    // primary: receipt-ocr LLM microservice
-    private final ReceiptOcrClientService receiptOcrClient;
-    private final ReceiptOcrMapper        ocrMapper;
-
-    // fallback: Tesseract heuristic pipeline (deprecated, kept for rollback)
-    private final OcrService          ocrService;
+    private final ReceiptExtractionService extractionService;
+    // re-parses stored OCR text of receipts processed before structured extraction existed
     private final ReceiptParserService parser;
+    private final FeedbackService      feedbackService;
 
-    @Transactional
+    // Not transactional on purpose: OCR can take tens of seconds (several Tesseract passes, or an
+    // ml-service / vision-model call) and must not hold a pool connection. Each save is its own
+    // short transaction. OCR only produces a draft; nothing is booked until confirmReceipt.
     public ReceiptResponse processReceipt(MultipartFile file, User user) throws IOException {
         // quota before OCR/storage so a capped user consumes nothing
         quotaService.requireQuotaAvailable(user);
@@ -96,29 +101,42 @@ public class ReceiptService {
         }
 
         receipt.setStatus(ReceiptStatus.PROCESSING);
-        receiptRepository.save(receipt);
+        receipt = receiptRepository.save(receipt);
 
-        // extract: receipt-ocr primary, Tesseract fallback
-        OcrExtractionResult extraction = extractWithFallback(filePath, receipt);
+        ReceiptExtractionService.Extraction extraction = null;
+        try {
+            extraction = extractionService.extract(filePath, file.getContentType(),
+                ReceiptExtractionService.context(user.getId(), receipt.getId()));
+        } catch (OcrException e) {
+            log.warn("OCR failed for receipt {}: {}", receipt.getId(), e.getMessage());
+        }
         // OCR ran; count it regardless of success
         quotaService.recordReceiptProcessed(user.getId());
+
         if (extraction == null) {
+            receipt.setStatus(ReceiptStatus.FAILED);
+            receipt.setErrorMessage("OCR failed: the image could not be read");
+            receipt = receiptRepository.save(receipt);
             return toResponse(receipt, null, null);
         }
 
+        OcrExtractionResult result = extraction.result();
+        applyExtraction(receipt, extraction);
         // draft only; the transaction is created when the user confirms
         receipt.setStatus(ReceiptStatus.COMPLETED);
-        if (!extraction.isSuccessful()) {
+        if (!result.isSuccessful()) {
             receipt.setErrorMessage("Could not extract a total amount from the receipt image.");
         }
-        receiptRepository.save(receipt);
-        return toResponse(receipt, extraction, null);
+        receipt = receiptRepository.save(receipt);
+        log.debug("Receipt {} extracted by {} decision={}", receipt.getId(), extraction.provider(), result.getDecision());
+        return toResponse(receipt, result, null);
     }
 
-    // Persist a user-reviewed OCR draft as a transaction. Idempotent.
+    // Persist a user-reviewed OCR draft as a transaction. Idempotent: the receipt row is locked, so a
+    // concurrent second submit waits and then returns the transaction the first one created.
     @Transactional
     public ReceiptResponse confirmReceipt(UUID receiptId, ReceiptConfirmRequest request, User user) {
-        Receipt receipt = receiptRepository.findByIdAndUserId(receiptId, user.getId())
+        Receipt receipt = receiptRepository.findByIdAndUserIdForUpdate(receiptId, user.getId())
             .orElseThrow(() -> new ResourceNotFoundException("Receipt", receiptId));
 
         // already confirmed: return existing, don't duplicate
@@ -132,15 +150,69 @@ public class ReceiptService {
         Transaction tx = buildTransactionFromConfirm(request, receipt, user);
         transactionRepository.save(tx);
 
-        // store the confirmed values on the receipt for audit
+        List<String> corrected = recordCorrections(receipt, request, tx.getCurrency(), user);
+
+        // store the confirmed values on the receipt; predicted_* keep what OCR read
         receipt.setExtractedMerchant(request.getMerchant());
         receipt.setExtractedAmount(request.getAmount());
         receipt.setExtractedDate(request.getDate());
+        receipt.setCurrency(tx.getCurrency());
+        receipt.setConfirmedAt(Instant.now());
         receiptRepository.save(receipt);
 
-        log.info("Receipt {} confirmed by user: merchant='{}' amount={}", receiptId, request.getMerchant(), request.getAmount());
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("correctedFields", corrected);
+        if (receipt.getOcrDecision() != null) metadata.put("ocrDecision", receipt.getOcrDecision());
+        auditLogService.log(user, AuditLogService.ACTION_RECEIPT_CONFIRMED, "Receipt", receiptId.toString(), metadata);
+
+        log.info("Receipt {} confirmed ({} field(s) corrected)", receiptId, corrected.size());
         OcrExtractionResult extraction = reconstructExtraction(receipt);
         return toResponse(receipt, extraction, tx);
+    }
+
+    // One feedback row per field the user changed: what OCR predicted, what the user confirmed.
+    private List<String> recordCorrections(Receipt receipt, ReceiptConfirmRequest req, String currency, User user) {
+        String predictedMerchant = receipt.getPredictedMerchant() != null ? receipt.getPredictedMerchant() : receipt.getExtractedMerchant();
+        BigDecimal predictedAmount = receipt.getPredictedAmount() != null ? receipt.getPredictedAmount() : receipt.getExtractedAmount();
+        LocalDate predictedDate = receipt.getPredictedDate() != null ? receipt.getPredictedDate() : receipt.getExtractedDate();
+        String predictedCurrency = receipt.getPredictedCurrency();
+
+        List<String> corrected = new ArrayList<>();
+        if (!sameText(predictedMerchant, req.getMerchant())) {
+            correction(receipt, user, ReceiptParserService.FIELD_MERCHANT, predictedMerchant, req.getMerchant(),
+                receipt.getMerchantConfidence(), corrected);
+        }
+        if (predictedAmount == null || predictedAmount.compareTo(req.getAmount()) != 0) {
+            correction(receipt, user, ReceiptParserService.FIELD_AMOUNT, plain(predictedAmount), plain(req.getAmount()),
+                receipt.getAmountConfidence(), corrected);
+        }
+        if (!Objects.equals(predictedDate, req.getDate())) {
+            correction(receipt, user, ReceiptParserService.FIELD_DATE, predictedDate == null ? null : predictedDate.toString(),
+                req.getDate().toString(), receipt.getDateConfidence(), corrected);
+        }
+        // receipts read before V17 have no predicted currency (it was always INR)
+        if (receipt.getExtractionDetails() != null && !Objects.equals(predictedCurrency, currency)) {
+            correction(receipt, user, ReceiptParserService.FIELD_CURRENCY, predictedCurrency, currency,
+                receipt.getCurrencyConfidence(), corrected);
+        }
+        return corrected;
+    }
+
+    private void correction(Receipt receipt, User user, String field, String predicted, String confirmed,
+                            BigDecimal confidence, List<String> corrected) {
+        feedbackService.record(user.getId(), new FeedbackCorrection(SubjectType.RECEIPT, receipt.getId(), field,
+            predicted, confirmed, FeedbackSource.RECEIPT_REVIEW, receipt.getOcrModelVersion(),
+            confidence == null ? null : confidence.doubleValue()));
+        corrected.add(field);
+    }
+
+    private static boolean sameText(String a, String b) {
+        if (a == null || b == null) return a == null && b == null;
+        return a.strip().equalsIgnoreCase(b.strip());
+    }
+
+    private static String plain(BigDecimal v) {
+        return v == null ? null : v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     public Page<ReceiptResponse> list(UUID userId, Pageable pageable) {
@@ -166,68 +238,80 @@ public class ReceiptService {
         receiptRepository.delete(receipt);
     }
 
-    // receipt-ocr first, Tesseract fallback; null (FAILED) only if both throw
-    private OcrExtractionResult extractWithFallback(Path filePath, Receipt receipt) {
-        Optional<ReceiptOcrResponse> ocrResponse = receiptOcrClient.extract(filePath);
-
-        if (ocrResponse.isPresent()) {
-            ReceiptOcrResponse ocrResult = ocrResponse.get();
-            OcrExtractionResult extraction = ocrMapper.map(ocrResult);
-
-            receipt.setOcrText(extraction.getRawText());
-            receipt.setOcrProvider("RECEIPT_OCR_SERVICE");
-            receipt.setExtractedMerchant(extraction.getMerchant());
-            receipt.setExtractedAmount(extraction.getAmount());
-            receipt.setExtractedDate(extraction.getDate());
-
-            if (extraction.getConfidence() != null) {
-                receipt.setOcrConfidence(
-                    BigDecimal.valueOf(extraction.getConfidence()).setScale(3, RoundingMode.HALF_UP));
-            }
-            if (ocrResult.getLineItems() != null && !ocrResult.getLineItems().isEmpty()) {
-                try {
-                    receipt.setLineItemsJson(objectMapper.writeValueAsString(ocrResult.getLineItems()));
-                } catch (JsonProcessingException e) {
-                    log.debug("Could not serialize line items for receipt {}: {}", receipt.getId(), e.getMessage());
-                }
-            }
-
-            log.info("receipt-ocr extracted merchant='{}' amount={} for receipt {}",
-                extraction.getMerchant(), extraction.getAmount(), receipt.getId());
-            return extraction;
+    private void applyExtraction(Receipt receipt, ReceiptExtractionService.Extraction extraction) {
+        OcrExtractionResult r = extraction.result();
+        String merchant = truncate(r.getMerchant(), MERCHANT_COLUMN);
+        receipt.setOcrText(r.getRawText());
+        receipt.setOcrProvider(extraction.provider());
+        receipt.setOcrModelVersion(truncate(extraction.modelVersion(), 64));
+        receipt.setExtractedMerchant(merchant);
+        receipt.setExtractedAmount(r.getAmount());
+        receipt.setExtractedDate(r.getDate());
+        receipt.setCurrency(r.getCurrency());
+        receipt.setPredictedMerchant(merchant);
+        receipt.setPredictedMerchantRaw(truncate(r.getMerchantRaw(), MERCHANT_COLUMN));
+        receipt.setPredictedAmount(r.getAmount());
+        receipt.setPredictedDate(r.getDate());
+        receipt.setPredictedCurrency(r.getCurrency());
+        Map<String, FieldAssessment> fields = r.getFields() != null ? r.getFields() : Map.of();
+        receipt.setMerchantConfidence(confidence(fields.get(ReceiptParserService.FIELD_MERCHANT)));
+        receipt.setAmountConfidence(confidence(fields.get(ReceiptParserService.FIELD_AMOUNT)));
+        receipt.setDateConfidence(confidence(fields.get(ReceiptParserService.FIELD_DATE)));
+        receipt.setCurrencyConfidence(confidence(fields.get(ReceiptParserService.FIELD_CURRENCY)));
+        receipt.setOcrDecision(r.getDecision() != null ? r.getDecision().name() : null);
+        if (r.getConfidence() != null) {
+            receipt.setOcrConfidence(BigDecimal.valueOf(r.getConfidence()).setScale(3, RoundingMode.HALF_UP));
         }
-
-        // Tesseract fallback
-        log.debug("receipt-ocr unavailable for receipt {}, falling back to Tesseract", receipt.getId());
+        if (r.getLineItems() != null && !r.getLineItems().isEmpty()) {
+            try {
+                receipt.setLineItemsJson(objectMapper.writeValueAsString(r.getLineItems()));
+            } catch (JsonProcessingException e) {
+                log.debug("Could not serialize line items for receipt {}", receipt.getId());
+            }
+        }
         try {
-            OcrDocument ocrDoc = ocrService.extractDocument(filePath);
-            receipt.setOcrText(ocrDoc.plainText());
-            receipt.setOcrProvider("TESSERACT_FALLBACK");
-            OcrExtractionResult extraction = parser.parse(ocrDoc);
-            receipt.setExtractedMerchant(extraction.getMerchant());
-            receipt.setExtractedAmount(extraction.getAmount());
-            receipt.setExtractedDate(extraction.getDate());
-            return extraction;
-        } catch (OcrException e) {
-            receipt.setStatus(ReceiptStatus.FAILED);
-            receipt.setErrorMessage("OCR failed: " + e.getMessage());
-            receiptRepository.save(receipt);
-            log.warn("OCR failed for receipt {}: {}", receipt.getId(), e.getMessage());
-            return null;
+            receipt.setExtractionDetails(objectMapper.writeValueAsString(r.toBuilder().rawText(null).lineItems(null).build()));
+        } catch (JsonProcessingException e) {
+            log.debug("Could not serialize extraction details for receipt {}", receipt.getId());
         }
     }
 
+    private static BigDecimal confidence(FieldAssessment f) {
+        return f == null || f.confidence() == null ? null : BigDecimal.valueOf(f.confidence()).setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private static String truncate(String v, int max) {
+        return v == null || v.length() <= max ? v : v.substring(0, max);
+    }
+
     private OcrExtractionResult reconstructExtraction(Receipt receipt) {
+        List<ReceiptLineItem> items = deserializeLineItems(receipt.getLineItemsJson());
+        if (receipt.getExtractionDetails() != null) {
+            try {
+                OcrExtractionResult details = objectMapper.readValue(receipt.getExtractionDetails(), OcrExtractionResult.class);
+                // extracted_* hold the confirmed values after confirmation
+                return details.toBuilder()
+                    .merchant(receipt.getExtractedMerchant())
+                    .amount(receipt.getExtractedAmount())
+                    .date(receipt.getExtractedDate())
+                    .currency(receipt.getCurrency())
+                    .rawText(receipt.getOcrText())
+                    .lineItems(items)
+                    .build();
+            } catch (JsonProcessingException e) {
+                log.debug("Could not read extraction details for receipt {}", receipt.getId());
+            }
+        }
         // structured data present when either field is set
         if (receipt.getExtractedAmount() != null || receipt.getExtractedMerchant() != null) {
-            List<ReceiptLineItem> items = deserializeLineItems(receipt.getLineItemsJson());
             Double conf = receipt.getOcrConfidence() != null
                 ? receipt.getOcrConfidence().doubleValue() : null;
             return OcrExtractionResult.builder()
                 .merchant(receipt.getExtractedMerchant())
                 .amount(receipt.getExtractedAmount())
                 .date(receipt.getExtractedDate())
-                .currency("INR")
+                // receipts read before V17 were always treated as INR
+                .currency(receipt.getCurrency() != null ? receipt.getCurrency() : "INR")
                 .successful(receipt.getExtractedAmount() != null)
                 .rawText(receipt.getOcrText())
                 .lineItems(items)
@@ -274,7 +358,7 @@ public class ReceiptService {
         return Transaction.builder()
             .user(user)
             .amount(req.getAmount().setScale(4, RoundingMode.HALF_UP))
-            .currency(req.getCurrency() != null && !req.getCurrency().isBlank() ? req.getCurrency() : "INR")
+            .currency(currencyFor(req, receipt))
             .transactionDate(req.getDate())
             .description(baseDescription)
             .merchant(req.getMerchant())
@@ -287,6 +371,13 @@ public class ReceiptService {
             .receipt(receipt)
             .reviewed(true) // user-confirmed
             .build();
+    }
+
+    // the user's choice, else what OCR detected, else the column's historical default
+    private static String currencyFor(ReceiptConfirmRequest req, Receipt receipt) {
+        if (req.getCurrency() != null && !req.getCurrency().isBlank()) return req.getCurrency().trim().toUpperCase(java.util.Locale.ROOT);
+        if (receipt.getCurrency() != null) return receipt.getCurrency();
+        return "INR";
     }
 
     private void validateUpload(MultipartFile file) throws IOException {
@@ -367,6 +458,8 @@ public class ReceiptService {
             .ocrProvider(receipt.getOcrProvider())
             .confidence(confidence)
             .requiresConfirmation(requiresConfirmation)
+            .currency(receipt.getCurrency())
+            .decision(extraction != null ? extraction.getDecision() : null)
             .createdAt(receipt.getCreatedAt())
             .build();
     }

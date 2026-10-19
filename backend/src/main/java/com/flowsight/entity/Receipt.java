@@ -70,6 +70,50 @@ public class Receipt {
     @Column(name = "ocr_provider", length = 30)
     private String ocrProvider;
 
+    @Column(name = "currency", length = 3)
+    private String currency;
+
+    // OCR output as first extracted; unlike extracted_* these are not overwritten on confirm
+    @Column(name = "predicted_merchant", length = 255)
+    private String predictedMerchant;
+
+    @Column(name = "predicted_merchant_raw", length = 255)
+    private String predictedMerchantRaw;
+
+    @Column(name = "predicted_amount", precision = 15, scale = 2)
+    private BigDecimal predictedAmount;
+
+    @Column(name = "predicted_date")
+    private LocalDate predictedDate;
+
+    @Column(name = "predicted_currency", length = 3)
+    private String predictedCurrency;
+
+    @Column(name = "merchant_confidence", precision = 4, scale = 3)
+    private BigDecimal merchantConfidence;
+
+    @Column(name = "amount_confidence", precision = 4, scale = 3)
+    private BigDecimal amountConfidence;
+
+    @Column(name = "date_confidence", precision = 4, scale = 3)
+    private BigDecimal dateConfidence;
+
+    @Column(name = "currency_confidence", precision = 4, scale = 3)
+    private BigDecimal currencyConfidence;
+
+    @Column(name = "ocr_decision", length = 30)
+    private String ocrDecision;
+
+    @Column(name = "ocr_model_version", length = 64)
+    private String ocrModelVersion;
+
+    // JSON of the extraction (fields, candidates, charges) without raw text and line items
+    @Column(name = "extraction_details", columnDefinition = "TEXT")
+    private String extractionDetails;
+
+    @Column(name = "confirmed_at")
+    private Instant confirmedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;

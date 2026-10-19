@@ -8,9 +8,11 @@ import com.flowsight.dto.receipt.ReceiptConfirmRequest;
 import com.flowsight.dto.receipt.ReceiptResponse;
 import com.flowsight.entity.*;
 import com.flowsight.exception.ResourceNotFoundException;
-import com.flowsight.ocr.OcrService;
-import com.flowsight.ocr.ReceiptOcrClientService;
-import com.flowsight.ocr.ReceiptOcrMapper;
+import com.flowsight.ml.FeedbackCorrection;
+import com.flowsight.ml.FeedbackService;
+import com.flowsight.ml.FeedbackSource;
+import com.flowsight.ml.SubjectType;
+import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
@@ -42,12 +44,12 @@ class ReceiptConfirmTest {
     @Mock private ReceiptRepository      receiptRepository;
     @Mock private TransactionRepository  transactionRepository;
     @Mock private FileStorageService     fileStorage;
-    @Mock private OcrService             ocrService;
     @Mock private ReceiptParserService   parser;
     @Mock private CategorizationService  categorizationService;
     @Mock private NormalizationService   normalizationService;
-    @Mock private ReceiptOcrClientService receiptOcrClient;
-    @Mock private ReceiptOcrMapper       ocrMapper;
+    @Mock private ReceiptExtractionService extractionService;
+    @Mock private FeedbackService        feedbackService;
+    private AuditLogService auditStub;
 
     private ReceiptService service;
     private Validator validator;
@@ -60,7 +62,7 @@ class ReceiptConfirmTest {
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         // Quota check happens at upload entry, not in the confirm flow — stub it
         ReceiptQuotaService quotaStub = org.mockito.Mockito.mock(ReceiptQuotaService.class);
-        AuditLogService    auditStub = org.mockito.Mockito.mock(AuditLogService.class);
+        auditStub = org.mockito.Mockito.mock(AuditLogService.class);
         com.flowsight.security.RateLimiter rateLimiterStub = org.mockito.Mockito.mock(
             com.flowsight.security.RateLimiter.class);
 
@@ -68,7 +70,7 @@ class ReceiptConfirmTest {
             receiptRepository, transactionRepository, fileStorage,
             categorizationService, normalizationService, objectMapper,
             quotaStub, auditStub, rateLimiterStub,
-            receiptOcrClient, ocrMapper, ocrService, parser
+            extractionService, parser, feedbackService
         );
 
         validator = Validation.buildDefaultValidatorFactory().getValidator();
@@ -162,7 +164,7 @@ class ReceiptConfirmTest {
         ReceiptConfirmRequest req = validRequest();
         req.setCategory(TransactionCategory.GROCERIES); // user explicitly chose
 
-        when(receiptRepository.findByIdAndUserId(receiptId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId()))
             .thenReturn(Optional.of(testReceipt));
         when(transactionRepository.findTopByReceiptId(receiptId))
             .thenReturn(Optional.empty());
@@ -189,7 +191,7 @@ class ReceiptConfirmTest {
         CategorizationService.CategorizationResult catResult =
             new CategorizationService.CategorizationResult(TransactionCategory.FOOD_DINING, 0.80);
 
-        when(receiptRepository.findByIdAndUserId(receiptId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId()))
             .thenReturn(Optional.of(testReceipt));
         when(transactionRepository.findTopByReceiptId(receiptId))
             .thenReturn(Optional.empty());
@@ -212,7 +214,7 @@ class ReceiptConfirmTest {
         ReceiptConfirmRequest req = validRequest();
         req.setNotes("Team lunch at Walmart");
 
-        when(receiptRepository.findByIdAndUserId(receiptId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId()))
             .thenReturn(Optional.of(testReceipt));
         when(transactionRepository.findTopByReceiptId(receiptId))
             .thenReturn(Optional.empty());
@@ -238,7 +240,7 @@ class ReceiptConfirmTest {
             .type(TransactionType.DEBIT).source(TransactionSource.OCR)
             .reviewed(true).build();
 
-        when(receiptRepository.findByIdAndUserId(receiptId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId()))
             .thenReturn(Optional.of(testReceipt));
         when(transactionRepository.findTopByReceiptId(receiptId))
             .thenReturn(Optional.of(existingTx));
@@ -252,7 +254,7 @@ class ReceiptConfirmTest {
     @Test
     void confirmReceipt_throwsWhenReceiptNotFound() {
         UUID unknownId = UUID.randomUUID();
-        when(receiptRepository.findByIdAndUserId(unknownId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(unknownId, testUser.getId()))
             .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmReceipt(unknownId, validRequest(), testUser))
@@ -297,7 +299,7 @@ class ReceiptConfirmTest {
         testReceipt.setOcrConfidence(new BigDecimal("0.30")); // LOW
         UUID receiptId = testReceipt.getId();
 
-        when(receiptRepository.findByIdAndUserId(receiptId, testUser.getId()))
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId()))
             .thenReturn(Optional.of(testReceipt));
         when(transactionRepository.findTopByReceiptId(receiptId))
             .thenReturn(Optional.empty());
@@ -316,6 +318,80 @@ class ReceiptConfirmTest {
             "CORRECTED MERCHANT".equals(tx.getMerchant()) &&
             tx.getAmount().compareTo(new BigDecimal("120.00")) == 0
         ));
+    }
+
+    // Prediction kept, corrections recorded, confirmation audited
+
+    @Test
+    void confirmReceipt_recordsOnlyCorrectedFields_andKeepsPrediction() {
+        UUID receiptId = testReceipt.getId();
+        testReceipt.setPredictedMerchant("WALMART");
+        testReceipt.setPredictedAmount(new BigDecimal("45.99"));
+        testReceipt.setPredictedDate(LocalDate.of(2024, 3, 15));
+        testReceipt.setAmountConfidence(new BigDecimal("0.550"));
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId())).thenReturn(Optional.of(testReceipt));
+        when(transactionRepository.findTopByReceiptId(receiptId)).thenReturn(Optional.empty());
+        when(normalizationService.normalize(any())).thenReturn("WALMART");
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        ReceiptConfirmRequest req = validRequest();
+        req.setAmount(new BigDecimal("54.99"));
+        service.confirmReceipt(receiptId, req, testUser);
+
+        verify(feedbackService).record(eq(testUser.getId()), argThat((FeedbackCorrection c) ->
+            c.subjectType() == SubjectType.RECEIPT && c.subjectId().equals(receiptId) && c.field().equals("amount")
+                && c.predictedValue().equals("45.99") && c.correctedValue().equals("54.99")
+                && c.source() == FeedbackSource.RECEIPT_REVIEW && c.confidence() == 0.55));
+        verifyNoMoreInteractions(feedbackService);
+        assertThat(testReceipt.getPredictedAmount()).isEqualByComparingTo("45.99");
+        assertThat(testReceipt.getExtractedAmount()).isEqualByComparingTo("54.99");
+        assertThat(testReceipt.getConfirmedAt()).isNotNull();
+    }
+
+    @Test
+    void confirmReceipt_logsReceiptConfirmedWithoutValues() {
+        UUID receiptId = testReceipt.getId();
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId())).thenReturn(Optional.of(testReceipt));
+        when(transactionRepository.findTopByReceiptId(receiptId)).thenReturn(Optional.empty());
+        when(normalizationService.normalize(any())).thenReturn("WALMART");
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.confirmReceipt(receiptId, validRequest(), testUser);
+
+        verify(auditStub).log(eq(testUser), eq(AuditLogService.ACTION_RECEIPT_CONFIRMED), eq("Receipt"),
+            eq(receiptId.toString()), argThat(m -> m.containsKey("correctedFields") && !m.containsValue("WALMART")));
+    }
+
+    @Test
+    void confirmReceipt_alreadyConfirmed_recordsNoFeedback() {
+        UUID receiptId = testReceipt.getId();
+        Transaction existingTx = Transaction.builder()
+            .user(testUser).amount(new BigDecimal("45.99")).currency("INR")
+            .transactionDate(LocalDate.of(2024, 3, 15)).merchant("WALMART")
+            .type(TransactionType.DEBIT).source(TransactionSource.OCR).reviewed(true).build();
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId())).thenReturn(Optional.of(testReceipt));
+        when(transactionRepository.findTopByReceiptId(receiptId)).thenReturn(Optional.of(existingTx));
+
+        ReceiptConfirmRequest req = validRequest();
+        req.setAmount(new BigDecimal("99.00"));
+        service.confirmReceipt(receiptId, req, testUser);
+
+        verifyNoInteractions(feedbackService);
+        verify(auditStub, never()).log(any(), eq(AuditLogService.ACTION_RECEIPT_CONFIRMED), any(), any(), any());
+    }
+
+    @Test
+    void confirmReceipt_usesDetectedCurrencyWhenRequestHasNone() {
+        UUID receiptId = testReceipt.getId();
+        testReceipt.setCurrency("SAR");
+        when(receiptRepository.findByIdAndUserIdForUpdate(receiptId, testUser.getId())).thenReturn(Optional.of(testReceipt));
+        when(transactionRepository.findTopByReceiptId(receiptId)).thenReturn(Optional.empty());
+        when(normalizationService.normalize(any())).thenReturn("WALMART");
+        when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.confirmReceipt(receiptId, validRequest(), testUser);
+
+        verify(transactionRepository).save(argThat(tx -> "SAR".equals(tx.getCurrency())));
     }
 
     // Helper

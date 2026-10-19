@@ -107,8 +107,13 @@ application:
     upload-dir: ${UPLOAD_DIR:/tmp/flowsight-receipts}
   groq:
     api-key: ${GROQ_API_KEY:}
+    # text model for merchant adjudication on low-confidence receipts (redacted OCR text only)
+    merchant-model: ${GROQ_MERCHANT_MODEL:llama-3.1-8b-instant}
   receipt-ocr:
     url: ${RECEIPT_OCR_URL:}
+  ocr:
+    # Tesseract language packs, e.g. eng+ara once tesseract-ocr-ara is installed in the image
+    tesseract-languages: ${OCR_TESSERACT_LANGUAGES:eng}
   # ml-service. With the URL or token blank, or a capability flag off, every caller
   # gets the existing rule-based result and nothing is sent or logged.
   ml:
@@ -137,7 +142,8 @@ application:
       ocr:
         enabled: ${ML_OCR_ENABLED:false}
         shadow: ${ML_OCR_SHADOW:false}
-        timeout: ${ML_OCR_TIMEOUT:400ms}
+        # preprocessing, Tesseract passes and an optional vision-model call; never inside a DB transaction
+        timeout: ${ML_OCR_TIMEOUT:60s}
       narrative:
         enabled: ${ML_NARRATIVE_ENABLED:false}
         shadow: ${ML_NARRATIVE_SHADOW:false}

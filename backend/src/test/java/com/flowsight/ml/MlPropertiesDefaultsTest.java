@@ -32,7 +32,12 @@ class MlPropertiesDefaultsTest {
             assertThat(props.capabilities()).containsKey(capability.id());
             assertThat(flags.enabled()).as(capability.id()).isFalse();
             assertThat(flags.shadow()).as(capability.id()).isFalse();
-            assertThat(flags.timeout()).isLessThan(Duration.ofSeconds(1));
+            if (capability == MlCapability.OCR) {
+                // receipt OCR runs outside any transaction and is not on an interactive hot path
+                assertThat(flags.timeout()).isBetween(Duration.ofSeconds(10), Duration.ofSeconds(90));
+            } else {
+                assertThat(flags.timeout()).isLessThan(Duration.ofSeconds(1));
+            }
         }
     }
 }

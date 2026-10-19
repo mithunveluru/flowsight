@@ -6,9 +6,8 @@ import com.flowsight.analytics.NormalizationService;
 import com.flowsight.entity.Role;
 import com.flowsight.entity.User;
 import com.flowsight.exception.FlowsightException;
-import com.flowsight.ocr.OcrService;
-import com.flowsight.ocr.ReceiptOcrClientService;
-import com.flowsight.ocr.ReceiptOcrMapper;
+import com.flowsight.ml.FeedbackService;
+import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
@@ -55,10 +54,9 @@ class ReceiptUploadSecurityTest {
             quotaService,
             mock(AuditLogService.class),
             rateLimiter,
-            mock(ReceiptOcrClientService.class),
-            mock(ReceiptOcrMapper.class),
-            mock(OcrService.class),
-            mock(ReceiptParserService.class));
+            mock(ReceiptExtractionService.class),
+            mock(ReceiptParserService.class),
+            mock(FeedbackService.class));
 
         user = User.builder()
             .id(UUID.randomUUID())

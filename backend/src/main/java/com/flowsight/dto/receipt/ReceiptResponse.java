@@ -25,5 +25,9 @@ public class ReceiptResponse {
     private String ocrProvider;
     private Double confidence;
     private boolean requiresConfirmation;
+    // receipt currency: the confirmed one once confirmed, else the detected one (null if unknown)
+    private String currency;
+    // worst per-field decision of the extraction; see extraction.fields
+    private ReceiptDecision decision;
     private Instant createdAt;
 }
