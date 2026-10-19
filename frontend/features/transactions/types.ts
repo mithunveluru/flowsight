@@ -1,5 +1,5 @@
 export type TransactionType = "DEBIT" | "CREDIT";
-export type TransactionSource = "MANUAL" | "CSV" | "SMS" | "OCR";
+export type TransactionSource = "MANUAL" | "CSV" | "SMS" | "OCR" | "SAMPLE";
 export type TransactionCategory =
   | "FOOD_DINING"
   | "GROCERIES"

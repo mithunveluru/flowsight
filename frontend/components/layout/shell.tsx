@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { CommandMenu } from "./command-menu";
+import { SampleDataBanner } from "./sample-data-banner";
 import { accentForPath } from "./nav";
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           className="flex-1 overflow-y-auto focus:outline-none"
           style={{ ["--section-accent" as string]: accentForPath(pathname) }}
         >
+          <SampleDataBanner />
           <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-12">{children}</div>
         </main>
       </div>

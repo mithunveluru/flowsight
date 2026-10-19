@@ -5,9 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { authApi } from "@/features/auth/api";
+import { RECENT_RECEIPTS_SIZE, useRecentReceipts } from "@/features/receipts/hooks";
+import { countDrafts } from "@/features/today/logic";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { SETTINGS_ITEM, isNavItemActive, navSections } from "./nav";
+import { RECEIPT_INBOX_HREF, SETTINGS_ITEM, isNavItemActive, navSections } from "./nav";
 
 export function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void } = {}) {
   return (
@@ -41,6 +43,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
+  const receipts = useRecentReceipts();
+  const drafts = receipts.data ? countDrafts(receipts.data.content) : 0;
 
   const handleSignOut = () => {
     // revoke the refresh token server-side; local logout proceeds regardless
@@ -79,7 +83,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <ul className="space-y-px" aria-labelledby={headingId}>
                 {group.items.map((item) => {
                   const active = isNavItemActive(pathname, item.href);
-                                  return (
+                  const badge = item.href === RECEIPT_INBOX_HREF && drafts > 0 ? drafts : null;
+                  return (
                     <li key={item.href}>
                       <Link
                         href={item.href}
@@ -89,6 +94,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       >
                         <item.icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} aria-hidden="true" />
                         <span className="flex-1 truncate">{item.label}</span>
+                        {badge != null && (
+                          <span className="ml-auto rounded-full bg-brand-soft px-1.5 text-[11px] font-semibold tabular-nums text-brand">
+                            {badge >= RECENT_RECEIPTS_SIZE ? `${RECENT_RECEIPTS_SIZE}+` : badge}
+                            <span className="sr-only"> {badge === 1 ? "draft" : "drafts"} awaiting review</span>
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );
