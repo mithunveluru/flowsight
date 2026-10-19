@@ -37,7 +37,7 @@ it never gets an LLM answer. The diagnostic forces HTTP/1.1 to measure the model
 |---|---|---|
 | `ocr-tesseract`, `ocr-llm` | `CurrentReceiptPipeline`, a copy of `ReceiptService.extractWithFallback` without the database: `ReceiptOcrClientService` + `ReceiptOcrMapper`, else `OcrService` + `ReceiptParserService` | 200 synthetic receipts from `receipts/generate.py`, plus private real receipts if present |
 | `categorization` | `CategorizationService.categorize` with the inputs `TransactionIngestionPipeline.processCsvRow` gives it | `categorization/cases.csv` (476 rows, India / KSA / UAE / US) |
-| `merchants` | `MerchantNormalizationService.normalize` and `NormalizationService.extractMerchant` | `merchants/cases.csv` (352 rows) |
+| `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
 scorer stay the same.
@@ -65,7 +65,9 @@ Categorization: accuracy, macro F1 over the labeled classes, ECE of the returned
 Merchants: `alias_exact` (canonical name correct), `alias_wrong` (an alias fired and named the
 wrong merchant, lower is better), `fuzzy` (canonical name, or the grouping key when no alias
 matched, at least 0.85 similar), `key_match` (raw and expected strings get the same grouping
-key), `extract_exact` / `extract_fuzzy` for `extractMerchant`.
+key), `extract_exact` / `extract_fuzzy` for the descriptor cleaner `MerchantText.clean`, and
+`resolved_exact` / `resolved_fuzzy` for the name `MerchantResolver` stores on a transaction
+(built-in aliases, in-memory trigram matching, no user rules, ML or LLM steps).
 
 ## Regression gate
 

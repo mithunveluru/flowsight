@@ -204,7 +204,8 @@ def cmd_categorization(args):
     return finish(args, current)
 
 
-MERCHANT_METRICS = ("alias_exact", "alias_wrong", "fuzzy", "key_match", "extract_exact", "extract_fuzzy")
+MERCHANT_METRICS = ("alias_exact", "alias_wrong", "fuzzy", "key_match", "extract_exact", "extract_fuzzy",
+                    "resolved_exact", "resolved_fuzzy")
 
 
 def score_merchant(case, pred):
@@ -219,6 +220,8 @@ def score_merchant(case, pred):
         "key_match": bool(pred.get("key")) and pred.get("key") == pred.get("expected_key"),
         "extract_exact": names_equal(pred.get("extracted"), expected),
         "extract_fuzzy": similarity(pred.get("extracted"), expected) >= FUZZY_THRESHOLD,
+        "resolved_exact": names_equal(pred.get("resolved"), expected),
+        "resolved_fuzzy": similarity(pred.get("resolved"), expected) >= FUZZY_THRESHOLD,
     }
 
 
@@ -238,8 +241,8 @@ def cmd_merchants(args):
     current = {"suite": args.suite, "truth_sha256": sha256(args.cases), "count": len(cases), "metrics": metrics,
                "slices": slices, "slice_gated": [m for m in MERCHANT_METRICS if m != "alias_wrong"], "info": {"n": len(cases)}}
 
-    print(f"\n== {args.suite}: MerchantNormalizationService (alias_*, fuzzy, key_match) "
-          f"and NormalizationService.extractMerchant (extract_*) ==")
+    print(f"\n== {args.suite}: MerchantNormalizationService (alias_*, fuzzy, key_match), "
+          f"MerchantText.clean (extract_*) and MerchantResolver offline (resolved_*) ==")
     print(format_table([{"set": "all", "n": len(cases), **metrics}, *({"set": k, **v} for k, v in slices.items())],
                        ["set", "n", *MERCHANT_METRICS]))
     return finish(args, current)
