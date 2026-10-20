@@ -105,6 +105,15 @@ application:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3007,http://localhost:1420,tauri://localhost,http://tauri.localhost}
   storage:
     upload-dir: ${UPLOAD_DIR:/tmp/flowsight-receipts}
+    # Review copy of each receipt (JPEG, metadata stripped). Kept until confirm + reviewed-retention
+    # (never past draft-retention), or draft-retention for drafts never confirmed; delete removes it at once.
+    receipt-images:
+      store: ${RECEIPT_IMAGE_STORE:local}
+      max-long-side: ${RECEIPT_IMAGE_MAX_LONG_SIDE:2000}
+      jpeg-quality: ${RECEIPT_IMAGE_JPEG_QUALITY:0.8}
+      draft-retention: ${RECEIPT_IMAGE_DRAFT_RETENTION:P7D}
+      reviewed-retention: ${RECEIPT_IMAGE_REVIEWED_RETENTION:PT24H}
+      cleanup-interval: ${RECEIPT_IMAGE_CLEANUP_INTERVAL:PT1H}
   groq:
     api-key: ${GROQ_API_KEY:}
     # text models for merchant adjudication on low-confidence receipts (redacted OCR text only), in order

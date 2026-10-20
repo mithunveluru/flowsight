@@ -8,13 +8,13 @@ import java.awt.image.BufferedImage;
  * Reads the EXIF orientation tag (0x0112) from a JPEG and applies it, so phone photos taken
  * sideways reach Tesseract upright. ImageIO ignores EXIF, hence the small parser.
  */
-final class ExifOrientation {
+public final class ExifOrientation {
 
     private ExifOrientation() {
     }
 
     /** 1 (normal) when the file is not a JPEG, has no EXIF block or the tag is missing. */
-    static int read(byte[] jpeg) {
+    public static int read(byte[] jpeg) {
         try {
             if (jpeg.length < 4 || (jpeg[0] & 0xFF) != 0xFF || (jpeg[1] & 0xFF) != 0xD8) return 1;
             int pos = 2;

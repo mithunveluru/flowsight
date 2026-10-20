@@ -14,7 +14,7 @@ import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
 import com.flowsight.security.RateLimiter;
-import com.flowsight.util.FileStorageService;
+import com.flowsight.storage.ReceiptImageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -32,7 +32,7 @@ class ReceiptUploadSecurityTest {
 
     private ReceiptRepository      receiptRepository;
     private TransactionRepository  transactionRepository;
-    private FileStorageService     fileStorage;
+    private ReceiptImageService    images;
     private ReceiptService         receiptService;
     private User user;
 
@@ -40,7 +40,7 @@ class ReceiptUploadSecurityTest {
     void setUp() {
         receiptRepository     = mock(ReceiptRepository.class);
         transactionRepository = mock(TransactionRepository.class);
-        fileStorage           = mock(FileStorageService.class);
+        images                = mock(ReceiptImageService.class);
 
         com.flowsight.service.ReceiptQuotaService quotaService =
             mock(com.flowsight.service.ReceiptQuotaService.class); // requireQuotaAvailable is a no-op mock
@@ -49,7 +49,7 @@ class ReceiptUploadSecurityTest {
         receiptService = new ReceiptService(
             receiptRepository,
             transactionRepository,
-            fileStorage,
+            images,
             new CategorizationService(),
             new NormalizationService(),
             new ObjectMapper(),
@@ -82,7 +82,7 @@ class ReceiptUploadSecurityTest {
             .hasMessageContaining("does not match a supported image format");
 
         // The malicious file never reached storage or the database.
-        verifyNoInteractions(fileStorage);
+        verifyNoInteractions(images);
         verifyNoInteractions(receiptRepository);
         verifyNoInteractions(transactionRepository);
     }
@@ -96,7 +96,7 @@ class ReceiptUploadSecurityTest {
             .isInstanceOf(FlowsightException.class)
             .hasMessageContaining("Unsupported file type");
 
-        verifyNoInteractions(fileStorage);
+        verifyNoInteractions(images);
     }
 
     @Test
@@ -109,7 +109,7 @@ class ReceiptUploadSecurityTest {
             .isInstanceOf(FlowsightException.class)
             .hasMessageContaining("5 MB");
 
-        verifyNoInteractions(fileStorage);
+        verifyNoInteractions(images);
     }
 
     @Test

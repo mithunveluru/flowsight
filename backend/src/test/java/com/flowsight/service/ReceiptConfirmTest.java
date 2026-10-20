@@ -22,19 +22,22 @@ import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
-import com.flowsight.util.FileStorageService;
+import com.flowsight.storage.ReceiptImageService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -50,9 +53,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ReceiptConfirmTest {
 
+    private static final Path STAGED = Path.of("/tmp/flowsight-receipt-staged.png");
+
     @Mock private ReceiptRepository      receiptRepository;
     @Mock private TransactionRepository  transactionRepository;
-    @Mock private FileStorageService     fileStorage;
+    @Mock private ReceiptImageService    images;
     @Mock private ReceiptParserService   parser;
     @Mock private CategorizationService  categorizationService;
     @Mock private NormalizationService   normalizationService;
@@ -78,7 +83,7 @@ class ReceiptConfirmTest {
             com.flowsight.security.RateLimiter.class);
 
         service = new ReceiptService(
-            receiptRepository, transactionRepository, fileStorage,
+            receiptRepository, transactionRepository, images,
             categorizationService, normalizationService, objectMapper,
             quotaStub, auditStub, rateLimiterStub,
             extractionService, parser, feedbackService, merchantResolver, categorizer
@@ -510,6 +515,89 @@ class ReceiptConfirmTest {
         assertThat(lastSavedReceipt().getPredictedMerchant()).isEqualTo("Dominos Pizza");
     }
 
+    // Receipt image: OCR reads the staged original, review keeps the compact copy
+
+    @Test
+    void processReceipt_ocrReadsTheStagedOriginal_andTheCompactCopyIsKeptAsADraft() throws Exception {
+        stubUpload(ocrResult());
+        when(merchantResolver.resolve(any(), any())).thenReturn(MerchantResolution.NONE);
+        Instant expiry = Instant.now().plus(Duration.ofDays(7));
+        when(images.keep(any(), eq(testUser.getId()), any())).thenReturn(Optional.of("user/receipt.jpg"));
+        when(images.draftExpiry(any())).thenReturn(expiry);
+
+        ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
+
+        InOrder order = inOrder(extractionService, images);
+        order.verify(extractionService).extract(eq(STAGED), eq("image/png"), any());
+        order.verify(images).unstage(STAGED);
+        order.verify(images).keep(any(), eq(testUser.getId()), any());
+        Receipt saved = lastSavedReceipt();
+        assertThat(saved.getFilePath()).isEqualTo("user/receipt.jpg");
+        assertThat(saved.getImageExpiresAt()).isEqualTo(expiry);
+    }
+
+    @Test
+    void processReceipt_imageNotKept_draftStillCreatedWithoutImage() throws Exception {
+        stubUpload(ocrResult());
+        when(merchantResolver.resolve(any(), any())).thenReturn(MerchantResolution.NONE);
+
+        ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
+
+        assertThat(response.getStatus()).isEqualTo(ReceiptStatus.COMPLETED);
+        assertThat(lastSavedReceipt().getFilePath()).isNull();
+        verify(images).unstage(STAGED);
+    }
+
+    @Test
+    void processReceipt_ocrFailure_stillRemovesTheStagedOriginal() throws Exception {
+        stubStaging();
+        when(extractionService.extract(any(), any(), any())).thenThrow(new RuntimeException("tesseract crashed"));
+
+        assertThatThrownBy(() -> service.processReceipt(pngUpload(), testUser)).isInstanceOf(RuntimeException.class);
+
+        verify(images).unstage(STAGED);
+    }
+
+    @Test
+    void confirmReceipt_shortensImageRetentionToTheReviewedWindow() {
+        stubConfirm(testReceipt.getId());
+        Instant draftExpiry = Instant.now().plus(Duration.ofDays(7));
+        Instant reviewed = Instant.now().plus(Duration.ofHours(24));
+        testReceipt.setFilePath("user/receipt.jpg");
+        testReceipt.setImageExpiresAt(draftExpiry);
+        when(images.reviewedExpiry(eq(draftExpiry), any())).thenReturn(reviewed);
+
+        service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
+
+        assertThat(testReceipt.getImageExpiresAt()).isEqualTo(reviewed);
+        assertThat(testReceipt.getFilePath()).isEqualTo("user/receipt.jpg");
+    }
+
+    @Test
+    void confirmReceipt_deletedImage_isNotRevived() {
+        stubConfirm(testReceipt.getId());
+        Instant deletedAt = Instant.now().minus(Duration.ofHours(1));
+        testReceipt.setImageExpiresAt(deletedAt);
+        testReceipt.setImageDeletedAt(deletedAt);
+
+        service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
+
+        verify(images, never()).reviewedExpiry(any(), any());
+        assertThat(testReceipt.getImageExpiresAt()).isEqualTo(deletedAt);
+    }
+
+    @Test
+    void delete_removesTheImageImmediately() {
+        testReceipt.setFilePath("user/receipt.jpg");
+        when(receiptRepository.findByIdAndUserId(testReceipt.getId(), testUser.getId())).thenReturn(Optional.of(testReceipt));
+
+        service.delete(testReceipt.getId(), testUser.getId());
+
+        InOrder order = inOrder(images, receiptRepository);
+        order.verify(images).delete("user/receipt.jpg");
+        order.verify(receiptRepository).delete(testReceipt);
+    }
+
     // Helper
 
     private void stubConfirm(UUID receiptId) {
@@ -520,14 +608,18 @@ class ReceiptConfirmTest {
     }
 
     private void stubUpload(OcrExtractionResult result) throws Exception {
+        stubStaging();
+        when(extractionService.extract(any(), any(), any()))
+            .thenReturn(new ReceiptExtractionService.Extraction("TESSERACT", null, result));
+    }
+
+    private void stubStaging() throws Exception {
         when(receiptRepository.save(any())).thenAnswer(inv -> {
             Receipt r = inv.getArgument(0);
             if (r.getId() == null) r.setId(UUID.randomUUID());
             return r;
         });
-        when(fileStorage.store(any(), any(), any())).thenReturn(Path.of("/tmp/receipt.png"));
-        when(extractionService.extract(any(), any(), any()))
-            .thenReturn(new ReceiptExtractionService.Extraction("TESSERACT", null, result));
+        when(images.stage(any())).thenReturn(STAGED);
     }
 
     @Test

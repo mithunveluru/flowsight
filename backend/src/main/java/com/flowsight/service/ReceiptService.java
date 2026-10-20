@@ -27,7 +27,7 @@ import com.flowsight.ocr.ReceiptExtractionService;
 import com.flowsight.ocr.ReceiptParserService;
 import com.flowsight.repository.ReceiptRepository;
 import com.flowsight.repository.TransactionRepository;
-import com.flowsight.util.FileStorageService;
+import com.flowsight.storage.ReceiptImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -67,7 +67,7 @@ public class ReceiptService {
 
     private final ReceiptRepository    receiptRepository;
     private final TransactionRepository transactionRepository;
-    private final FileStorageService   fileStorage;
+    private final ReceiptImageService  images;
     private final CategorizationService categorizationService;
     private final NormalizationService  normalizationService;
     private final ObjectMapper          objectMapper;
@@ -100,10 +100,10 @@ public class ReceiptService {
         receipt = receiptRepository.save(receipt);
         auditLogService.log(user, AuditLogService.ACTION_RECEIPT_UPLOADED, "Receipt", receipt.getId().toString());
 
-        Path filePath;
+        // OCR reads the original; only the compacted copy is kept for review
+        Path staged;
         try {
-            filePath = fileStorage.store(file, user.getId(), receipt.getId());
-            receipt.setFilePath(filePath.toString());
+            staged = images.stage(file);
         } catch (IOException e) {
             receipt.setStatus(ReceiptStatus.FAILED);
             receipt.setErrorMessage("File storage failed: " + e.getMessage());
@@ -116,13 +116,22 @@ public class ReceiptService {
 
         ReceiptExtractionService.Extraction extraction = null;
         try {
-            extraction = extractionService.extract(filePath, file.getContentType(),
+            extraction = extractionService.extract(staged, file.getContentType(),
                 ReceiptExtractionService.context(user.getId(), receipt.getId()));
         } catch (OcrException e) {
             log.warn("OCR failed for receipt {}: {}", receipt.getId(), e.getMessage());
+        } finally {
+            images.unstage(staged);
         }
         // OCR ran; count it regardless of success
         quotaService.recordReceiptProcessed(user.getId());
+
+        // kept for failed reads too: the user types the values while looking at the image
+        String imageKey = images.keep(file.getBytes(), user.getId(), receipt.getId()).orElse(null);
+        if (imageKey != null) {
+            receipt.setFilePath(imageKey);
+            receipt.setImageExpiresAt(images.draftExpiry(Instant.now()));
+        }
 
         if (extraction == null) {
             receipt.setStatus(ReceiptStatus.FAILED);
@@ -168,6 +177,9 @@ public class ReceiptService {
         receipt.setExtractedDate(request.getDate());
         receipt.setCurrency(tx.getCurrency());
         receipt.setConfirmedAt(Instant.now());
+        if (receipt.getFilePath() != null && receipt.getImageDeletedAt() == null) {
+            receipt.setImageExpiresAt(images.reviewedExpiry(receipt.getImageExpiresAt(), receipt.getConfirmedAt()));
+        }
         receiptRepository.save(receipt);
 
         Map<String, Object> metadata = new LinkedHashMap<>();
@@ -247,7 +259,7 @@ public class ReceiptService {
     public void delete(UUID id, UUID userId) {
         Receipt receipt = receiptRepository.findByIdAndUserId(id, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Receipt", id));
-        fileStorage.delete(receipt.getFilePath());
+        images.delete(receipt.getFilePath());
         receiptRepository.delete(receipt);
     }
 

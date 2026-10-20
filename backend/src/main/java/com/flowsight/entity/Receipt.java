@@ -114,6 +114,13 @@ public class Receipt {
     @Column(name = "confirmed_at")
     private Instant confirmedAt;
 
+    // file_path is the review copy's store key until image_expires_at; image_deleted_at once it is gone
+    @Column(name = "image_expires_at")
+    private Instant imageExpiresAt;
+
+    @Column(name = "image_deleted_at")
+    private Instant imageDeletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;
