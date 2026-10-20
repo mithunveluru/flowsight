@@ -3,6 +3,12 @@ package com.flowsight.analytics;
 import com.flowsight.dto.analytics.*;
 import com.flowsight.entity.TransactionCategory;
 import com.flowsight.entity.TransactionType;
+import com.flowsight.ml.forecast.CashFlowForecast;
+import com.flowsight.ml.forecast.ForecastEvidence;
+import com.flowsight.ml.forecast.ForecastInterval;
+import com.flowsight.ml.forecast.ForecastService;
+import com.flowsight.ml.forecast.MonthlyHistory;
+import com.flowsight.ml.forecast.SeriesForecast;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +40,7 @@ public class AnalyticsService {
     private static final DateTimeFormatter MONTH_LABEL = DateTimeFormatter.ofPattern("MMM yyyy");
 
     private final TransactionRepository transactionRepository;
+    private final ForecastService       forecastService;
 
     // Activity bounds — surfaces "where the data is" so the UI can guide the
     // user away from an empty current-month view after a previous-month import.
@@ -90,9 +97,19 @@ public class AnalyticsService {
 
         List<Object[]> raw = transactionRepository.monthlyTrend(userId, from, to);
         List<MonthlyTrendPoint> points = fillMonthGaps(raw, from, to);
-        points.addAll(buildForecast(points));
 
-        return AnalyticsTrendResponse.builder().points(points).build();
+        MonthlyHistory history = forecastService.history(userId, to);
+        CashFlowForecast forecast = forecastService.forecast(userId, history, FORECAST_MONTHS + 1);
+        points.addAll(forecastPoints(forecast));
+
+        return AnalyticsTrendResponse.builder()
+            .points(points)
+            .forecast(new AnalyticsTrendResponse.Forecast(forecast.asOf(), forecast.dataMonths(),
+                forecast.dataMonths() <= ForecastEvidence.LOW_HISTORY_MONTHS, forecast.source(),
+                ForecastEvidence.of(forecast, forecast.spend(), history),
+                ForecastEvidence.of(forecast, forecast.income(), history),
+                ForecastEvidence.of(forecast, forecast.net(), history)))
+            .build();
     }
 
     // Category breakdown
@@ -227,33 +244,27 @@ public class AnalyticsService {
         return points;
     }
 
-    private List<MonthlyTrendPoint> buildForecast(List<MonthlyTrendPoint> history) {
-        if (history.isEmpty()) return List.of();
-
-        int lookback = Math.min(3, history.size());
-        List<MonthlyTrendPoint> recent = history.subList(history.size() - lookback, history.size());
-
-        BigDecimal avgSpend = recent.stream().map(MonthlyTrendPoint::getSpend)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
-            .divide(BigDecimal.valueOf(lookback), 2, RoundingMode.HALF_UP);
-
-        BigDecimal avgIncome = recent.stream().map(MonthlyTrendPoint::getIncome)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
-            .divide(BigDecimal.valueOf(lookback), 2, RoundingMode.HALF_UP);
-
-        List<MonthlyTrendPoint> forecast = new ArrayList<>();
-        LocalDate base = LocalDate.now().withDayOfMonth(1);
-
-        for (int i = 1; i <= FORECAST_MONTHS; i++) {
-            LocalDate m = base.plusMonths(i);
-            forecast.add(MonthlyTrendPoint.builder()
+    // the months after the current one; step 1 of the forecast is the current month
+    private List<MonthlyTrendPoint> forecastPoints(CashFlowForecast forecast) {
+        List<MonthlyTrendPoint> out = new ArrayList<>();
+        for (int k = 2; k <= FORECAST_MONTHS + 1; k++) {
+            LocalDate m = forecast.month(k).atDay(1);
+            SeriesForecast.Step spend  = forecast.spend().step(k);
+            SeriesForecast.Step income = forecast.income().step(k);
+            SeriesForecast.Step net    = forecast.net().step(k);
+            out.add(MonthlyTrendPoint.builder()
                 .month(m.format(MONTH_KEY)).label(m.format(MONTH_LABEL))
-                .spend(avgSpend).income(avgIncome)
-                .net(avgIncome.subtract(avgSpend))
+                .spend(money(spend.point())).income(money(income.point())).net(money(net.point()))
                 .projected(true)
+                .range(new MonthlyTrendPoint.Range(
+                    ForecastInterval.of(spend), ForecastInterval.of(income), ForecastInterval.of(net)))
                 .build());
         }
-        return forecast;
+        return out;
+    }
+
+    private static BigDecimal money(double v) {
+        return BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal coalesce(BigDecimal v) {

@@ -1,5 +1,6 @@
 package com.flowsight.dto.analytics;
 
+import com.flowsight.ml.forecast.ForecastInterval;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,4 +15,8 @@ public class MonthlyTrendPoint {
     private BigDecimal income;
     private BigDecimal net;
     private boolean projected;   // true = forecast, rendered with dashed line on frontend
+    // prediction intervals of a projected point; null on actual months
+    private Range range;
+
+    public record Range(ForecastInterval spend, ForecastInterval income, ForecastInterval net) {}
 }
