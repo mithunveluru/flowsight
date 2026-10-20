@@ -143,6 +143,8 @@ public class MerchantRuleService {
                 tx.setCategory(rule.getCategory());
                 tx.setConfidenceScore(BigDecimal.ONE);
                 tx.setCategorySource(CategorySource.USER);
+                tx.setCategoryModelVersion(null);
+                tx.setCategoryAlternatives(null);
                 tx.setReviewed(true);
             }
         }

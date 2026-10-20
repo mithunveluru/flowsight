@@ -127,6 +127,7 @@ class MerchantRuleIntegrationTest {
         Transaction applied = transactionRepository.findById(second.getId()).orElseThrow();
         assertThat(applied.getCategory()).isEqualTo(TransactionCategory.FOOD_DINING);
         assertThat(applied.getCategorySource()).isEqualTo(CategorySource.USER);
+        assertThat(applied.getCategoryModelVersion()).isNull();
     }
 
     @Test
