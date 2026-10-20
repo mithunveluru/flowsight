@@ -534,6 +534,8 @@ class ReceiptConfirmTest {
         Receipt saved = lastSavedReceipt();
         assertThat(saved.getFilePath()).isEqualTo("user/receipt.jpg");
         assertThat(saved.getImageExpiresAt()).isEqualTo(expiry);
+        assertThat(response.isImageAvailable()).isTrue();
+        assertThat(response.getImageExpiresAt()).isEqualTo(expiry);
     }
 
     @Test
@@ -544,6 +546,7 @@ class ReceiptConfirmTest {
         ReceiptResponse response = service.processReceipt(pngUpload(), testUser);
 
         assertThat(response.getStatus()).isEqualTo(ReceiptStatus.COMPLETED);
+        assertThat(response.isImageAvailable()).isFalse();
         assertThat(lastSavedReceipt().getFilePath()).isNull();
         verify(images).unstage(STAGED);
     }
@@ -567,10 +570,11 @@ class ReceiptConfirmTest {
         testReceipt.setImageExpiresAt(draftExpiry);
         when(images.reviewedExpiry(eq(draftExpiry), any())).thenReturn(reviewed);
 
-        service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
+        ReceiptResponse response = service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
 
         assertThat(testReceipt.getImageExpiresAt()).isEqualTo(reviewed);
         assertThat(testReceipt.getFilePath()).isEqualTo("user/receipt.jpg");
+        assertThat(response.isImageAvailable()).isTrue();
     }
 
     @Test
@@ -580,10 +584,11 @@ class ReceiptConfirmTest {
         testReceipt.setImageExpiresAt(deletedAt);
         testReceipt.setImageDeletedAt(deletedAt);
 
-        service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
+        ReceiptResponse response = service.confirmReceipt(testReceipt.getId(), validRequest(), testUser);
 
         verify(images, never()).reviewedExpiry(any(), any());
         assertThat(testReceipt.getImageExpiresAt()).isEqualTo(deletedAt);
+        assertThat(response.isImageAvailable()).isFalse();
     }
 
     @Test

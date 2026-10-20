@@ -29,6 +29,8 @@ import java.util.UUID;
 @Slf4j
 public class ReceiptImageService {
 
+    public static final String CONTENT_TYPE = "image/jpeg";
+
     private static final List<String> OCR_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp", "tiff", "bmp");
     private static final int PURGE_BATCH = 500;
 
@@ -72,6 +74,15 @@ public class ReceiptImageService {
             return Optional.of(key);
         } catch (IOException | RuntimeException e) {
             log.warn("Receipt {} image not kept: {}", receiptId, e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
+    public Optional<byte[]> read(String key) {
+        try {
+            return store.get(key);
+        } catch (IOException | RuntimeException e) {
+            log.warn("Could not read a receipt image: {}", e.getClass().getSimpleName());
             return Optional.empty();
         }
     }

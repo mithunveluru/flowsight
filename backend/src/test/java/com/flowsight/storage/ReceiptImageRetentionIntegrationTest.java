@@ -31,7 +31,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
-// V21 against Postgres and the local disk store: retention timestamps and the cleanup job.
+// V21 against Postgres and the local disk store: retention timestamps, the cleanup job, and the
+// user-scoped image read behind GET /api/v1/receipts/{id}/image.
 @SpringBootTest
 @ActiveProfiles("test")
 class ReceiptImageRetentionIntegrationTest {
@@ -96,16 +97,46 @@ class ReceiptImageRetentionIntegrationTest {
     }
 
     @Test
-    void confirmShortensRetention_andKeepsTheImageUntilThen() throws IOException {
+    void confirmShortensRetention_andTheImageStaysViewableUntilThen() throws IOException {
         Receipt receipt = receiptWithImage(Instant.now().plus(Duration.ofDays(7)));
 
-        receiptService.confirmReceipt(receipt.getId(), confirmRequest(), user);
+        var response = receiptService.confirmReceipt(receipt.getId(), confirmRequest(), user);
 
         Instant expected = Instant.now().plus(Duration.ofHours(24));
+        assertThat(response.isImageAvailable()).isTrue();
+        assertThat(response.getImageExpiresAt()).isCloseTo(expected, within(Duration.ofMinutes(1)));
         assertThat(receiptRepository.findById(receipt.getId()).orElseThrow().getImageExpiresAt())
             .isCloseTo(expected, within(Duration.ofMinutes(1)));
+        assertThat(receiptService.findImage(receipt.getId(), user.getId()).orElseThrow()).isEqualTo(IMAGE);
+    }
+
+    @Test
+    void imageIsScopedToItsOwner() throws IOException {
+        Receipt receipt = receiptWithImage(Instant.now().plus(Duration.ofDays(7)));
+        User other = newUser();
+        try {
+            assertThat(receiptService.findImage(receipt.getId(), user.getId()).orElseThrow()).isEqualTo(IMAGE);
+            assertThat(receiptService.findImage(receipt.getId(), other.getId())).isEmpty();
+        } finally {
+            userRepository.deleteById(other.getId());
+        }
+    }
+
+    @Test
+    void expiredDeletedOrLostImages_areNotFound() throws IOException {
+        Receipt purged = receiptWithImage(Instant.now().minusSeconds(1));
         images.purgeExpired(Instant.now());
-        assertThat(store.get(receipt.getFilePath()).orElseThrow()).isEqualTo(IMAGE);
+        Receipt expiredNotYetPurged = receiptWithImage(Instant.now().minusSeconds(1));
+        // Render's disk does not survive a redeploy; the row still says the image is there
+        Receipt lostWithTheDisk = receiptWithImage(Instant.now().plus(Duration.ofDays(1)));
+        store.delete(lostWithTheDisk.getFilePath());
+
+        for (Receipt r : new Receipt[]{purged, expiredNotYetPurged, lostWithTheDisk}) {
+            assertThat(receiptService.findImage(r.getId(), user.getId())).isEmpty();
+        }
+        assertThat(receiptService.getById(purged.getId(), user.getId()).isImageAvailable()).isFalse();
+        assertThat(receiptService.getById(expiredNotYetPurged.getId(), user.getId()).isImageAvailable()).isFalse();
+        assertThat(receiptService.getById(lostWithTheDisk.getId(), user.getId()).isImageAvailable()).isTrue();
     }
 
     @Test

@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -64,6 +66,7 @@ public class ReceiptService {
     private static final BigDecimal FULL_CONFIDENCE = BigDecimal.ONE.setScale(4, RoundingMode.UNNECESSARY);
     // a category from the user's own rule: their earlier choice, but not reviewed for this row
     private static final BigDecimal RULE_CONFIDENCE = new BigDecimal("0.9500");
+    private static final int IMAGE_VIEWS_PER_MINUTE = 60;
 
     private final ReceiptRepository    receiptRepository;
     private final TransactionRepository transactionRepository;
@@ -261,6 +264,14 @@ public class ReceiptService {
             .orElseThrow(() -> new ResourceNotFoundException("Receipt", id));
         images.delete(receipt.getFilePath());
         receiptRepository.delete(receipt);
+    }
+
+    // The review copy; empty when the receipt is not the user's or its image has expired or was lost.
+    public Optional<byte[]> findImage(UUID id, UUID userId) {
+        rateLimiter.check("receipt-image:" + userId, IMAGE_VIEWS_PER_MINUTE, Duration.ofMinutes(1));
+        return receiptRepository.findByIdAndUserId(id, userId)
+            .filter(receipt -> ReceiptImageService.isAvailable(receipt, Instant.now()))
+            .flatMap(receipt -> images.read(receipt.getFilePath()));
     }
 
     // Returns the extraction as the review screen shows it, with the merchant resolved.
@@ -513,6 +524,8 @@ public class ReceiptService {
             .requiresConfirmation(requiresConfirmation)
             .currency(receipt.getCurrency())
             .decision(extraction != null ? extraction.getDecision() : null)
+            .imageAvailable(ReceiptImageService.isAvailable(receipt, Instant.now()))
+            .imageExpiresAt(receipt.getImageExpiresAt())
             .createdAt(receipt.getCreatedAt())
             .build();
     }

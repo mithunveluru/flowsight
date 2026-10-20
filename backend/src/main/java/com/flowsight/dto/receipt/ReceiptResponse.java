@@ -29,5 +29,8 @@ public class ReceiptResponse {
     private String currency;
     // worst per-field decision of the extraction; see extraction.fields
     private ReceiptDecision decision;
+    // GET /api/v1/receipts/{id}/image serves the review copy while this is true
+    private boolean imageAvailable;
+    private Instant imageExpiresAt;
     private Instant createdAt;
 }

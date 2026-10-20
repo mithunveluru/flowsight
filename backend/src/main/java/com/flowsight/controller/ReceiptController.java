@@ -4,11 +4,13 @@ import com.flowsight.dto.receipt.ReceiptConfirmRequest;
 import com.flowsight.dto.receipt.ReceiptResponse;
 import com.flowsight.entity.User;
 import com.flowsight.service.ReceiptService;
+import com.flowsight.storage.ReceiptImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,21 @@ public class ReceiptController {
         @AuthenticationPrincipal User user
     ) {
         return ResponseEntity.ok(receiptService.getById(id, user.getId()));
+    }
+
+    // Receipt images are personal data: no shared or browser cache may keep a copy. A bodiless 404
+    // (foreign, expired or lost) does not depend on what the client accepts.
+    @GetMapping("/{id}/image")
+    public ResponseEntity<byte[]> image(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal User user
+    ) {
+        return receiptService.findImage(id, user.getId())
+            .map(bytes -> ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(ReceiptImageService.CONTENT_TYPE))
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .body(bytes))
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/confirm")
