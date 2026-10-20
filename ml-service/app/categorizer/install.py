@@ -27,7 +27,8 @@ def registry_metrics(meta: dict) -> dict[str, float]:
     return {f"cv_{k}": float(v) for k, v in meta["validation"]["chosen"].items()}
 
 
-def install(model_dir: Path, status: str = "shadow", source: Path = BUNDLED) -> ModelVersion:
+def install(model_dir: Path, status: str = "shadow", source: Path = BUNDLED,
+            registry: ModelRegistry | None = None) -> ModelVersion:
     meta = json.loads((source / META).read_text(encoding="utf-8"))
     version = meta["version"]
     target = Path(model_dir) / CAPABILITY / version
@@ -39,7 +40,7 @@ def install(model_dir: Path, status: str = "shadow", source: Path = BUNDLED) -> 
         for name in (WEIGHTS, META):
             shutil.copyfile(source / name, target / name)
 
-    registry = ModelRegistry(model_dir)
+    registry = registry or ModelRegistry(model_dir)
     if any(m.version == version for m in registry.list(CAPABILITY)):
         return registry.set_status(CAPABILITY, version, status)
     return registry.register(CAPABILITY, version, training_data=meta["training_data"],

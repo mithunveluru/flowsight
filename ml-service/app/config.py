@@ -29,6 +29,10 @@ class Settings:
             env=env,
         )
 
+    @property
+    def bootstrap(self) -> bool:
+        return self.env.get("ML_BOOTSTRAP", "true").strip().lower() in _TRUE
+
     def enabled(self, capability: str) -> bool:
         return _flag(self.env, env_prefix(capability) + "_ENABLED")
 

@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.capability import Capability, Predictor
 from app.categorizer.model import CategoryModel
-from app.registry import ModelVersion
+from app.registry import ModelRegistry, ModelVersion
 
 MAX_ITEMS = 100
 
@@ -56,6 +56,10 @@ class Categorizer(Capability):
             return CategorizeOutput.model_validate({"predictions": rows})
 
         return predict
+
+    def bootstrap(self, registry: ModelRegistry) -> ModelVersion:
+        from app.categorizer.install import install
+        return install(registry.model_dir, status="active", registry=registry)
 
     def input_summary(self, payload: CategorizeInput) -> dict:
         return {"items": len(payload.items),

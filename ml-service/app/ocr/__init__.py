@@ -19,10 +19,11 @@ from pydantic import BaseModel, Field
 from app.capability import Capability, Predictor
 from app.ocr import pipeline, vision
 from app.ocr.tesseract import Runner, make_runner
-from app.registry import ModelVersion
+from app.registry import ModelRegistry, ModelVersion
 
 # 5 MB upload cap in the backend, base64-encoded
 MAX_IMAGE_BASE64 = 7_000_000
+BASELINE_VERSION = "v1"
 
 
 class OcrInput(BaseModel):
@@ -85,6 +86,13 @@ class OcrCapability(Capability):
         self._env = env
         self._runner = runner
         self._transport = transport
+
+    def bootstrap(self, registry: ModelRegistry) -> ModelVersion:
+        target = registry.model_dir / self.name / BASELINE_VERSION
+        target.mkdir(parents=True, exist_ok=True)
+        (target / "config.json").write_text(json.dumps({"tesseract_languages": "eng"}) + "\n")
+        return registry.register(self.name, BASELINE_VERSION,
+                                 training_data={"engine": "tesseract", "languages": "eng"}, status="active")
 
     def load(self, model: ModelVersion, artifact_dir: Path) -> Predictor:
         env = dict(os.environ if self._env is None else self._env)

@@ -12,7 +12,7 @@ from typing import Any, Callable, ClassVar
 
 from pydantic import BaseModel
 
-from app.registry import ModelVersion
+from app.registry import ModelRegistry, ModelVersion
 
 Predictor = Callable[[BaseModel], BaseModel]
 
@@ -35,4 +35,9 @@ class Capability(ABC):
         return {}
 
     def confidence(self, result: BaseModel) -> float | None:
+        return None
+
+    def bootstrap(self, registry: ModelRegistry) -> ModelVersion | None:
+        """Install the baseline that ships in the image, for a registry that has never seen this
+        capability. Returns the registered version, or None when there is nothing to install."""
         return None

@@ -57,6 +57,26 @@ def _predict_route(runtime: Runtime, capability: Capability):
     return predict
 
 
+def bootstrap(capabilities: list[Capability], registry: ModelRegistry) -> dict[str, str]:
+    """Give every capability the registry has never seen its bundled baseline, so a fresh model
+    volume serves models immediately. Capabilities an operator already registered, retired or
+    shadowed are left alone."""
+    outcome: dict[str, str] = {}
+    for capability in capabilities:
+        if registry.list(capability.name):
+            continue
+        try:
+            installed = capability.bootstrap(registry)
+        except Exception as exc:
+            log.exception("bootstrap failed for %s", capability.name)
+            outcome[capability.name] = f"failed: {type(exc).__name__}"
+            continue
+        if installed is not None:
+            log.info("bootstrapped %s %s as %s", capability.name, installed.version, installed.status)
+            outcome[capability.name] = f"installed {installed.version}"
+    return outcome
+
+
 def create_app(
     settings: Settings | None = None,
     capabilities: list[Capability] | None = None,
@@ -66,6 +86,8 @@ def create_app(
     capabilities = load_installed() if capabilities is None else capabilities
     registry = ModelRegistry(settings.model_dir)
     runtime = Runtime(capabilities, registry, settings, PredictionLog(settings.service_token, prediction_sink))
+
+    bootstrapped = bootstrap(capabilities, registry) if settings.bootstrap else {}
 
     if not settings.service_token:
         log.warning("ML_SERVICE_TOKEN is not set; every endpoint except /health will reject requests")
@@ -91,6 +113,7 @@ def create_app(
                     "shadow_mode": settings.shadow(name),
                     "active": getattr(registry.find(name, "active"), "version", None),
                     "shadow": getattr(registry.find(name, "shadow"), "version", None),
+                    **({"bootstrap": bootstrapped[name]} if name in bootstrapped else {}),
                 }
                 for name in runtime.capabilities
             ],
