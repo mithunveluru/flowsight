@@ -1,0 +1,140 @@
+{
+  "count": 26373,
+  "info": {
+    "cov80": 0.7919,
+    "cov95": 0.9416,
+    "methods": {
+      "forecast-remaining": 25083,
+      "month-to-date-pace": 1135,
+      "none": 155
+    },
+    "n": 26373,
+    "origins": 2253,
+    "users": 160
+  },
+  "metrics": {
+    "cov80_gap": 0.0081,
+    "cov95_gap": 0.0084,
+    "mape": 0.1585,
+    "net_smae": null,
+    "wape": 0.21
+  },
+  "slices": {
+    "h=0": {
+      "cov80": 0.7919,
+      "cov80_gap": 0.0081,
+      "cov95": 0.9416,
+      "cov95_gap": 0.0084,
+      "mape": 0.1585,
+      "n": 26373,
+      "net_smae": null,
+      "wape": 0.21
+    },
+    "history=0": {
+      "cov80": 0.8524,
+      "cov80_gap": 0.0524,
+      "cov95": 0.8849,
+      "cov95_gap": 0.0651,
+      "mape": 0.4002,
+      "n": 1260,
+      "net_smae": null,
+      "wape": 0.5251
+    },
+    "history=1-3": {
+      "cov80": 0.7944,
+      "cov80_gap": 0.0056,
+      "cov95": 0.9622,
+      "cov95_gap": 0.0122,
+      "mape": 0.1917,
+      "n": 4051,
+      "net_smae": null,
+      "wape": 0.2358
+    },
+    "history=12+": {
+      "cov80": 0.7873,
+      "cov80_gap": 0.0127,
+      "cov95": 0.9384,
+      "cov95_gap": 0.0116,
+      "mape": 0.1186,
+      "n": 11739,
+      "net_smae": null,
+      "wape": 0.1726
+    },
+    "history=4-11": {
+      "cov80": 0.7884,
+      "cov80_gap": 0.0116,
+      "cov95": 0.9442,
+      "cov95_gap": 0.0058,
+      "mape": 0.1443,
+      "n": 9323,
+      "net_smae": null,
+      "wape": 0.1943
+    },
+    "series=category": {
+      "cov80": 0.7847,
+      "cov80_gap": 0.0153,
+      "cov95": 0.9401,
+      "cov95_gap": 0.0099,
+      "mape": null,
+      "n": 24120,
+      "net_smae": null,
+      "wape": 0.2554
+    },
+    "series=spend": {
+      "cov80": 0.8686,
+      "cov80_gap": 0.0686,
+      "cov95": 0.9574,
+      "cov95_gap": 0.0074,
+      "mape": 0.1585,
+      "n": 2253,
+      "net_smae": null,
+      "wape": 0.1655
+    },
+    "tag=drift": {
+      "cov80": 0.7878,
+      "cov80_gap": 0.0122,
+      "cov95": 0.9405,
+      "cov95_gap": 0.0095,
+      "mape": 0.1585,
+      "n": 15168,
+      "net_smae": null,
+      "wape": 0.207
+    },
+    "tag=seasonal": {
+      "cov80": 0.802,
+      "cov80_gap": 0.002,
+      "cov95": 0.9401,
+      "cov95_gap": 0.0099,
+      "mape": 0.1734,
+      "n": 12909,
+      "net_smae": null,
+      "wape": 0.2232
+    },
+    "tag=shock": {
+      "cov80": 0.7853,
+      "cov80_gap": 0.0147,
+      "cov95": 0.9345,
+      "cov95_gap": 0.0155,
+      "mape": 0.197,
+      "n": 8001,
+      "net_smae": null,
+      "wape": 0.2539
+    },
+    "tag=volatile": {
+      "cov80": 0.8185,
+      "cov80_gap": 0.0185,
+      "cov95": 0.9474,
+      "cov95_gap": 0.0026,
+      "mape": 0.1606,
+      "n": 13011,
+      "net_smae": null,
+      "wape": 0.2064
+    }
+  },
+  "suite": "budget-pace",
+  "tolerance": {
+    "overall": 0.005,
+    "slice": 0.01
+  },
+  "truth_sha256": "a5bbdecfc0225c9197268181ba1c2cfab1eed5892a9a75175935461b37f26e4a"
+}

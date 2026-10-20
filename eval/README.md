@@ -45,6 +45,9 @@ for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml
 | `recurring-model` | the ml-service recurring-scorer artifact (`ml-service/app/recurring_scorer/artifact`, numpy only, via `recurring/predict_model.py`) on the requests `RecurringDetectionService.scorerRequest` builds, mapped by `fromScores`, then `LeakDetectionService.analyzeWithModel` with each user's personal baseline | same |
 | `forecast-current` | the trend forecast as `AnalyticsService` shipped it: mean of the last three trend points (current partial month included), per series | `forecast/generate.py`: 160 seeded synthetic users, rolling origins |
 | `budget-pace-current` | the month-end projection as `BudgetService` shipped it: spend so far * days in month / days elapsed | same |
+| `forecast` | `CashFlowForecaster`, the in-app forecast the backend serves when ml-service is off | same |
+| `forecast-ml` | the ml-service `forecaster` model (`ml-service/app/forecaster/model.py`, loaded by path) | same |
+| `budget-pace` | `BudgetPace`: spent so far plus the forecast's share of the month still ahead | same |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
 scorer stay the same.
@@ -111,6 +114,11 @@ have under five months of history, so every user also contributes short-history 
 - `net_smae`: absolute error of net cash flow over the month's income plus spend.
 - `cov80`, `cov95`: share of actuals inside the 80% / 95% prediction intervals; `cov80_gap` and
   `cov95_gap` are the distance to nominal (gated, lower is better). `n/a` without intervals.
+
+The interval priors are calibrated by `ml-service/app/forecaster/calibrate.py` on histories from the
+same generator with a different seed (`--users 400 --seed 7`), so coverage here is measured on
+held-out synthetic users, not on real ones. `run.sh` also fails when the backend's copy of the
+priors differs from ml-service's.
 
 Slices: history at the origin (`history=0`, `1-3`, `4-11`, `12+` complete months), series kind,
 horizon `h`, and user tags (`seasonal`, `shock`, `volatile`, `drift`).

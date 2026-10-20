@@ -166,10 +166,25 @@ if [ "$MODE" = tesseract ]; then
     --pred out/pred-insights-validator.jsonl --baseline baselines/insights-validator.json
   score intents --suite assistant-intents --cases insights/intents.csv \
     --pred out/pred-assistant-intents.jsonl --baseline baselines/assistant-intents.json
+  # the backend and ml-service must serve the same interval priors
+  if ! cmp -s "$ROOT/ml-service/app/forecaster/artifact/priors.json" \
+       "$ROOT/backend/src/main/resources/com/flowsight/ml/forecast/priors.json"; then
+    echo "FAIL: forecaster priors differ between ml-service and the backend" >&2
+    STATUS=1
+  fi
+  in_image -w /work/eval "$IMAGE" python3 forecast/predict_model.py \
+    --model /work/ml-service/app/forecaster/model.py --priors /work/ml-service/app/forecaster/artifact/priors.json \
+    --histories out/forecast/histories.jsonl --out out/pred-forecast-ml.jsonl
   for suite in forecast-current budget-pace-current; do
     score forecast --suite "$suite" --histories out/forecast/histories.jsonl \
       --pred "out/pred-$suite.jsonl" --baseline "baselines/$suite.json"
   done
+  score forecast --suite forecast --histories out/forecast/histories.jsonl --pred out/pred-forecast.jsonl \
+    --baseline baselines/forecast.json --reference baselines/forecast-current.json
+  score forecast --suite forecast-ml --histories out/forecast/histories.jsonl --pred out/pred-forecast-ml.jsonl \
+    --baseline baselines/forecast-ml.json --reference baselines/forecast.json
+  score forecast --suite budget-pace --histories out/forecast/histories.jsonl --pred out/pred-budget-pace.jsonl \
+    --baseline baselines/budget-pace.json --reference baselines/budget-pace-current.json
 fi
 
 echo "eval ($MODE) finished in $((SECONDS - START))s, exit $STATUS"

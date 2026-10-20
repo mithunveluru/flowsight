@@ -1,0 +1,185 @@
+{
+  "count": 92172,
+  "info": {
+    "cov80": 0.808,
+    "cov95": 0.9547,
+    "methods": {
+      "damped-trend": 6198,
+      "exponential-smoothing": 11118,
+      "income-minus-spend": 6759,
+      "month-to-date": 3867,
+      "recent-mean": 22419,
+      "recent-mean+month-to-date": 16476,
+      "recent-median": 18078,
+      "seasonal-deviation": 7257
+    },
+    "n": 92172,
+    "origins": 2253,
+    "users": 160
+  },
+  "metrics": {
+    "cov80_gap": 0.008,
+    "cov95_gap": 0.0047,
+    "mape": 0.7437,
+    "net_smae": 0.216,
+    "wape": 0.2815
+  },
+  "slices": {
+    "h=1": {
+      "cov80": 0.8111,
+      "cov80_gap": 0.0111,
+      "cov95": 0.9562,
+      "cov95_gap": 0.0062,
+      "mape": 0.6083,
+      "n": 30724,
+      "net_smae": 0.2121,
+      "wape": 0.2769
+    },
+    "h=2": {
+      "cov80": 0.8078,
+      "cov80_gap": 0.0078,
+      "cov95": 0.9549,
+      "cov95_gap": 0.0049,
+      "mape": 0.7897,
+      "n": 30724,
+      "net_smae": 0.2192,
+      "wape": 0.2836
+    },
+    "h=3": {
+      "cov80": 0.8049,
+      "cov80_gap": 0.0049,
+      "cov95": 0.953,
+      "cov95_gap": 0.003,
+      "mape": 0.8334,
+      "n": 30724,
+      "net_smae": 0.2168,
+      "wape": 0.2839
+    },
+    "history=0": {
+      "cov80": 0.7907,
+      "cov80_gap": 0.0093,
+      "cov95": 0.9427,
+      "cov95_gap": 0.0073,
+      "mape": 0.7595,
+      "n": 4329,
+      "net_smae": 0.3298,
+      "wape": 0.5682
+    },
+    "history=1-3": {
+      "cov80": 0.8062,
+      "cov80_gap": 0.0062,
+      "cov95": 0.9622,
+      "cov95_gap": 0.0122,
+      "mape": 0.9367,
+      "n": 14250,
+      "net_smae": 0.2747,
+      "wape": 0.3533
+    },
+    "history=12+": {
+      "cov80": 0.8085,
+      "cov80_gap": 0.0085,
+      "cov95": 0.9518,
+      "cov95_gap": 0.0018,
+      "mape": 0.89,
+      "n": 40953,
+      "net_smae": 0.1855,
+      "wape": 0.2316
+    },
+    "history=4-11": {
+      "cov80": 0.8104,
+      "cov80_gap": 0.0104,
+      "cov95": 0.9566,
+      "cov95_gap": 0.0066,
+      "mape": 0.4731,
+      "n": 32640,
+      "net_smae": 0.2059,
+      "wape": 0.2623
+    },
+    "series=category": {
+      "cov80": 0.8071,
+      "cov80_gap": 0.0071,
+      "cov95": 0.9552,
+      "cov95_gap": 0.0052,
+      "mape": null,
+      "n": 71895,
+      "net_smae": null,
+      "wape": 0.3043
+    },
+    "series=income": {
+      "cov80": 0.8208,
+      "cov80_gap": 0.0208,
+      "cov95": 0.9617,
+      "cov95_gap": 0.0117,
+      "mape": 1.2854,
+      "n": 6759,
+      "net_smae": null,
+      "wape": 0.2956
+    },
+    "series=net": {
+      "cov80": 0.8046,
+      "cov80_gap": 0.0046,
+      "cov95": 0.9524,
+      "cov95_gap": 0.0024,
+      "mape": null,
+      "n": 6759,
+      "net_smae": 0.216,
+      "wape": null
+    },
+    "series=spend": {
+      "cov80": 0.8072,
+      "cov80_gap": 0.0072,
+      "cov95": 0.9444,
+      "cov95_gap": 0.0056,
+      "mape": 0.2242,
+      "n": 6759,
+      "net_smae": null,
+      "wape": 0.2388
+    },
+    "tag=drift": {
+      "cov80": 0.8071,
+      "cov80_gap": 0.0071,
+      "cov95": 0.9548,
+      "cov95_gap": 0.0048,
+      "mape": 0.6575,
+      "n": 53046,
+      "net_smae": 0.204,
+      "wape": 0.2696
+    },
+    "tag=seasonal": {
+      "cov80": 0.7989,
+      "cov80_gap": 0.0011,
+      "cov95": 0.9491,
+      "cov95_gap": 0.0009,
+      "mape": 0.873,
+      "n": 44973,
+      "net_smae": 0.2407,
+      "wape": 0.3193
+    },
+    "tag=shock": {
+      "cov80": 0.7907,
+      "cov80_gap": 0.0093,
+      "cov95": 0.9447,
+      "cov95_gap": 0.0053,
+      "mape": 1.0884,
+      "n": 27963,
+      "net_smae": 0.2695,
+      "wape": 0.3606
+    },
+    "tag=volatile": {
+      "cov80": 0.7828,
+      "cov80_gap": 0.0172,
+      "cov95": 0.9549,
+      "cov95_gap": 0.0049,
+      "mape": 1.2082,
+      "n": 45501,
+      "net_smae": 0.3076,
+      "wape": 0.3694
+    }
+  },
+  "suite": "forecast",
+  "tolerance": {
+    "overall": 0.005,
+    "slice": 0.01
+  },
+  "truth_sha256": "a5bbdecfc0225c9197268181ba1c2cfab1eed5892a9a75175935461b37f26e4a"
+}

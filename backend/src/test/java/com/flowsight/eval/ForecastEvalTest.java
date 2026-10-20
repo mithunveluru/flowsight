@@ -2,6 +2,14 @@ package com.flowsight.eval;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowsight.entity.TransactionCategory;
+import com.flowsight.entity.TransactionType;
+import com.flowsight.ml.forecast.BudgetPace;
+import com.flowsight.ml.forecast.CashFlowForecast;
+import com.flowsight.ml.forecast.CashFlowForecaster;
+import com.flowsight.ml.forecast.ForecastPriors;
+import com.flowsight.ml.forecast.MonthlyHistory;
+import com.flowsight.ml.forecast.SeriesForecast;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
@@ -24,7 +32,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Rolling-origin backtest of the cash-flow forecasts on the synthetic histories from
  * eval/forecast/generate.py. At every origin ("today") only transactions up to that day are
  * visible; the forecasts for the next three months and the month-end budget pace are written
- * as JSONL for score.py. Skipped unless -Deval.forecast.input is set. Driven by eval/run.sh.
+ * as JSONL for score.py, once as the code shipped (frozen copies below) and once through
+ * CashFlowForecaster / BudgetPace. Skipped unless -Deval.forecast.input is set. Driven by eval/run.sh.
  */
 class ForecastEvalTest {
 
@@ -45,6 +54,9 @@ class ForecastEvalTest {
 
         List<Map<String, Object>> trend = new ArrayList<>();
         List<Map<String, Object>> pace = new ArrayList<>();
+        List<Map<String, Object>> forecast = new ArrayList<>();
+        List<Map<String, Object>> forecastPace = new ArrayList<>();
+        ForecastPriors priors = ForecastPriors.bundled();
         int origins = 0;
         try (BufferedReader in = Files.newBufferedReader(Path.of(input), StandardCharsets.UTF_8)) {
             String line;
@@ -60,12 +72,18 @@ class ForecastEvalTest {
                     Origin origin = origin(user.get("user").asText(), LocalDate.parse(o.asText()), all);
                     trend.addAll(currentTrendForecast(origin));
                     pace.addAll(currentBudgetPace(origin));
+                    MonthlyHistory h = history(origin);
+                    CashFlowForecast f = CashFlowForecaster.forecast(h, HORIZON + 1, priors);
+                    forecast.addAll(forecastRows(origin, f));
+                    forecastPace.addAll(paceRows(origin, h, f));
                     origins++;
                 }
             }
         }
         write(outDir.resolve("pred-forecast-current.jsonl"), trend);
         write(outDir.resolve("pred-budget-pace-current.jsonl"), pace);
+        write(outDir.resolve("pred-forecast.jsonl"), forecast);
+        write(outDir.resolve("pred-budget-pace.jsonl"), forecastPace);
         System.out.printf("forecast eval: %d origins -> %d trend rows, %d pace rows in %s%n",
             origins, trend.size(), pace.size(), outDir);
     }
@@ -140,6 +158,62 @@ class ForecastEvalTest {
             rows.add(row(o, "cat:" + c, now, 0, toDate.getOrDefault("cat:" + c, 0.0) * factor, "linear-pace"));
         }
         return rows;
+    }
+
+    // the in-app path as ForecastService builds it, without the database
+    static MonthlyHistory history(Origin o) {
+        List<MonthlyHistory.Txn> txns = o.visible().stream()
+            .map(t -> new MonthlyHistory.Txn(t.date(), t.credit() ? TransactionType.CREDIT : TransactionType.DEBIT,
+                TransactionCategory.valueOf(t.category()), t.amount()))
+            .toList();
+        return MonthlyHistory.of(txns, o.visible().isEmpty() ? null : o.visible().get(0).date(), o.today());
+    }
+
+    static List<Map<String, Object>> forecastRows(Origin o, CashFlowForecast f) {
+        YearMonth now = YearMonth.from(o.today());
+        List<SeriesForecast> all = new ArrayList<>(List.of(f.income(), f.spend(), f.net()));
+        all.addAll(f.categories());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int h = 1; h <= HORIZON; h++) {
+            for (SeriesForecast s : all) {
+                SeriesForecast.Step st = s.step(h + 1);
+                String name = s.kind() == com.flowsight.ml.forecast.SeriesKind.CATEGORY ? "cat:" + s.name() : s.name();
+                Map<String, Object> r = row(o, name, now.plusMonths(h), h, st.point(), s.method().id());
+                r.put("n", s.dataMonths());
+                withInterval(r, st.lower80(), st.upper80(), st.lower95(), st.upper95());
+                rows.add(r);
+            }
+        }
+        return rows;
+    }
+
+    // same series as currentBudgetPace, so both suites score the same rows
+    static List<Map<String, Object>> paceRows(Origin o, MonthlyHistory h, CashFlowForecast f) {
+        YearMonth now = YearMonth.from(o.today());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(paceRow(o, "spend", now, h.dataMonths(),
+            BudgetPace.project(f.spend(), h.spend(), h.spendToDate(), h.spendSameDays(), h.dayFraction())));
+        for (String c : o.categories()) {
+            TransactionCategory cat = TransactionCategory.valueOf(c);
+            rows.add(paceRow(o, "cat:" + c, now, h.dataMonths(), BudgetPace.project(f.category(c),
+                h.categories().getOrDefault(cat, new double[h.dataMonths()]), h.categoriesToDate().getOrDefault(cat, 0.0),
+                h.categoriesSameDays().getOrDefault(cat, 0.0), h.dayFraction())));
+        }
+        return rows;
+    }
+
+    static Map<String, Object> paceRow(Origin o, String series, YearMonth target, int n, BudgetPace.Projection p) {
+        Map<String, Object> r = row(o, series, target, 0, p.point(), p.method());
+        r.put("n", n);
+        withInterval(r, p.lower80(), p.upper80(), p.lower95(), p.upper95());
+        return r;
+    }
+
+    static void withInterval(Map<String, Object> r, double lo80, double hi80, double lo95, double hi95) {
+        r.put("lo80", Math.round(lo80 * 100) / 100.0);
+        r.put("hi80", Math.round(hi80 * 100) / 100.0);
+        r.put("lo95", Math.round(lo95 * 100) / 100.0);
+        r.put("hi95", Math.round(hi95 * 100) / 100.0);
     }
 
     static Map<String, Object> row(Origin o, String series, YearMonth target, int h, double point, String method) {

@@ -45,6 +45,9 @@ DEFAULT_TOLERANCE = {
     # forecasts are deterministic; slices are gated on an absolute drop, not a case count
     "forecast-current": {"overall": 0.005, "slice": 0.01},
     "budget-pace-current": {"overall": 0.005, "slice": 0.01},
+    "forecast": {"overall": 0.005, "slice": 0.01},
+    "forecast-ml": {"overall": 0.005, "slice": 0.01},
+    "budget-pace": {"overall": 0.005, "slice": 0.01},
 }
 
 
@@ -496,6 +499,9 @@ def cmd_intents(args):
 FORECAST_SUITES = {
     "forecast-current": "flat mean of the last three trend points (current month included), as AnalyticsService shipped",
     "budget-pace-current": "linear month-end pace spend * days / elapsed, as BudgetService shipped",
+    "forecast": "CashFlowForecaster, the in-app path (backtest-selected method, calibrated intervals)",
+    "forecast-ml": "ml-service forecaster model (app/forecaster/model.py) on the same origins",
+    "budget-pace": "BudgetPace: spent so far plus the forecast's share of the month still ahead",
 }
 FORECAST_METRICS = ("wape", "mape", "net_smae", "cov80_gap", "cov95_gap")
 
