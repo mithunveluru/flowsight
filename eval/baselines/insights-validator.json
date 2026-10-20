@@ -1,0 +1,111 @@
+{
+  "count": 271,
+  "info": {
+    "n": 271
+  },
+  "metrics": {
+    "accuracy": 1.0,
+    "false_accept_rate": 0.0,
+    "false_reject_rate": 0.0
+  },
+  "slices": {
+    "variant=g_count": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_date_iso": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_date_long": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_exact": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_indian": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_lakh": {
+      "accuracy": 1.0,
+      "n": 7
+    },
+    "variant=g_month_year": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_no_numbers": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_percent": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_percent_exact": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_plain": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_rounded": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_text_fact": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=g_thousands": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_annualized": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_count": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_date": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_month_year": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_percent": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_perturbed": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_sum": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_thousands": {
+      "accuracy": 1.0,
+      "n": 12
+    },
+    "variant=r_words": {
+      "accuracy": 1.0,
+      "n": 12
+    }
+  },
+  "suite": "insights-validator",
+  "tolerance": {
+    "overall": 0.0,
+    "slice_items": 0
+  },
+  "truth_sha256": "2dfc7108e59bc018d5f10077ce4a2ea2b40f7f221a6ecc1fc7a35a8ebb2d9952"
+}

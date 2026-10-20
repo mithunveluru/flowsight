@@ -2,7 +2,8 @@
 # Usage: eval/run.sh [--mode tesseract|llm|ml-service] [--update-baseline]
 #
 # tesseract (default): offline; scorer tests, receipt OCR via Tesseract, categorization, merchants,
-#             recurring payments and leaks.
+#             recurring payments and leaks, the insights grounding validator and the assistant's
+#             intent matcher.
 # llm:        receipt OCR through the receipt-ocr service exactly as the backend calls it
 #             (needs RECEIPT_OCR_URL, default http://127.0.0.1:8001).
 # ml-service: receipt OCR through ml-service's ocr capability (needs ML_SERVICE_URL and
@@ -86,7 +87,11 @@ MVN_PROPS=(-Deval.input=/work/eval/out/manifest.jsonl -Deval.output=/work/eval/o
 TESTS=ReceiptEvalTest
 DOCKER_ENV=(-e GROQ_API_KEY=)
 if [ "$MODE" = tesseract ]; then
-  TESTS="ReceiptEvalTest,TextEvalTest,RecurringEvalTest"
+  TESTS="ReceiptEvalTest,TextEvalTest,RecurringEvalTest,InsightsEvalTest"
+  MVN_PROPS+=(-Deval.insights.validator=/work/eval/insights/validator_cases.jsonl
+              -Deval.insights.validatorOutput=/work/eval/out/pred-insights-validator.jsonl
+              -Deval.insights.intents=/work/eval/insights/intents.csv
+              -Deval.insights.intentsOutput=/work/eval/out/pred-assistant-intents.jsonl)
   MVN_PROPS+=(-Deval.categorization.input=/work/eval/categorization/cases.csv
               -Deval.categorization.output=/work/eval/out/pred-categorization.jsonl
               -Deval.categorization.modelInput=/work/eval/out/categorization-model-input.jsonl
@@ -153,6 +158,10 @@ if [ "$MODE" = tesseract ]; then
     --pred out/pred-recurring-rules.jsonl --baseline baselines/recurring-rules.json
   score recurring --suite recurring-model --cases out/recurring/cases.jsonl \
     --pred out/pred-recurring-model.jsonl --baseline baselines/recurring-model.json
+  score validator --suite insights-validator --cases insights/validator_cases.jsonl \
+    --pred out/pred-insights-validator.jsonl --baseline baselines/insights-validator.json
+  score intents --suite assistant-intents --cases insights/intents.csv \
+    --pred out/pred-assistant-intents.jsonl --baseline baselines/assistant-intents.json
 fi
 
 echo "eval ($MODE) finished in $((SECONDS - START))s, exit $STATUS"

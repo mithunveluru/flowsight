@@ -5,6 +5,8 @@
   score.py categorization --suite S --cases C --pred P --baseline B [--update-baseline]
   score.py merchants      --suite S --cases C --pred P --baseline B [--update-baseline]
   score.py recurring      --suite S --cases C --pred P --baseline B [--update-baseline]
+  score.py validator      --suite S --cases C --pred P --baseline B [--update-baseline]
+  score.py intents        --suite S --cases C --pred P --baseline B [--update-baseline]
 
 Exit status: 0 ok, 1 regression against the baseline, 2 baseline missing or stale.
 """
@@ -36,6 +38,9 @@ DEFAULT_TOLERANCE = {
     "merchants": {"overall": 0.01, "slice_items": 1},
     "recurring-rules": {"overall": 0.01, "slice_items": 1},
     "recurring-model": {"overall": 0.01, "slice_items": 1},
+    # both are pure functions of committed inputs: any change is a real change
+    "insights-validator": {"overall": 0.0, "slice_items": 0},
+    "assistant-intents": {"overall": 0.0, "slice_items": 0},
 }
 
 
@@ -415,6 +420,76 @@ def cmd_recurring(args):
     return finish(args, current)
 
 
+# ---------------------------------------------------------------- insights
+
+REFUSALS = {"WRITE_REQUEST", "OTHER_USERS", "UNSUPPORTED"}
+
+
+def score_validator(cases, preds):
+    """accuracy over all cases; false_accept = invented values let through; false_reject = grounded text refused."""
+    rows = []
+    for c in cases:
+        accepted = bool(preds.get(c["id"], {}).get("grounded", False))
+        rows.append({"variant": c["variant"], "expected": c["expected"], "correct": accepted == (c["expected"] == "accept"),
+                     "accepted": accepted})
+    rejects = [r for r in rows if r["expected"] == "reject"]
+    accepts = [r for r in rows if r["expected"] == "accept"]
+    metrics = {"accuracy": rate(r["correct"] for r in rows),
+               "false_accept_rate": rate(r["accepted"] for r in rejects),
+               "false_reject_rate": rate(not r["accepted"] for r in accepts)}
+    by_variant = defaultdict(list)
+    for r in rows:
+        by_variant[f"variant={r['variant']}"].append(r)
+    slices = {k: {"n": len(v), "accuracy": rate(r["correct"] for r in v)} for k, v in sorted(by_variant.items())}
+    return metrics, slices
+
+
+def score_intents(cases, preds):
+    rows = []
+    for c in cases:
+        p = preds.get(c["id"], {})
+        rows.append({"intent": c["intent"], "intent_ok": p.get("intent") == c["intent"],
+                     "period_ok": p.get("period") == c["period"],
+                     "category_ok": (p.get("category") or "") == (c["category"] or ""),
+                     "refused": p.get("intent") in REFUSALS})
+    refusals = [r for r in rows if r["intent"] in REFUSALS]
+    answerable = [r for r in rows if r["intent"] not in REFUSALS]
+    metrics = {"intent_accuracy": rate(r["intent_ok"] for r in rows),
+               "period_accuracy": rate(r["period_ok"] for r in rows),
+               "category_accuracy": rate(r["category_ok"] for r in rows),
+               "refusal_recall": rate(r["refused"] for r in refusals),
+               "answerable_recall": rate(not r["refused"] for r in answerable)}
+    by_intent = defaultdict(list)
+    for r in rows:
+        by_intent[f"intent={r['intent']}"].append(r)
+    slices = {k: {"n": len(v), "intent_accuracy": rate(r["intent_ok"] for r in v)} for k, v in sorted(by_intent.items())}
+    return metrics, slices
+
+
+def cmd_validator(args):
+    cases = read_jsonl(args.cases)
+    preds = {p["id"]: p for p in read_jsonl(args.pred)}
+    metrics, slices = score_validator(cases, preds)
+    current = {"suite": args.suite, "truth_sha256": sha256(args.cases), "count": len(cases), "metrics": metrics,
+               "slices": slices, "slice_gated": ["accuracy"], "info": {"n": len(cases)}}
+    print(f"\n== {args.suite}: GroundingValidator on seeded grounded / invented-number sentences ==")
+    print(format_table([{"set": "all", "n": len(cases), **metrics}], ["set", "n", *metrics]))
+    print(format_table([{"slice": k, **v} for k, v in slices.items()], ["slice", "n", "accuracy"]))
+    return finish(args, current)
+
+
+def cmd_intents(args):
+    cases = read_csv(args.cases)
+    preds = {p["id"]: p for p in read_jsonl(args.pred)}
+    metrics, slices = score_intents(cases, preds)
+    current = {"suite": args.suite, "truth_sha256": sha256(args.cases), "count": len(cases), "metrics": metrics,
+               "slices": slices, "slice_gated": ["intent_accuracy"], "info": {"n": len(cases)}}
+    print(f"\n== {args.suite}: IntentMatcher (the assistant's no-LLM path) ==")
+    print(format_table([{"set": "all", "n": len(cases), **metrics}], ["set", "n", *metrics]))
+    print(format_table([{"slice": k, **v} for k, v in slices.items()], ["slice", "n", "intent_accuracy"]))
+    return finish(args, current)
+
+
 # ---------------------------------------------------------------- baseline gate
 
 def finish(args, current):
@@ -460,7 +535,7 @@ def main(argv=None):
     m.add_argument("--private", required=True)
     m.add_argument("--out", required=True)
     m.add_argument("--synthetic-only", action="store_true")
-    for name in ("receipts", "categorization", "merchants", "recurring"):
+    for name in ("receipts", "categorization", "merchants", "recurring", "validator", "intents"):
         p = sub.add_parser(name)
         p.add_argument("--suite", required=True, choices=sorted(DEFAULT_TOLERANCE))
         p.add_argument("--pred", required=True)
@@ -473,7 +548,8 @@ def main(argv=None):
             p.add_argument("--cases", required=True)
     args = ap.parse_args(argv)
     return {"manifest": cmd_manifest, "receipts": cmd_receipts, "categorization": cmd_categorization,
-            "merchants": cmd_merchants, "recurring": cmd_recurring}[args.cmd](args)
+            "merchants": cmd_merchants, "recurring": cmd_recurring, "validator": cmd_validator,
+            "intents": cmd_intents}[args.cmd](args)
 
 
 if __name__ == "__main__":

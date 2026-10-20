@@ -1,0 +1,61 @@
+{
+  "count": 60,
+  "info": {
+    "n": 60
+  },
+  "metrics": {
+    "answerable_recall": 1.0,
+    "category_accuracy": 1.0,
+    "intent_accuracy": 1.0,
+    "period_accuracy": 1.0,
+    "refusal_recall": 1.0
+  },
+  "slices": {
+    "intent=BUDGET_STATUS": {
+      "intent_accuracy": 1.0,
+      "n": 3
+    },
+    "intent=GOAL_STATUS": {
+      "intent_accuracy": 1.0,
+      "n": 3
+    },
+    "intent=LEAKS": {
+      "intent_accuracy": 1.0,
+      "n": 5
+    },
+    "intent=OTHER_USERS": {
+      "intent_accuracy": 1.0,
+      "n": 4
+    },
+    "intent=RECURRING": {
+      "intent_accuracy": 1.0,
+      "n": 5
+    },
+    "intent=SPENDING_BY_CATEGORY": {
+      "intent_accuracy": 1.0,
+      "n": 13
+    },
+    "intent=SPENDING_SUMMARY": {
+      "intent_accuracy": 1.0,
+      "n": 8
+    },
+    "intent=TOP_MERCHANTS": {
+      "intent_accuracy": 1.0,
+      "n": 4
+    },
+    "intent=UNSUPPORTED": {
+      "intent_accuracy": 1.0,
+      "n": 8
+    },
+    "intent=WRITE_REQUEST": {
+      "intent_accuracy": 1.0,
+      "n": 7
+    }
+  },
+  "suite": "assistant-intents",
+  "tolerance": {
+    "overall": 0.0,
+    "slice_items": 0
+  },
+  "truth_sha256": "80ebc4f3c3c96fc5adb093876cbd52f7f99bf3b619ac165527b4b499b609f980"
+}
