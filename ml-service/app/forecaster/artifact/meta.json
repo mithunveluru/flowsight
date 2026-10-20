@@ -1,0 +1,10 @@
+{
+ "training_data": {
+  "errors": 305084,
+  "origins": 5613,
+  "sha256": "be73d5b96bd85d5a8479d55b5d853743c5db47934cb020c0062e2366f5dddf88",
+  "source": "eval/forecast/generate.py --users 400 --seed 7 (synthetic)",
+  "users": 400
+ },
+ "version": "priors-2026-10"
+}
