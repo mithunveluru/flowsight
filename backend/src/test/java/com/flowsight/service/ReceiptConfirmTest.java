@@ -530,6 +530,24 @@ class ReceiptConfirmTest {
             .thenReturn(new ReceiptExtractionService.Extraction("TESSERACT", null, result));
     }
 
+    @Test
+    void listMarksConfirmedReceiptsWithTheirTransaction() {
+        Receipt draft = Receipt.builder().id(UUID.randomUUID()).user(testUser).fileName("draft.jpg")
+            .status(ReceiptStatus.COMPLETED).build();
+        Transaction tx = Transaction.builder().id(UUID.randomUUID()).user(testUser).receipt(testReceipt)
+            .amount(new BigDecimal("12.50")).type(TransactionType.DEBIT).transactionDate(LocalDate.now())
+            .category(TransactionCategory.FOOD_DINING).build();
+        when(receiptRepository.findByUserIdOrderByCreatedAtDesc(eq(testUser.getId()), any()))
+            .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testReceipt, draft)));
+        when(transactionRepository.findByReceiptIdIn(any())).thenReturn(List.of(tx));
+
+        List<ReceiptResponse> page = service.list(testUser.getId(), org.springframework.data.domain.PageRequest.of(0, 20)).getContent();
+
+        assertThat(page.get(0).getTransaction()).isNotNull();
+        assertThat(page.get(0).getTransaction().getId()).isEqualTo(tx.getId());
+        assertThat(page.get(1).getTransaction()).isNull();
+    }
+
     private Receipt lastSavedReceipt() {
         var captor = org.mockito.ArgumentCaptor.forClass(Receipt.class);
         verify(receiptRepository, atLeastOnce()).save(captor.capture());

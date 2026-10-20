@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -224,10 +225,13 @@ public class ReceiptService {
         return v == null ? null : v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
+    // confirmed receipts carry their transaction, which is how clients tell drafts apart
     public Page<ReceiptResponse> list(UUID userId, Pageable pageable) {
-        return receiptRepository
-            .findByUserIdOrderByCreatedAtDesc(userId, pageable)
-            .map(r -> toResponse(r, null, null));
+        Page<Receipt> page = receiptRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        List<UUID> ids = page.getContent().stream().map(Receipt::getId).toList();
+        Map<UUID, Transaction> confirmed = ids.isEmpty() ? Map.of() : transactionRepository.findByReceiptIdIn(ids).stream()
+            .collect(Collectors.toMap(t -> t.getReceipt().getId(), t -> t, (first, second) -> first));
+        return page.map(r -> toResponse(r, reconstructExtraction(r), confirmed.get(r.getId())));
     }
 
     public ReceiptResponse getById(UUID id, UUID userId) {

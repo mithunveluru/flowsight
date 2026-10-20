@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,6 +57,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     long countByUserId(UUID userId);
 
     Optional<Transaction> findTopByReceiptId(UUID receiptId);
+
+    List<Transaction> findByReceiptIdIn(Collection<UUID> receiptIds);
 
     // Activity-bounds queries — used to direct the UI to non-empty date ranges
     // after an import lands in a month other than the current one.
