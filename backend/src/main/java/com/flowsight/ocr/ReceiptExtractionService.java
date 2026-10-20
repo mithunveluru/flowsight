@@ -33,10 +33,11 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Picks the OCR engine for one receipt image. ml-service (ML_OCR_ENABLED) answers first when it
- * is configured; otherwise the receipt-ocr vision service (RECEIPT_OCR_URL), checked against the
- * Tesseract pipeline; otherwise the Tesseract pipeline alone, which is what runs when nothing
- * else is deployed. Makes network calls and runs Tesseract: never call it inside a transaction.
+ * Picks the OCR engine for one receipt image, in this order: ml-service (ML_OCR_ENABLED), then the
+ * receipt-ocr vision service (RECEIPT_OCR_URL) checked against Tesseract, then the Tesseract
+ * pipeline alone, which is what runs when nothing else is deployed. Every engine tried and why it
+ * fell through is kept on the result as engineAttempts. Makes network calls and runs Tesseract:
+ * never call it inside a transaction.
  */
 @Service
 @RequiredArgsConstructor
@@ -59,13 +60,24 @@ public class ReceiptExtractionService {
     }
 
     public Extraction extract(Path image, String mimeType, PredictionContext context) {
+        List<String> attempts = new ArrayList<>();
+        Extraction chosen = choose(image, mimeType, context, attempts);
+        chosen.result().setEngineAttempts(List.copyOf(attempts));
+        if (attempts.size() > 1) log.info("receipt OCR fell through: {}", String.join(" -> ", attempts));
+        return chosen;
+    }
+
+    private Extraction choose(Path image, String mimeType, PredictionContext context, List<String> attempts) {
         if (mlClient.isActive(MlCapability.OCR)) {
-            Optional<Extraction> ml = fromMlService(image, mimeType, context);
+            Optional<Extraction> ml = fromMlService(image, mimeType, context, attempts);
             if (ml.isPresent()) return ml.get();
+        } else {
+            attempts.add(PROVIDER_ML + ": not enabled");
         }
-        Optional<ReceiptOcrResponse> llm = receiptOcrClient.extract(image);
-        if (llm.isPresent()) {
-            OcrExtractionResult fromLlm = ocrMapper.map(llm.get());
+        ReceiptOcrClientService.Call call = receiptOcrClient.call(image);
+        attempts.add(PROVIDER_LLM + ": " + call.outcome());
+        if (call.response().isPresent()) {
+            OcrExtractionResult fromLlm = ocrMapper.map(call.response().get());
             OcrExtractionResult fromTesseract = null;
             try {
                 fromTesseract = tesseract.extract(image);
@@ -74,25 +86,36 @@ public class ReceiptExtractionService {
             }
             return new Extraction(PROVIDER_LLM, null, crossCheck(fromLlm, fromTesseract));
         }
-        return new Extraction(PROVIDER_TESSERACT, null, tesseract.extract(image));
+        OcrExtractionResult result = tesseract.extract(image);
+        attempts.add(PROVIDER_TESSERACT + ": ok");
+        return new Extraction(PROVIDER_TESSERACT, null, result);
     }
 
     public static PredictionContext context(java.util.UUID userId, java.util.UUID receiptId) {
         return PredictionContext.of(userId, SubjectType.RECEIPT, receiptId);
     }
 
-    private Optional<Extraction> fromMlService(Path image, String mimeType, PredictionContext context) {
+    private Optional<Extraction> fromMlService(Path image, String mimeType, PredictionContext context,
+                                               List<String> attempts) {
         String encoded;
         try {
             encoded = Base64.getEncoder().encodeToString(Files.readAllBytes(image));
         } catch (IOException e) {
+            attempts.add(PROVIDER_ML + ": image unreadable");
             return Optional.empty();
         }
         MlPrediction<MlOcrResult> p = mlClient.predict(MlCapability.OCR, new MlOcrRequest(encoded, mimeType),
             MlOcrResult.class, context, () -> null);
-        if (!p.fromModel() || p.value() == null) return Optional.empty();
+        if (!p.fromModel() || p.value() == null) {
+            attempts.add(PROVIDER_ML + ": " + (p.outcome() == null ? "shadow only" : p.outcome().name()));
+            return Optional.empty();
+        }
         OcrExtractionResult mapped = fromMl(p.value());
-        if (mapped.getAmount() == null && mapped.getMerchant() == null) return Optional.empty();
+        if (mapped.getAmount() == null && mapped.getMerchant() == null) {
+            attempts.add(PROVIDER_ML + ": no merchant or total");
+            return Optional.empty();
+        }
+        attempts.add(PROVIDER_ML + ": ok");
         return Optional.of(new Extraction(PROVIDER_ML, p.modelVersion(), mapped));
     }
 

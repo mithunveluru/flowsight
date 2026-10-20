@@ -107,10 +107,13 @@ application:
     upload-dir: ${UPLOAD_DIR:/tmp/flowsight-receipts}
   groq:
     api-key: ${GROQ_API_KEY:}
-    # text model for merchant adjudication on low-confidence receipts (redacted OCR text only)
-    merchant-model: ${GROQ_MERCHANT_MODEL:llama-3.1-8b-instant}
+    # text models for merchant adjudication on low-confidence receipts (redacted OCR text only), in order
+    # of preference; the first one the key can use is called, checked against the provider's model list
+    merchant-model: ${GROQ_MERCHANT_MODEL:openai/gpt-oss-20b,llama-3.1-8b-instant}
   receipt-ocr:
     url: ${RECEIPT_OCR_URL:}
+    # after a 5xx or connection failure the service is skipped for this long
+    backoff: ${RECEIPT_OCR_BACKOFF:10m}
   ocr:
     # Tesseract language packs, e.g. eng+ara once tesseract-ocr-ara is installed in the image
     tesseract-languages: ${OCR_TESSERACT_LANGUAGES:eng}

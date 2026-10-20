@@ -224,6 +224,42 @@ class ReceiptOcrClientServiceTest {
         }
     }
 
+    @Test
+    void aFailingServiceIsSkippedForTheBackoff(@TempDir Path tempDir) throws Exception {
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+            new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        java.util.concurrent.atomic.AtomicInteger hits = new java.util.concurrent.atomic.AtomicInteger();
+        server.createContext("/ocr/", exchange -> {
+            hits.incrementAndGet();
+            exchange.getRequestBody().readAllBytes();
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            Path image = Files.write(tempDir.resolve("r.jpg"), new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+            java.util.concurrent.atomic.AtomicReference<java.time.Instant> now =
+                new java.util.concurrent.atomic.AtomicReference<>(java.time.Instant.parse("2026-10-20T00:00:00Z"));
+            java.time.Clock clock = new java.time.Clock() {
+                @Override public java.time.ZoneId getZone() { return java.time.ZoneOffset.UTC; }
+                @Override public java.time.Clock withZone(java.time.ZoneId zone) { return this; }
+                @Override public java.time.Instant instant() { return now.get(); }
+            };
+            ReceiptOcrClientService client = new ReceiptOcrClientService(
+                "http://127.0.0.1:" + server.getAddress().getPort(), java.time.Duration.ofMinutes(10), mapper, clock);
+
+            assertThat(client.call(image).outcome()).isEqualTo("HTTP 500");
+            assertThat(client.call(image).outcome()).isEqualTo("skipped after a recent failure");
+            assertThat(hits).hasValue(1);
+
+            now.set(now.get().plus(java.time.Duration.ofMinutes(11)));
+            assertThat(client.call(image).outcome()).isEqualTo("HTTP 500");
+            assertThat(hits).hasValue(2);
+        } finally {
+            server.stop(0);
+        }
+    }
+
     private ReceiptOcrClientService client() {
         return new ReceiptOcrClientService("", mapper);
     }

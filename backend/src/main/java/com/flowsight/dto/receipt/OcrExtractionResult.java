@@ -45,4 +45,6 @@ public class OcrExtractionResult {
     private Map<String, FieldAssessment> fields;
     // worst decision over fields
     private ReceiptDecision decision;
+    // engines tried in order, e.g. "ML_SERVICE: ERROR", "TESSERACT: ok"
+    private List<String> engineAttempts;
 }

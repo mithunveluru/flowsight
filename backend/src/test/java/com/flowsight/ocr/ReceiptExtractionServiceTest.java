@@ -8,6 +8,7 @@ import com.flowsight.dto.receipt.ReceiptDecision;
 import com.flowsight.dto.receipt.ReceiptOcrResponse;
 import com.flowsight.ml.MlCapability;
 import com.flowsight.ml.MlClient;
+import com.flowsight.ml.MlOutcome;
 import com.flowsight.ml.MlPrediction;
 import com.flowsight.ml.PredictionContext;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ class ReceiptExtractionServiceTest {
         Path img = Files.write(dir.resolve("r.jpg"), new byte[]{1});
         OcrExtractionResult tess = tesseractResult("36.19", ReceiptDecision.ACCEPT, "Total AED 36.19");
         when(mlClient.isActive(MlCapability.OCR)).thenReturn(false);
-        when(receiptOcr.extract(img)).thenReturn(Optional.empty());
+        when(receiptOcr.call(img)).thenReturn(ReceiptOcrClientService.Call.failed("not configured"));
         when(tesseract.extract(img)).thenReturn(tess);
 
         ReceiptExtractionService.Extraction e = service.extract(img, "image/jpeg", PredictionContext.NONE);
@@ -94,12 +95,16 @@ class ReceiptExtractionServiceTest {
     void mlServiceFailureFallsBackToTesseract(@TempDir Path dir) throws Exception {
         Path img = Files.write(dir.resolve("r.jpg"), new byte[]{1});
         when(mlClient.isActive(MlCapability.OCR)).thenReturn(true);
-        when(mlClient.predict(any(), any(), any(), any(), any())).thenReturn(new MlPrediction<>(null, MlPrediction.Source.RULES, null, null));
-        when(receiptOcr.extract(img)).thenReturn(Optional.empty());
+        when(mlClient.predict(any(), any(), any(), any(), any()))
+            .thenReturn(new MlPrediction<>(null, MlPrediction.Source.RULES, null, null, MlOutcome.REJECTED));
+        when(receiptOcr.call(img)).thenReturn(ReceiptOcrClientService.Call.failed("HTTP 500"));
         when(tesseract.extract(img)).thenReturn(tesseractResult("36.19", ReceiptDecision.ACCEPT, ""));
 
-        assertThat(service.extract(img, "image/jpeg", PredictionContext.NONE).provider())
-            .isEqualTo(ReceiptExtractionService.PROVIDER_TESSERACT);
+        ReceiptExtractionService.Extraction e = service.extract(img, "image/jpeg", PredictionContext.NONE);
+
+        assertThat(e.provider()).isEqualTo(ReceiptExtractionService.PROVIDER_TESSERACT);
+        assertThat(e.result().getEngineAttempts())
+            .containsExactly("ML_SERVICE: REJECTED", "RECEIPT_OCR_SERVICE: HTTP 500", "TESSERACT: ok");
     }
 
     @Test

@@ -64,13 +64,31 @@ class GroqAIProviderTest {
     @Test
     void buildRequestBody_producesValidJson() throws Exception {
         GroqAIProvider provider = new GroqAIProvider("dummy-key", mapper);
-        String body = provider.buildRequestBody("test message");
+        String body = provider.buildRequestBody("llama-3.1-8b-instant", "test message");
         var node = mapper.readTree(body);
-        assertThat(node.has("model")).isTrue();
+        assertThat(node.get("model").asText()).isEqualTo("llama-3.1-8b-instant");
         assertThat(node.has("messages")).isTrue();
         assertThat(node.at("/response_format/type").asText()).isEqualTo("json_object");
         assertThat(node.get("temperature").asInt()).isEqualTo(0);
         assertThat(node.get("max_tokens").asInt()).isEqualTo(150);
+        assertThat(node.has("reasoning_effort")).isFalse();
+    }
+
+    @Test
+    void reasoningModelsGetRoomToThinkBeforeAnswering() throws Exception {
+        GroqAIProvider provider = new GroqAIProvider("dummy-key", mapper);
+        var node = mapper.readTree(provider.buildRequestBody("openai/gpt-oss-20b", "test message"));
+        assertThat(node.get("reasoning_effort").asText()).isEqualTo("low");
+        assertThat(node.get("max_tokens").asInt()).isGreaterThan(150);
+    }
+
+    @Test
+    void modelListKeepsOnlyActiveIds() throws Exception {
+        GroqAIProvider provider = new GroqAIProvider("dummy-key", mapper);
+        String body = """
+            {"data":[{"id":"openai/gpt-oss-20b","active":true},{"id":"old-model","active":false},{"id":"whisper-large-v3"}]}
+            """;
+        assertThat(provider.parseModelIds(body)).containsExactlyInAnyOrder("openai/gpt-oss-20b", "whisper-large-v3");
     }
 
     // Response parsing

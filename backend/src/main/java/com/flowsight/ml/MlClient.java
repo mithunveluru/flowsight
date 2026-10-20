@@ -88,7 +88,7 @@ public class MlClient {
             record(capability, PredictionLogEntry.Mode.SERVE, attempt, context);
             return attempt.outcome() == MlOutcome.OK
                 ? MlPrediction.model(attempt.value(), attempt.modelVersion(), attempt.confidence())
-                : MlPrediction.rules(ruleBased.get());
+                : MlPrediction.rules(ruleBased.get(), attempt.outcome());
         }
 
         T rules = ruleBased.get();
