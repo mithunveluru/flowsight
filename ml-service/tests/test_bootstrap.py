@@ -6,6 +6,7 @@ from app.categorizer import CAPABILITY as CATEGORIZER
 from app.config import Settings
 from app.main import create_app
 from app.ocr import OcrCapability
+from app.recurring_scorer import CAPABILITY as RECURRING
 from app.registry import ModelRegistry
 from tests.conftest import AUTH, TOKEN
 from tests.echo import EchoCapability
@@ -38,6 +39,16 @@ def test_fresh_volume_serves_the_bundled_models(tmp_path: Path):
                json={"items": [{"description": "NETFLIX.COM subscription", "merchant": "Netflix"}]})
     assert r.status_code == 200
     assert r.json()["model_version"] == caps["categorizer"]["active"]
+
+
+def test_fresh_volume_serves_the_recurring_scorer(tmp_path: Path):
+    c = client(tmp_path, [RECURRING], ML_RECURRING_SCORER_ENABLED="true")
+    caps = health(c)
+    assert caps["recurring-scorer"]["active"] == "logreg-1"
+    assert caps["recurring-scorer"]["bootstrap"].startswith("installed")
+    body = {"as_of": "2026-10-01", "groups": [{"days": [-90, -60, -30], "amounts": [499, 499, 499]}]}
+    r = c.post("/v1/capabilities/recurring-scorer/predict", headers=AUTH, json=body)
+    assert r.status_code == 200 and r.json()["result"]["scores"][0]["recurring"]
 
 
 def test_restart_does_not_reinstall(tmp_path: Path):
