@@ -41,8 +41,8 @@ class RecurringEvalTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final MerchantNormalizationService normalizer = new MerchantNormalizationService();
-    private final RecurringDetectionService recurring = new RecurringDetectionService(null, null, null, normalizer);
-    private final LeakDetectionService leaks = new LeakDetectionService(null, null, normalizer);
+    private final RecurringDetectionService recurring = new RecurringDetectionService(null, null, null, normalizer, null, null);
+    private final LeakDetectionService leaks = new LeakDetectionService(null, null, normalizer, null, null);
 
     @Test
     void writesRulePredictions() throws Exception {

@@ -7,6 +7,9 @@ import com.flowsight.entity.RecurringPeriod;
 import com.flowsight.entity.Transaction;
 import com.flowsight.entity.TransactionCategory;
 import com.flowsight.entity.TransactionType;
+import com.flowsight.ml.PersonalizationService;
+import com.flowsight.ml.recurring.PatternLeakDetector;
+import com.flowsight.ml.recurring.RecurringScorer;
 import com.flowsight.repository.RecurringPatternRepository;
 import com.flowsight.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
@@ -61,12 +64,81 @@ class LeakDetectionServiceTest {
         assertThat(creep.getMonthlyImpact()).isEqualByComparingTo("216.67");
     }
 
+    @Test
+    void overlapTitlesDoNotRepeatTheWordSubscriptions() {
+        List<Transaction> txns = new ArrayList<>();
+        for (String m : new String[]{"Notion", "Dropbox", "Canva"}) txns.add(debit(m, "500", today.minusDays(5)));
+
+        LeakDetectionResponse r = detect(txns, List.of(pattern("Notion", "Notion", RecurringPeriod.MONTHLY, "500"),
+            pattern("Dropbox", "Dropbox", RecurringPeriod.MONTHLY, "500"),
+            pattern("Canva", "Canva", RecurringPeriod.MONTHLY, "500")));
+
+        assertThat(find(r, "DUPLICATE_SUBSCRIPTIONS").getTitle()).isEqualTo("3 subscriptions");
+        assertThat(find(r, "DUPLICATE_SUBSCRIPTIONS").getEvidence().getSource()).isEqualTo("RULES");
+    }
+
+    @Test
+    void aMonthlyPriceRiseIsFoundOnceOlderPaymentsAreInView() {
+        // four monthly payments: the oldest is outside the three-month window the other rules use
+        List<Transaction> txns = new ArrayList<>();
+        String[] amounts = {"499", "499", "649", "649"};
+        for (int i = 0; i < amounts.length; i++) txns.add(debit("Netflix", amounts[i], today.minusMonths(3).minusDays(4).plusMonths(i)));
+
+        LeakDetectionResponse r = detect(txns, List.of(pattern("Netflix", "Netflix", RecurringPeriod.MONTHLY, "649")));
+
+        assertThat(find(r, "SUBSCRIPTION_CREEP").getMonthlyImpact()).isEqualByComparingTo("150");
+    }
+
+    @Test
+    void theModelPathRunsOnlyForScoredPatternsWithTheCapabilityServing() {
+        List<Transaction> txns = new ArrayList<>();
+        String[] amounts = {"499", "499", "499", "649", "649"};
+        for (int i = 0; i < amounts.length; i++) txns.add(debit("Netflix", amounts[i], today.minusMonths(4 - i)));
+        RecurringPattern scored = pattern("Netflix", "Netflix", RecurringPeriod.MONTHLY, "649");
+        scored.setModelVersion("logreg-1");
+
+        assertThat(find(detect(txns, List.of(scored), true, false), "SUBSCRIPTION_CREEP").getEvidence().getMethod())
+            .isEqualTo(PatternLeakDetector.METHOD_CHANGE_POINT);
+        // capability switched off, or patterns stored by the rules: the rules answer
+        assertThat(find(detect(txns, List.of(scored), false, false), "SUBSCRIPTION_CREEP").getEvidence().getSource())
+            .isEqualTo("RULES");
+        assertThat(find(detect(txns, List.of(pattern("Netflix", "Netflix", RecurringPeriod.MONTHLY, "649")), true, false),
+            "SUBSCRIPTION_CREEP").getEvidence().getSource()).isEqualTo("RULES");
+    }
+
+    @Test
+    void drainsUseGlobalThresholdsWhenPersonalizationIsOff() {
+        List<Transaction> txns = new ArrayList<>();
+        for (int m = 1; m <= 4; m++) txns.add(debit("Oakwood Apartments", "2000", today.minusMonths(m).withDayOfMonth(2)));
+        for (int d = 0; d < 30; d++) {
+            txns.add(Transaction.builder().merchant("Starbucks").amount(new BigDecimal("6.50")).type(TransactionType.DEBIT)
+                .category(TransactionCategory.FOOD_DINING).transactionDate(today.minusDays(2 * d)).build());
+        }
+        RecurringPattern scored = pattern("Oakwood Apartments", "Oakwood Apartments", RecurringPeriod.MONTHLY, "2000");
+        scored.setModelVersion("logreg-1");
+
+        LeakInsight personal = find(detect(txns, List.of(scored), true, true), "HIGH_FREQUENCY_SMALL_SPEND");
+        assertThat(personal.getEvidence().getInputs()).containsEntry("personalBaseline", true);
+        assertThat(detect(txns, List.of(scored), true, false).getLeaks())
+            .noneMatch(l -> l.getType().equals("HIGH_FREQUENCY_SMALL_SPEND"));
+    }
+
     private LeakDetectionResponse detect(List<Transaction> txns, List<RecurringPattern> patterns) {
+        return detect(txns, patterns, false, false);
+    }
+
+    private LeakDetectionResponse detect(List<Transaction> txns, List<RecurringPattern> patterns, boolean serving,
+                                         boolean personalized) {
         TransactionRepository txRepo = mock(TransactionRepository.class);
         RecurringPatternRepository patternRepo = mock(RecurringPatternRepository.class);
+        RecurringScorer scorer = mock(RecurringScorer.class);
+        PersonalizationService personalization = mock(PersonalizationService.class);
         when(txRepo.findForRecurringDetection(any(), any())).thenReturn(txns);
         when(patternRepo.findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(any())).thenReturn(patterns);
-        return new LeakDetectionService(txRepo, patternRepo, normalizer).detectLeaks(UUID.randomUUID());
+        when(scorer.serving()).thenReturn(serving);
+        when(personalization.isEnabled(any())).thenReturn(personalized);
+        return new LeakDetectionService(txRepo, patternRepo, normalizer, scorer, personalization)
+            .detectLeaks(UUID.randomUUID());
     }
 
     // mirrors RecurringDetectionService: display name from the alias, key from the raw merchant

@@ -2,6 +2,8 @@ package com.flowsight.analytics;
 
 import com.flowsight.dto.recurring.RecurringPatternResponse;
 import com.flowsight.entity.*;
+import com.flowsight.ml.FeedbackService;
+import com.flowsight.ml.recurring.RecurringScorer;
 import com.flowsight.repository.RecurringPatternRepository;
 import com.flowsight.repository.TransactionRepository;
 import com.flowsight.repository.UserRepository;
@@ -38,7 +40,8 @@ class RecurringKeyRealignmentTest {
 
     @BeforeEach
     void setUp() {
-        service = new RecurringDetectionService(transactions, patterns, users, normalizer);
+        service = new RecurringDetectionService(transactions, patterns, users, normalizer,
+            mock(RecurringScorer.class), mock(FeedbackService.class));
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(patterns.save(any())).thenAnswer(inv -> {
             RecurringPattern p = inv.getArgument(0);

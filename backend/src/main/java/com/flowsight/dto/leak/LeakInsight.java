@@ -19,4 +19,5 @@ public class LeakInsight {
     private BigDecimal annualImpact;
     private int        affectedItemsCount;
     private List<LeakItem> items;
+    private LeakEvidence evidence;
 }

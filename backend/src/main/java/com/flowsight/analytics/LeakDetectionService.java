@@ -1,11 +1,16 @@
 package com.flowsight.analytics;
 
 import com.flowsight.dto.leak.LeakDetectionResponse;
+import com.flowsight.dto.leak.LeakEvidence;
 import com.flowsight.dto.leak.LeakInsight;
 import com.flowsight.dto.leak.LeakItem;
 import com.flowsight.entity.RecurringPattern;
 import com.flowsight.entity.Transaction;
 import com.flowsight.entity.TransactionCategory;
+import com.flowsight.ml.PersonalizationService;
+import com.flowsight.ml.recurring.PatternLeakDetector;
+import com.flowsight.ml.recurring.SpendBaseline;
+import com.flowsight.ml.recurring.RecurringScorer;
 import com.flowsight.repository.RecurringPatternRepository;
 import com.flowsight.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,33 +63,59 @@ public class LeakDetectionService {
     private final TransactionRepository        transactionRepository;
     private final RecurringPatternRepository   patternRepository;
     private final MerchantNormalizationService merchantNormalizer;
+    private final RecurringScorer              recurringScorer;
+    private final PersonalizationService       personalization;
 
     public LeakDetectionResponse detectLeaks(UUID userId) {
         LocalDate asOf = LocalDate.now();
-        List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, asOf.minusMonths(LOOKBACK_MONTHS));
+        List<Transaction> txns = transactionRepository.findForRecurringDetection(
+            userId, asOf.minusMonths(PatternLeakDetector.CREEP_LOOKBACK_MONTHS));
         List<RecurringPattern> patterns = patternRepository
             .findByUserIdAndIsDismissedFalseOrderByEstimatedAmountDesc(userId);
-        LeakDetectionResponse response = analyze(txns, patterns, asOf);
-        log.debug("Detected {} leaks for user {}: monthly={}, annual={}", response.getTotalLeaksFound(), userId,
-            response.getTotalMonthlyImpact(), response.getTotalAnnualImpact());
+        // the model-path detectors build on scored patterns; until a refresh stores some, rules run
+        boolean model = recurringScorer.serving() && patterns.stream().anyMatch(p -> p.getModelVersion() != null);
+        LeakDetectionResponse response = model
+            ? analyzeWithModel(txns, patterns, asOf, personalization.isEnabled(userId)
+                ? SpendBaseline.personal(txns, asOf) : SpendBaseline.global())
+            : analyze(txns, patterns, asOf);
+        log.debug("Detected {} leaks for user {} ({}): monthly={}, annual={}", response.getTotalLeaksFound(), userId,
+            model ? "model" : "rules", response.getTotalMonthlyImpact(), response.getTotalAnnualImpact());
         return response;
     }
 
-    // Leaks in the debits up to asOf; patterns in the repository's order (largest amount first).
+    // Rule-based leaks in the debits up to asOf; patterns in the repository's order (largest amount first).
     public LeakDetectionResponse analyze(List<Transaction> allTxns, List<RecurringPattern> patterns, LocalDate asOf) {
-        LocalDate from = asOf.minusMonths(LOOKBACK_MONTHS);
-        List<Transaction> txns = allTxns.stream()
-            .filter(t -> !t.getTransactionDate().isBefore(from))
-            .collect(Collectors.toList());
-
+        List<Transaction> txns = window(allTxns, asOf.minusMonths(LOOKBACK_MONTHS));
         Map<String, TransactionCategory> merchantCategory = buildMerchantCategoryMap(txns);
 
         List<LeakInsight> leaks = new ArrayList<>();
-        addIfPresent(leaks, detectDuplicateSubscriptions(patterns, merchantCategory));
-        addIfPresent(leaks, detectSubscriptionCreep(patterns, txns));
-        addIfPresent(leaks, detectHighFrequencySmallSpend(txns));
-        addIfPresent(leaks, detectBankFees(txns));
+        addIfPresent(leaks, detectDuplicateSubscriptions(patterns, merchantCategory, asOf));
+        // a monthly price rise needs payments from before the window to compare against
+        addIfPresent(leaks, detectSubscriptionCreep(patterns,
+            window(allTxns, asOf.minusMonths(PatternLeakDetector.CREEP_LOOKBACK_MONTHS)), asOf));
+        addIfPresent(leaks, detectHighFrequencySmallSpend(txns, asOf));
+        addIfPresent(leaks, detectBankFees(txns, asOf));
+        return summarize(leaks);
+    }
 
+    // Leaks when the patterns come from the recurring-scorer: change points, canonical-key duplicates, personal drains.
+    public LeakDetectionResponse analyzeWithModel(List<Transaction> allTxns, List<RecurringPattern> patterns,
+                                                  LocalDate asOf, SpendBaseline baseline) {
+        PatternLeakDetector detector = new PatternLeakDetector(merchantNormalizer::normalizeKey, LeakDetectionService::severity);
+        List<Transaction> txns = window(allTxns, asOf.minusMonths(LOOKBACK_MONTHS));
+        List<LeakInsight> leaks = new ArrayList<>();
+        addIfPresent(leaks, detector.duplicates(patterns, txns, asOf));
+        addIfPresent(leaks, detector.creep(patterns, allTxns, asOf));
+        addIfPresent(leaks, detector.drains(allTxns, patterns, baseline, asOf));
+        addIfPresent(leaks, detectBankFees(txns, asOf));
+        return summarize(leaks);
+    }
+
+    private static List<Transaction> window(List<Transaction> txns, LocalDate from) {
+        return txns.stream().filter(t -> !t.getTransactionDate().isBefore(from)).collect(Collectors.toList());
+    }
+
+    private static LeakDetectionResponse summarize(List<LeakInsight> leaks) {
         // biggest opportunities first
         leaks.sort(Comparator.comparing(
             LeakInsight::getMonthlyImpact, Comparator.nullsLast(Comparator.reverseOrder())));
@@ -97,7 +128,6 @@ public class LeakDetectionService {
         BigDecimal totalAnnual = totalMonthly.multiply(BigDecimal.valueOf(12))
             .setScale(2, RoundingMode.HALF_UP);
 
-
         return LeakDetectionResponse.builder()
             .totalLeaksFound(leaks.size())
             .totalMonthlyImpact(totalMonthly.setScale(2, RoundingMode.HALF_UP))
@@ -106,9 +136,15 @@ public class LeakDetectionService {
             .build();
     }
 
+    private static LeakEvidence rule(String method, LocalDate from, LocalDate to, Map<String, Object> inputs) {
+        return LeakEvidence.builder().source("RULES").method(method).windowStart(from).windowEnd(to)
+            .inputs(inputs).build();
+    }
+
     private LeakInsight detectDuplicateSubscriptions(
         List<RecurringPattern> patterns,
-        Map<String, TransactionCategory> merchantCategory
+        Map<String, TransactionCategory> merchantCategory,
+        LocalDate asOf
     ) {
         Map<TransactionCategory, List<RecurringPattern>> byCategory = new EnumMap<>(TransactionCategory.class);
         for (RecurringPattern p : patterns) {
@@ -149,8 +185,8 @@ public class LeakDetectionService {
 
         return LeakInsight.builder()
             .type("DUPLICATE_SUBSCRIPTIONS")
-            .severity(severityFor(cheapestMonthly))
-            .title(dupes.size() + " " + cat.getDisplayName().toLowerCase() + " subscriptions")
+            .severity(severity(cheapestMonthly))
+            .title(PatternLeakDetector.overlapTitle(dupes.size(), cat))
             .description(String.format(
                 "You have %d active subscriptions in %s totaling ₹%s/month.",
                 dupes.size(), cat.getDisplayName(), formatBD(totalMonthly)))
@@ -160,10 +196,14 @@ public class LeakDetectionService {
             .annualImpact(cheapestMonthly.multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP))
             .affectedItemsCount(dupes.size())
             .items(items)
+            .evidence(rule("rule:category-count", asOf.minusMonths(LOOKBACK_MONTHS), asOf, Map.of(
+                "categories", DUPLICATE_DETECT_CATEGORIES.stream().map(Enum::name).sorted().toList(),
+                "minPatterns", 2)))
             .build();
     }
 
-    private LeakInsight detectSubscriptionCreep(List<RecurringPattern> patterns, List<Transaction> allTxns) {
+    private LeakInsight detectSubscriptionCreep(List<RecurringPattern> patterns, List<Transaction> allTxns,
+                                                LocalDate asOf) {
         Map<String, List<Transaction>> byMerchant = allTxns.stream()
             .filter(t -> t.getMerchant() != null)
             .collect(Collectors.groupingBy(t -> merchantNormalizer.normalizeKey(t.getMerchant())));
@@ -207,7 +247,7 @@ public class LeakDetectionService {
 
         return LeakInsight.builder()
             .type("SUBSCRIPTION_CREEP")
-            .severity(severityFor(totalImpact))
+            .severity(severity(totalImpact))
             .title(crept.size() + " subscription" + (crept.size() == 1 ? "" : "s") + " with price increases")
             .description("Recent payments are higher than your historical average — likely silent price hikes.")
             .recommendation("Compare current prices to your past payments and contact merchants if increases were unannounced.")
@@ -215,10 +255,13 @@ public class LeakDetectionService {
             .annualImpact(totalImpact.multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP))
             .affectedItemsCount(crept.size())
             .items(crept)
+            .evidence(rule("rule:last-two-vs-earlier",
+                asOf.minusMonths(PatternLeakDetector.CREEP_LOOKBACK_MONTHS), asOf, Map.of(
+                    "minPayments", CREEP_MIN_OCCURRENCES, "minRatio", CREEP_RATIO_THRESHOLD, "recentPayments", 2)))
             .build();
     }
 
-    private LeakInsight detectHighFrequencySmallSpend(List<Transaction> txns) {
+    private LeakInsight detectHighFrequencySmallSpend(List<Transaction> txns, LocalDate asOf) {
         Map<String, List<Transaction>> byMerchant = txns.stream()
             .filter(t -> t.getMerchant() != null && !t.getMerchant().isBlank())
             .filter(t -> t.getAmount().compareTo(FREQ_MAX_PER_TX) <= 0)
@@ -258,7 +301,7 @@ public class LeakDetectionService {
 
         return LeakInsight.builder()
             .type("HIGH_FREQUENCY_SMALL_SPEND")
-            .severity(severityFor(totalMonthly))
+            .severity(severity(totalMonthly))
             .title("Silent drains: " + drains.size() + " high-frequency merchant" + (drains.size() == 1 ? "" : "s"))
             .description("Small, frequent purchases that add up to significant monthly outflows.")
             .recommendation("Habits are easier to reduce than to eliminate — track these visits to make conscious choices.")
@@ -266,10 +309,12 @@ public class LeakDetectionService {
             .annualImpact(totalMonthly.multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP))
             .affectedItemsCount(drains.size())
             .items(drains)
+            .evidence(rule("rule:fixed-thresholds", asOf.minusMonths(LOOKBACK_MONTHS), asOf, Map.of(
+                "minVisits", FREQ_MIN_COUNT, "maxPerVisit", FREQ_MAX_PER_TX, "minMonthlySpend", FREQ_MIN_MONTHLY)))
             .build();
     }
 
-    private LeakInsight detectBankFees(List<Transaction> txns) {
+    private LeakInsight detectBankFees(List<Transaction> txns, LocalDate asOf) {
         Map<String, List<Transaction>> feesByMerchant = new LinkedHashMap<>();
 
         for (Transaction tx : txns) {
@@ -309,7 +354,7 @@ public class LeakDetectionService {
 
         return LeakInsight.builder()
             .type("BANK_FEES")
-            .severity(severityFor(monthly))
+            .severity(severity(monthly))
             .title("Bank fees and charges detected")
             .description(items.size() + " merchant" + (items.size() == 1 ? "" : "s")
                 + " charged fees totaling ₹" + formatBD(totalAll) + " in the last " + LOOKBACK_MONTHS + " months.")
@@ -318,6 +363,9 @@ public class LeakDetectionService {
             .annualImpact(monthly.multiply(BigDecimal.valueOf(12)).setScale(2, RoundingMode.HALF_UP))
             .affectedItemsCount(items.size())
             .items(items)
+            .evidence(rule("rule:fee-keywords", asOf.minusMonths(LOOKBACK_MONTHS), asOf,
+                Map.of("pattern", "fee, penalty, overdraft, late/ATM/processing/service/finance/annual/"
+                    + "maintenance/convenience/cancellation fee or charge")))
             .build();
     }
 
@@ -338,7 +386,7 @@ public class LeakDetectionService {
             .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
     }
 
-    private String severityFor(BigDecimal monthlyImpact) {
+    public static String severity(BigDecimal monthlyImpact) {
         if (monthlyImpact.compareTo(SEVERITY_HIGH)   >= 0) return "HIGH";
         if (monthlyImpact.compareTo(SEVERITY_MEDIUM) >= 0) return "MEDIUM";
         return "LOW";

@@ -14,4 +14,5 @@ public class LeakItem {
     private String     detail;       // e.g. "12x this month" or "Avg ₹150/visit"
     private String     category;     // enum name for color coding
     private String     categoryLabel;
+    private LeakEvidence evidence;  // set when the item has its own measurements (price steps, duplicates)
 }

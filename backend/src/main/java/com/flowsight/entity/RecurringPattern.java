@@ -58,6 +58,23 @@ public class RecurringPattern {
     @Column(precision = 4, scale = 3)
     private BigDecimal confidence;
 
+    // recurring-scorer output (V19); null when the rules detected the pattern
+    @Column(precision = 5, scale = 4)
+    private BigDecimal probability;
+
+    @Column(name = "next_expected_low")
+    private LocalDate nextExpectedLow;
+
+    @Column(name = "next_expected_high")
+    private LocalDate nextExpectedHigh;
+
+    @Column(name = "model_version", length = 64)
+    private String modelVersion;
+
+    @Column(name = "charges_per_period", nullable = false)
+    @Builder.Default
+    private int chargesPerPeriod = 1;
+
     @Column(name = "is_cancellation_candidate", nullable = false)
     @Builder.Default
     private boolean isCancellationCandidate = false;

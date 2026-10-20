@@ -3,6 +3,13 @@ package com.flowsight.analytics;
 import com.flowsight.analytics.MerchantNormalizationService.Normalized;
 import com.flowsight.dto.recurring.RecurringPatternResponse;
 import com.flowsight.entity.*;
+import com.flowsight.ml.FeedbackCorrection;
+import com.flowsight.ml.FeedbackService;
+import com.flowsight.ml.FeedbackSource;
+import com.flowsight.ml.SubjectType;
+import com.flowsight.ml.recurring.RecurringScorer;
+import com.flowsight.ml.recurring.RecurringScorerRequest;
+import com.flowsight.ml.recurring.RecurringScorerResponse;
 import com.flowsight.repository.RecurringPatternRepository;
 import com.flowsight.repository.TransactionRepository;
 import com.flowsight.repository.UserRepository;
@@ -56,13 +63,16 @@ public class RecurringDetectionService {
     private final RecurringPatternRepository  patternRepository;
     private final UserRepository              userRepository;
     private final MerchantNormalizationService merchantNormalizer;
+    private final RecurringScorer             recurringScorer;
+    private final FeedbackService             feedbackService;
 
     // Detect, persist, and return active patterns. Confirmed and dismissed keys survive re-scans.
     @Transactional
     public List<RecurringPatternResponse> detectAndRefresh(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow();
 
-        LocalDate from = LocalDate.now().minusMonths(LOOKBACK_MONTHS);
+        LocalDate asOf = LocalDate.now();
+        LocalDate from = asOf.minusMonths(LOOKBACK_MONTHS);
         List<Transaction> txns = transactionRepository.findForRecurringDetection(userId, from);
 
         List<RecurringPattern> kept = patternRepository.findByUserIdOrderByConfidenceDesc(userId).stream()
@@ -92,7 +102,7 @@ public class RecurringDetectionService {
 
         List<RecurringPattern> resultPatterns = new ArrayList<>();
 
-        for (RecurringPattern fresh : detect(txns, user)) {
+        for (RecurringPattern fresh : detectServed(userId, txns, user, asOf)) {
             String ck = compositeKey(fresh.getNormalizedKey(), fresh.getPeriod());
 
             if (dismissedKeys.contains(ck)) {
@@ -108,6 +118,11 @@ public class RecurringDetectionService {
                 confirmed.setOccurrenceCount(fresh.getOccurrenceCount());
                 confirmed.setConfidence(fresh.getConfidence());
                 confirmed.setCancellationCandidate(fresh.isCancellationCandidate());
+                confirmed.setProbability(fresh.getProbability());
+                confirmed.setNextExpectedLow(fresh.getNextExpectedLow());
+                confirmed.setNextExpectedHigh(fresh.getNextExpectedHigh());
+                confirmed.setModelVersion(fresh.getModelVersion());
+                confirmed.setChargesPerPeriod(fresh.getChargesPerPeriod());
                 resultPatterns.add(patternRepository.save(confirmed));
                 continue;
             }
@@ -135,6 +150,87 @@ public class RecurringDetectionService {
             .collect(Collectors.toList());
     }
 
+    // The recurring-scorer's patterns when it answers; the rules otherwise.
+    private List<RecurringPattern> detectServed(UUID userId, List<Transaction> txns, User user, LocalDate asOf) {
+        if (!recurringScorer.active()) return detect(txns, user);
+        return recurringScorer.score(userId, scorerRequest(txns, asOf))
+            .map(scores -> fromScores(txns, user, asOf, scores))
+            .orElseGet(() -> detect(txns, user));
+    }
+
+    // One group per merchant key with at least two charges up to asOf, in grouping order.
+    public RecurringScorerRequest scorerRequest(List<Transaction> txns, LocalDate asOf) {
+        List<RecurringScorerRequest.Group> groups = new ArrayList<>();
+        for (MerchantGroup g : candidates(txns, asOf)) {
+            List<Transaction> recent = g.txns.subList(
+                Math.max(0, g.txns.size() - RecurringScorerRequest.MAX_CHARGES), g.txns.size());
+            TransactionCategory category = mostCommonCategory(g.txns);
+            groups.add(new RecurringScorerRequest.Group(
+                recent.stream().map(t -> (int) ChronoUnit.DAYS.between(asOf, t.getTransactionDate())).toList(),
+                recent.stream().map(t -> t.getAmount().doubleValue()).toList(),
+                category == null ? null : category.name()));
+        }
+        return RecurringScorerRequest.of(asOf, groups);
+    }
+
+    // Patterns for the groups the scorer calls recurring; scores line up with scorerRequest's groups.
+    public List<RecurringPattern> fromScores(List<Transaction> txns, User user, LocalDate asOf,
+                                             RecurringScorer.Scores scores) {
+        List<MerchantGroup> groups = candidates(txns, asOf);
+        List<RecurringPattern> found = new ArrayList<>();
+        for (int i = 0; i < groups.size(); i++) {
+            RecurringScorerResponse.Score score = scores.scores().get(i);
+            RecurringPeriod period = parsePeriod(score.period());
+            if (!score.recurring() || period == null || score.nextInDays() == null) continue;
+            MerchantGroup g = groups.get(i);
+            TransactionCategory dominant = mostCommonCategory(g.txns);
+            int charges = Math.max(1, score.chargesPerPeriod());
+            double probability = Math.max(0, Math.min(1, score.probability()));
+            found.add(RecurringPattern.builder()
+                .user(user)
+                .merchant(displayName(g))
+                .normalizedKey(g.key)
+                .period(period)
+                .estimatedAmount(BigDecimal.valueOf(score.amount() * charges).setScale(4, RoundingMode.HALF_UP))
+                .lastSeenDate(g.txns.get(g.txns.size() - 1).getTransactionDate())
+                .nextExpectedDate(asOf.plusDays(score.nextInDays()))
+                .nextExpectedLow(score.nextLowInDays() == null ? null : asOf.plusDays(score.nextLowInDays()))
+                .nextExpectedHigh(score.nextHighInDays() == null ? null : asOf.plusDays(score.nextHighInDays()))
+                .occurrenceCount(g.txns.size())
+                .confidence(BigDecimal.valueOf(probability).setScale(3, RoundingMode.HALF_UP))
+                .probability(BigDecimal.valueOf(probability).setScale(4, RoundingMode.HALF_UP))
+                .modelVersion(scores.modelVersion() == null ? "unknown" : scores.modelVersion())
+                .chargesPerPeriod(charges)
+                .isCancellationCandidate(dominant != null && CANCELLATION_CATEGORIES.contains(dominant))
+                .isDismissed(false)
+                .isUserConfirmed(false)
+                .build());
+        }
+        return found;
+    }
+
+    private List<MerchantGroup> candidates(List<Transaction> txns, LocalDate asOf) {
+        List<Transaction> usable = txns.stream()
+            .filter(t -> !t.getTransactionDate().isAfter(asOf) && t.getAmount() != null && t.getAmount().signum() > 0)
+            .toList();
+        List<MerchantGroup> out = new ArrayList<>();
+        for (Map.Entry<String, MerchantGroup> e : groupByNormalizedMerchant(usable).entrySet()) {
+            if (e.getValue().txns.size() < MIN_OCCURRENCES) continue;
+            e.getValue().txns.sort(Comparator.comparing(Transaction::getTransactionDate));
+            out.add(e.getValue());
+        }
+        return out;
+    }
+
+    private static RecurringPeriod parsePeriod(String name) {
+        if (name == null) return null;
+        try {
+            return RecurringPeriod.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     // Rule-based detection over the given debits; nothing is read or persisted.
     public List<RecurringPattern> detect(List<Transaction> txns, User user) {
         List<RecurringPattern> found = new ArrayList<>();
@@ -158,6 +254,7 @@ public class RecurringDetectionService {
             .orElseThrow(() -> new com.flowsight.exception.ResourceNotFoundException("RecurringPattern", patternId));
         p.setDismissed(true);
         p.setUserConfirmed(false); // mutually exclusive
+        recordReview(userId, p, "NOT_RECURRING");
         return toResponse(patternRepository.save(p));
     }
 
@@ -175,6 +272,7 @@ public class RecurringDetectionService {
             .orElseThrow(() -> new com.flowsight.exception.ResourceNotFoundException("RecurringPattern", patternId));
         p.setUserConfirmed(true);
         p.setDismissed(false); // un-dismiss if previously dismissed
+        recordReview(userId, p, "RECURRING");
         return toResponse(patternRepository.save(p));
     }
 
@@ -184,6 +282,14 @@ public class RecurringDetectionService {
             .orElseThrow(() -> new com.flowsight.exception.ResourceNotFoundException("RecurringPattern", patternId));
         p.setUserConfirmed(false);
         return toResponse(patternRepository.save(p));
+    }
+
+    // The detector always claimed RECURRING; the user's answer is the correction.
+    private void recordReview(UUID userId, RecurringPattern p, String answer) {
+        BigDecimal score = p.getProbability() != null ? p.getProbability() : p.getConfidence();
+        feedbackService.record(userId, new FeedbackCorrection(SubjectType.RECURRING_PATTERN, p.getId(), "recurring",
+            "RECURRING", answer, FeedbackSource.RECURRING_REVIEW, p.getModelVersion(),
+            score == null ? null : score.doubleValue()));
     }
 
     // Stored keys come from whichever MerchantNormalizationService version saved them; recompute
@@ -212,7 +318,7 @@ public class RecurringDetectionService {
             Normalized norm = merchantNormalizer.normalize(rawMerchant);
             if (norm.isEmpty() || norm.getKey().length() < MIN_KEY_LENGTH) continue;
 
-            groups.computeIfAbsent(norm.getKey(), k -> new MerchantGroup(norm))
+            groups.computeIfAbsent(norm.getKey(), k -> new MerchantGroup(k, norm))
                   .add(tx);
         }
         return groups;
@@ -274,10 +380,7 @@ public class RecurringDetectionService {
 
         if (confidence < CONFIDENCE_FLOOR) return null;
 
-        // canonical name if known, else the most-common raw name
-        String merchantDisplay = group.normalized.getCanonicalName() != null
-            ? group.normalized.getCanonicalName()
-            : mostCommonMerchantName(txns);
+        String merchantDisplay = displayName(group);
 
         BigDecimal estimatedAmount = BigDecimal.valueOf(stats.getAverage())
             .setScale(4, RoundingMode.HALF_UP);
@@ -310,12 +413,17 @@ public class RecurringDetectionService {
             ? (int) ChronoUnit.DAYS.between(today, p.getNextExpectedDate())
             : 0;
 
+        // a scored pattern is late only once its next-date interval has passed
+        int lateBy = p.getNextExpectedHigh() != null
+            ? (int) ChronoUnit.DAYS.between(p.getNextExpectedHigh(), today)
+            : -daysUntilNext;
+
         String status;
         if (p.getNextExpectedDate() == null) {
             status = "ACTIVE";
-        } else if (daysUntilNext < -p.getPeriod().getNominalDays()) {
+        } else if (lateBy > p.getPeriod().getNominalDays()) {
             status = "MISSED";
-        } else if (daysUntilNext < 0) {
+        } else if (lateBy > 0) {
             status = "OVERDUE";
         } else if (daysUntilNext <= 7) {
             status = "DUE_SOON";
@@ -354,7 +462,20 @@ public class RecurringDetectionService {
             .isUserConfirmed(p.isUserConfirmed())
             .status(status)
             .daysUntilNext(daysUntilNext)
+            .scoredBy(p.getModelVersion() != null ? "MODEL" : "RULES")
+            .probability(p.getProbability())
+            .nextExpectedLow(p.getNextExpectedLow())
+            .nextExpectedHigh(p.getNextExpectedHigh())
+            .modelVersion(p.getModelVersion())
+            .chargesPerPeriod(p.getChargesPerPeriod())
             .build();
+    }
+
+    // canonical name if known, else the most-common raw name
+    private String displayName(MerchantGroup group) {
+        return group.normalized.getCanonicalName() != null
+            ? group.normalized.getCanonicalName()
+            : mostCommonMerchantName(group.txns);
     }
 
     private TransactionCategory mostCommonCategory(List<Transaction> txns) {
@@ -381,10 +502,12 @@ public class RecurringDetectionService {
     }
 
     private static class MerchantGroup {
+        final String key;
         final Normalized normalized;
         final List<Transaction> txns = new ArrayList<>();
 
-        MerchantGroup(Normalized normalized) {
+        MerchantGroup(String key, Normalized normalized) {
+            this.key = key;
             this.normalized = normalized;
         }
 

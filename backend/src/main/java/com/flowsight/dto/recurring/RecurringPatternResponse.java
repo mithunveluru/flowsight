@@ -29,4 +29,12 @@ public class RecurringPatternResponse {
     // Status for frontend badge: ACTIVE | DUE_SOON | OVERDUE | MISSED
     private String    status;
     private int       daysUntilNext;    // negative when overdue
+    // MODEL when the recurring-scorer detected it, RULES otherwise; the fields below are null for RULES
+    private String    scoredBy;
+    private BigDecimal probability;
+    private LocalDate nextExpectedLow;
+    private LocalDate nextExpectedHigh;
+    private String    modelVersion;
+    // 2 when one service is billed twice per period; estimatedAmount covers every charge
+    private int       chargesPerPeriod;
 }
