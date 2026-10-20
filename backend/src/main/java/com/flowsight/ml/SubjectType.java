@@ -4,5 +4,6 @@ package com.flowsight.ml;
 public enum SubjectType {
     TRANSACTION,
     RECEIPT,
-    RECURRING_PATTERN
+    RECURRING_PATTERN,
+    RECOMMENDATION
 }

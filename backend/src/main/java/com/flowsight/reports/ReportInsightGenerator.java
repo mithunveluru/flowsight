@@ -5,28 +5,77 @@ import com.flowsight.dto.insights.BehavioralPattern;
 import com.flowsight.dto.insights.Recommendation;
 import com.flowsight.dto.leak.LeakInsight;
 import com.flowsight.dto.recurring.RecurringPatternResponse;
+import com.flowsight.llm.FactSet;
+import com.flowsight.llm.GroundedNarrator;
+import com.flowsight.llm.PersonalDataRedactor;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 // Builds the report's narrative prose; every sentence is grounded in ReportData numbers.
+// The executive summary may be rewritten by the LLM, which is held to the same facts.
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class ReportInsightGenerator {
 
+    private static final String SUMMARY_TASK =
+        "Write the executive summary of a spending report in three to five sentences (under 120 words).";
+    private static final int SUMMARY_MAX_CHARS = 1200;
+
+    private final GroundedNarrator narrator;
+
     public ReportNarrative generate(ReportData data) {
+        List<String> template = buildExecutiveSummary(data);
+        GroundedNarrator.Narrative summary = narrator.narrate(SUMMARY_TASK, summaryFacts(data),
+            String.join(" ", template), PersonalDataRedactor.forIdentifiers(List.of()), SUMMARY_MAX_CHARS);
+        List<String> executive = summary.source() == GroundedNarrator.Source.LLM
+            ? Arrays.asList(summary.text().split("(?<=[.!?])\\s+"))
+            : template;
         return new ReportNarrative(
-            buildExecutiveSummary(data),
+            executive,
             buildBehaviorAnalysis(data),
             buildLeakAnalysis(data),
             buildRecurringSummary(data),
             buildConsequenceParagraph(data),
-            buildRecommendationLines(data)
+            buildRecommendationLines(data),
+            summary.source().name()
         );
+    }
+
+    // Everything the executive summary template states, and nothing more.
+    static FactSet summaryFacts(ReportData d) {
+        var current = d.getCurrentPeriod();
+        FactSet facts = new FactSet()
+            .date("period_start", d.getPeriodStart())
+            .date("period_end", d.getPeriodEnd())
+            .count("transaction_count", current.getTransactionCount())
+            .amount("total_spend", current.getTotalSpend())
+            .amount("total_income", current.getTotalIncome())
+            .amount("net_cashflow", current.getNetCashflow());
+        if (d.getPriorPeriod().getTotalSpend().compareTo(BigDecimal.ZERO) > 0) {
+            facts.amount("prior_period_spend", d.getPriorPeriod().getTotalSpend())
+                .amount("spend_change", d.getSpendChange())
+                .percent("spend_change_percent", d.getSpendChangePercent());
+        }
+        if (!current.getCategoryBreakdown().isEmpty()) {
+            var top = current.getCategoryBreakdown().get(0);
+            facts.text("top_category", top.getDisplayName())
+                .amount("top_category_spend", top.getAmount())
+                .percent("top_category_share_percent", top.getPercentage());
+        }
+        if (d.getBehavioralProfile() != null) facts.text("spender_profile", d.getBehavioralProfile().getSummary());
+        if (d.getLeaks() != null && d.getLeaks().getTotalMonthlyImpact() != null) {
+            facts.amount("leak_saving_monthly", d.getLeaks().getTotalMonthlyImpact())
+                .amount("leak_saving_annual", d.getLeaks().getTotalAnnualImpact());
+        }
+        return facts;
     }
 
     private List<String> buildExecutiveSummary(ReportData d) {
@@ -237,6 +286,7 @@ public class ReportInsightGenerator {
         List<String> recurringSummary;
         List<String> consequenceParagraph;
         List<RecommendationLine> recommendations;
+        String executiveSummarySource;      // LLM | TEMPLATE
     }
 
     @Value

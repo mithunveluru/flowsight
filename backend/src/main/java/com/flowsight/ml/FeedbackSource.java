@@ -4,5 +4,6 @@ package com.flowsight.ml;
 public enum FeedbackSource {
     RECEIPT_REVIEW,
     TRANSACTION_EDIT,
-    RECURRING_REVIEW
+    RECURRING_REVIEW,
+    RECOMMENDATION_FEEDBACK
 }

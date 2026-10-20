@@ -8,6 +8,13 @@ import com.flowsight.dto.leak.LeakDetectionResponse;
 import com.flowsight.dto.leak.LeakInsight;
 import com.flowsight.entity.FinancialGoal;
 import com.flowsight.entity.GoalStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowsight.insights.RecommendationRanker;
+import com.flowsight.insights.RecommendationStatsRepository;
+import com.flowsight.llm.ChatProvider;
+import com.flowsight.llm.GroundedNarrator;
+import com.flowsight.ml.PersonalizationService;
+import com.flowsight.ml.UserFeedbackRepository;
 import com.flowsight.repository.FinancialGoalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +34,11 @@ class RecommendationEngineTest {
 
     private final LeakDetectionService leakDetection = mock(LeakDetectionService.class);
     private final FinancialGoalRepository goalRepository = mock(FinancialGoalRepository.class);
-    private final RecommendationEngine engine = new RecommendationEngine(leakDetection, goalRepository);
+    private final UserFeedbackRepository feedback = mock(UserFeedbackRepository.class);
+    private final RecommendationStatsRepository stats = mock(RecommendationStatsRepository.class);
+    private final RecommendationRanker ranker =
+        new RecommendationRanker(feedback, mock(PersonalizationService.class), stats);
+    private final RecommendationEngine engine = new RecommendationEngine(leakDetection, goalRepository, ranker);
 
     private final List<BehavioralPattern> behaviors = List.of(
         behavior("WEEKEND_OVERSPEND", "You spend 85% more per day on weekends than weekdays."),
@@ -87,10 +98,50 @@ class RecommendationEngineTest {
         when(behavioral.analyze(any())).thenReturn(BehavioralProfile.builder().patterns(behaviors).build());
         ConsequenceCalculator consequences = mock(ConsequenceCalculator.class);
 
-        InsightsResponse insights = new InsightsService(behavioral, engine, consequences).getInsights(UUID.randomUUID());
+        ChatProvider noModel = mock(ChatProvider.class);
+        GroundedNarrator narrator = new GroundedNarrator(noModel, new ObjectMapper());
+
+        InsightsResponse insights = new InsightsService(behavioral, engine, consequences, narrator)
+            .getInsights(UUID.randomUUID());
 
         assertThat(insights.getTotalPotentialMonthlySaving()).isEqualByComparingTo("1900");
         assertThat(insights.getTotalPotentialAnnualSaving()).isEqualByComparingTo("22800");
+        assertThat(insights.getNarrative().getSource()).isEqualTo("TEMPLATE");
+        assertThat(insights.getNarrative().getText()).contains("₹1,900 a month");
+    }
+
+    @Test
+    void behaviorAdviceCarriesItsEstimateButStaysOutOfTheHeadline() {
+        BehavioralPattern weekend = behavior("WEEKEND_OVERSPEND", "You spend 140% more per day on weekends than weekdays.");
+        weekend.setMonthlySavingEstimate(new BigDecimal("4983.33"));
+        BehavioralPattern tiny = behavior("LIFESTYLE_INFLATION", "Your spending has grown 12% over the last 3 months vs the prior 3.");
+        tiny.setMonthlySavingEstimate(new BigDecimal("60"));
+        BehavioralAnalysisService behavioral = mock(BehavioralAnalysisService.class);
+        when(behavioral.analyze(any())).thenReturn(BehavioralProfile.builder().patterns(List.of(weekend, tiny)).build());
+
+        InsightsResponse insights = new InsightsService(behavioral, engine, mock(ConsequenceCalculator.class),
+            new GroundedNarrator(mock(ChatProvider.class), new ObjectMapper())).getInsights(UUID.randomUUID());
+
+        Recommendation cap = insights.getRecommendations().stream()
+            .filter(r -> "BEHAVIOR_WEEKEND_OVERSPEND".equals(r.getKind())).findFirst().orElseThrow();
+        assertThat(cap.getPotentialMonthlySaving()).isEqualByComparingTo("4983.33");
+        assertThat(cap.getPotentialAnnualSaving()).isEqualByComparingTo("59799.96");
+        assertThat(cap.getSource()).isEqualTo("BEHAVIOR");
+        assertThat(insights.getRecommendations()).filteredOn(r -> "BEHAVIOR_LIFESTYLE_INFLATION".equals(r.getKind()))
+            .singleElement().extracting(Recommendation::getPotentialMonthlySaving).isNull();
+        // still only the leak savings: 1,500 + 400
+        assertThat(insights.getTotalPotentialMonthlySaving()).isEqualByComparingTo("1900");
+    }
+
+    @Test
+    void idsAreStablePerUserAndDifferBetweenUsers() {
+        UUID a = UUID.randomUUID();
+        List<String> first = engine.candidates(a, behaviors).stream().map(Recommendation::getId).toList();
+        List<String> again = engine.candidates(a, behaviors).stream().map(Recommendation::getId).toList();
+        List<String> other = engine.candidates(UUID.randomUUID(), behaviors).stream().map(Recommendation::getId).toList();
+
+        assertThat(again).isEqualTo(first);
+        assertThat(other).doesNotContainAnyElementsOf(first);
     }
 
     private static BehavioralPattern behavior(String code, String description) {

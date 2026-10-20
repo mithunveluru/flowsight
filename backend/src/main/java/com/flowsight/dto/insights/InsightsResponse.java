@@ -12,7 +12,9 @@ public class InsightsResponse {
     private BehavioralProfile          profile;
     private List<Recommendation>       recommendations;
     private List<ConsequenceProjection> topConsequences;
-    // Sum of all monthly savings if every recommendation is acted on.
+    // Sum of the leak-based savings; behavior estimates overlap with leaks and each other, so they are not added.
     private BigDecimal totalPotentialMonthlySaving;
     private BigDecimal totalPotentialAnnualSaving;
+    // a short grounded summary; source LLM or TEMPLATE
+    private InsightNarrative narrative;
 }

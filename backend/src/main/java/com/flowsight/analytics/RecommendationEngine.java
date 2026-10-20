@@ -6,6 +6,7 @@ import com.flowsight.dto.leak.LeakDetectionResponse;
 import com.flowsight.dto.leak.LeakInsight;
 import com.flowsight.entity.FinancialGoal;
 import com.flowsight.entity.GoalStatus;
+import com.flowsight.insights.RecommendationRanker;
 import com.flowsight.repository.FinancialGoalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// Fuses leaks, behaviors, and active goals into ranked recommendations (top 5 by monthly saving).
-// Behavior advice carries no saving estimate (null) and ranks after every quantified one.
+// Fuses leaks, behaviors, and active goals into recommendations; RecommendationRanker orders them
+// by learned acceptance and saving. Behavior advice carries a saving only when the pattern has one.
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,8 +30,14 @@ public class RecommendationEngine {
 
     private final LeakDetectionService     leakDetectionService;
     private final FinancialGoalRepository  goalRepository;
+    private final RecommendationRanker     ranker;
 
     public List<Recommendation> generate(UUID userId, List<BehavioralPattern> behaviors) {
+        return ranker.rank(userId, candidates(userId, behaviors), MAX_RECOMMENDATIONS);
+    }
+
+    // Every recommendation the user's data supports, unranked, with stable ids.
+    public List<Recommendation> candidates(UUID userId, List<BehavioralPattern> behaviors) {
         List<Recommendation> candidates = new ArrayList<>();
 
         // leaks -> cancel/reduce
@@ -38,6 +46,7 @@ public class RecommendationEngine {
         for (LeakInsight leak : leaks.getLeaks()) {
             Recommendation rec = fromLeak(leak);
             if (rec == null) continue;
+            identify(rec, userId, "LEAK", "LEAK_" + leak.getType(), leak.getType());
             candidates.add(rec);
             recoverableMonthly = recoverableMonthly.add(rec.getPotentialMonthlySaving());
         }
@@ -45,7 +54,10 @@ public class RecommendationEngine {
         // behaviors -> habit shifts
         for (BehavioralPattern pattern : behaviors) {
             Recommendation rec = fromBehavior(pattern);
-            if (rec != null) candidates.add(rec);
+            if (rec == null) continue;
+            String subject = pattern.getCategory() == null ? pattern.getCode() : pattern.getCode() + ":" + pattern.getCategory();
+            identify(rec, userId, "BEHAVIOR", "BEHAVIOR_" + pattern.getCode(), subject);
+            candidates.add(rec);
         }
 
         // active goal + leak savings -> suggest redirecting what the leak recommendations recover
@@ -53,17 +65,24 @@ public class RecommendationEngine {
             .findByUserIdAndStatusOrderByTargetDateAsc(userId, GoalStatus.ACTIVE);
         if (!activeGoals.isEmpty() && recoverableMonthly.compareTo(NOISE_FLOOR) > 0) {
             FinancialGoal nearestGoal = activeGoals.get(0);
-            candidates.add(buildRedirectRecommendation(nearestGoal, recoverableMonthly));
+            Recommendation redirect = buildRedirectRecommendation(nearestGoal, recoverableMonthly);
+            identify(redirect, userId, "GOAL", "GOAL_REDIRECT", String.valueOf(nearestGoal.getId()));
+            candidates.add(redirect);
         }
 
-        // quantified savings above the noise floor rank first; unquantified behavior advice follows
+        // quantified savings above the noise floor first, then unquantified advice; the ranker re-orders
         return candidates.stream()
             .filter(r -> r.getPotentialMonthlySaving() == null
                       || r.getPotentialMonthlySaving().compareTo(NOISE_FLOOR) >= 0)
             .sorted(Comparator.comparing(Recommendation::getPotentialMonthlySaving,
                 Comparator.nullsLast(Comparator.reverseOrder())))
-            .limit(MAX_RECOMMENDATIONS)
             .collect(Collectors.toList());
+    }
+
+    private static void identify(Recommendation r, UUID userId, String source, String kind, String subject) {
+        r.setSource(source);
+        r.setKind(kind);
+        r.setId(UUID.nameUUIDFromBytes((userId + "|" + kind + "|" + subject).getBytes(StandardCharsets.UTF_8)).toString());
     }
 
     private Recommendation fromLeak(LeakInsight leak) {
@@ -117,29 +136,50 @@ public class RecommendationEngine {
     }
 
     private Recommendation fromBehavior(BehavioralPattern p) {
+        BigDecimal monthly = estimate(p.getMonthlySavingEstimate());
+        BigDecimal annual = monthly == null ? null : monthly.multiply(BigDecimal.valueOf(12));
+        List<String> evidence = p.getContext() == null ? List.of() : List.of(p.getContext());
         return switch (p.getCode()) {
             case "WEEKEND_OVERSPEND" -> Recommendation.builder()
                 .type("SHIFT_HABIT")
                 .title("Cap weekend spending")
                 .description(p.getDescription())
-                .suggestedAction("Set a weekend budget that brings daily spend closer to your weekday baseline.")
-                .potentialMonthlySaving(null) // not quantified without precise weekly data
-                .potentialAnnualSaving(null)
+                .suggestedAction(monthly == null
+                    ? "Set a weekend budget that brings daily spend closer to your weekday baseline."
+                    : "Set a weekend budget; bringing weekend days down to your usual level saves the amount shown.")
+                .potentialMonthlySaving(monthly)
+                .potentialAnnualSaving(annual)
                 .confidence(p.getSeverity())
-                .evidence(List.of(p.getContext()))
+                .evidence(evidence)
                 .build();
             case "LIFESTYLE_INFLATION" -> Recommendation.builder()
                 .type("REVIEW_INFLATION")
                 .title("Check lifestyle inflation")
                 .description(p.getDescription())
                 .suggestedAction("Review your largest categories — small upgrades often compound silently.")
-                .potentialMonthlySaving(null)
-                .potentialAnnualSaving(null)
+                .potentialMonthlySaving(monthly)
+                .potentialAnnualSaving(annual)
                 .confidence(p.getSeverity())
-                .evidence(List.of(p.getContext()))
+                .evidence(evidence)
+                .build();
+            case "CATEGORY_DRIFT" -> Recommendation.builder()
+                .type("REDUCE_CATEGORY")
+                .title(p.getTitle())
+                .description(p.getDescription())
+                .suggestedAction("Check what changed in this category; returning to your earlier level saves the amount shown.")
+                .potentialMonthlySaving(monthly)
+                .potentialAnnualSaving(annual)
+                .confidence(p.getSeverity())
+                .evidence(evidence)
                 .build();
             default -> null;
         };
+    }
+
+    // below the noise floor an estimate is not worth showing; the advice stays, unquantified
+    private static BigDecimal estimate(BigDecimal monthly) {
+        if (monthly == null || monthly.compareTo(NOISE_FLOOR) < 0) return null;
+        return monthly.setScale(2, RoundingMode.HALF_UP);
     }
 
     private Recommendation buildRedirectRecommendation(FinancialGoal goal, BigDecimal recoverableMonthly) {
