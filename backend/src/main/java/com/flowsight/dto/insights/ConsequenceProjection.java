@@ -16,6 +16,7 @@ public class ConsequenceProjection {
     private BigDecimal fiveYearCost;
     private BigDecimal tenYearCost;
     private BigDecimal tenYearOpportunityCost;      // FV if invested instead
+    private Double     assumedAnnualReturnPercent;  // the return behind tenYearOpportunityCost; an assumption
     // Short reflection prompt — used as the card subtitle.
     private String reflection;
 }

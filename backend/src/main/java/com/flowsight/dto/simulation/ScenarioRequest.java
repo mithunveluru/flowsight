@@ -43,4 +43,16 @@ public class ScenarioRequest {
     @Min(1)
     @Max(600)
     private Integer tenureMonths;
+
+    // Assumed annual return for opportunity costs; 8 when omitted.
+    @DecimalMin(value = "0.0")
+    @DecimalMax(value = "30.0")
+    private BigDecimal annualReturnPercent;
+
+    // Monte Carlo path count (default 2000) and seed (default: derived from the user, so a repeat gives the same answer).
+    @Min(200)
+    @Max(10000)
+    private Integer paths;
+
+    private Long seed;
 }

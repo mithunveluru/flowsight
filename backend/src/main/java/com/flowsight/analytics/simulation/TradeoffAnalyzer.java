@@ -20,20 +20,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TradeoffAnalyzer {
 
-    private static final double ASSUMED_ANNUAL_RETURN = 0.08;
-    private static final int    GOAL_HORIZON_MONTHS   = 120;
+    static final int            GOAL_HORIZON_MONTHS   = 120;
     private static final double DAYS_PER_MONTH        = 365.25 / 12;
 
     private final FinancialGoalRepository goalRepository;
     private final ProjectionEngine        projectionEngine;
 
-    public List<Tradeoff> analyze(FinancialBaseline baseline, ScenarioRequest scenario) {
+    public List<Tradeoff> analyze(FinancialBaseline baseline, ScenarioRequest scenario, SimulationAssumptions assumed) {
         List<Tradeoff> tradeoffs = new ArrayList<>();
 
         switch (scenario.getType()) {
-            case ONE_TIME_PURCHASE   -> addOneTimeTradeoffs(tradeoffs, baseline, scenario);
-            case RECURRING_EXPENSE   -> addRecurringTradeoffs(tradeoffs, scenario);
-            case SAVINGS_ADJUSTMENT  -> addSavingsTradeoffs(tradeoffs, scenario);
+            case ONE_TIME_PURCHASE   -> addOneTimeTradeoffs(tradeoffs, baseline, scenario, assumed);
+            case RECURRING_EXPENSE   -> addRecurringTradeoffs(tradeoffs, scenario, assumed);
+            case SAVINGS_ADJUSTMENT  -> addSavingsTradeoffs(tradeoffs, scenario, assumed);
             case LOAN_EMI            -> addLoanTradeoffs(tradeoffs, scenario);
         }
 
@@ -45,7 +44,15 @@ public class TradeoffAnalyzer {
     public GoalImpact computeGoalImpact(
         UUID userId, BigDecimal monthlyImpact, Integer impactMonths, FinancialBaseline baseline
     ) {
-        if (monthlyImpact.compareTo(BigDecimal.ZERO) >= 0) return null; // boost or neutral — no delay
+        return computeGoalImpact(userId, monthlyImpact, impactMonths, BigDecimal.ZERO, baseline);
+    }
+
+    // upfront: a one-time amount paid now, which the goal's savings have to make up first
+    public GoalImpact computeGoalImpact(
+        UUID userId, BigDecimal monthlyImpact, Integer impactMonths, BigDecimal upfront, FinancialBaseline baseline
+    ) {
+        boolean lump = upfront.compareTo(BigDecimal.ZERO) > 0;
+        if (monthlyImpact.compareTo(BigDecimal.ZERO) >= 0 && !lump) return null; // boost or neutral — no delay
         if (!baseline.isHasEnoughData()) return null;
 
         List<FinancialGoal> goals = goalRepository
@@ -60,6 +67,8 @@ public class TradeoffAnalyzer {
         double current = baseline.getMonthlyNetSavings().doubleValue();
         double reduced = current + monthlyImpact.doubleValue();
 
+        // without savings the goal is out of reach with or without a one-time purchase
+        if (current <= 0 && monthlyImpact.signum() == 0) return null;
         if (reduced <= 0) {
             return unreachable(goal, String.format(
                 "This takes your monthly savings from %s to %s, leaving nothing to put toward '%s'. "
@@ -68,7 +77,7 @@ public class TradeoffAnalyzer {
         }
 
         Integer before = monthsToReach(need, current, current, null);
-        Integer after  = monthsToReach(need, current, reduced, impactMonths);
+        Integer after  = monthsToReach(need + upfront.doubleValue(), current, reduced, impactMonths);
         if (before == null || after == null) {
             return unreachable(goal, String.format(
                 "At ₹%s/month of savings, '%s' would take more than %d years to reach.",
@@ -78,9 +87,14 @@ public class TradeoffAnalyzer {
         int delayMonths = after - before;
         if (delayMonths == 0) return null;
 
-        String description = String.format(
-            "Pushes '%s' back by about %d %s: from %d to %d months at your current savings pace.",
-            goal.getName(), delayMonths, delayMonths == 1 ? "month" : "months", before, after);
+        String description = lump
+            ? String.format(
+                "Paying %s up front pushes '%s' back by about %d %s: from %d to %d months at your current savings pace.",
+                signedINR(upfront.doubleValue()), goal.getName(), delayMonths, delayMonths == 1 ? "month" : "months",
+                before, after)
+            : String.format(
+                "Pushes '%s' back by about %d %s: from %d to %d months at your current savings pace.",
+                goal.getName(), delayMonths, delayMonths == 1 ? "month" : "months", before, after);
         double monthsToTarget = ChronoUnit.DAYS.between(LocalDate.now(), goal.getTargetDate()) / DAYS_PER_MONTH;
         if (after > monthsToTarget) {
             description += " That is later than its target date of " + goal.getTargetDate() + ".";
@@ -113,7 +127,8 @@ public class TradeoffAnalyzer {
             .build();
     }
 
-    private void addOneTimeTradeoffs(List<Tradeoff> out, FinancialBaseline baseline, ScenarioRequest scenario) {
+    private void addOneTimeTradeoffs(List<Tradeoff> out, FinancialBaseline baseline, ScenarioRequest scenario,
+                                     SimulationAssumptions assumed) {
         BigDecimal amount = scenario.getAmount();
 
         // months to save up at current net savings
@@ -133,11 +148,11 @@ public class TradeoffAnalyzer {
         }
 
         out.add(t("10-year opportunity cost",
-            "₹" + fmtINR(futureValueLumpSum(amount, ASSUMED_ANNUAL_RETURN, 10)),
-            "If this amount were invested today at 8% annual return."));
+            "₹" + fmtINR(futureValueLumpSum(amount, assumed.annualRate(), 10)),
+            "If this amount were invested today at an assumed " + rate(assumed) + "% annual return."));
     }
 
-    private void addRecurringTradeoffs(List<Tradeoff> out, ScenarioRequest scenario) {
+    private void addRecurringTradeoffs(List<Tradeoff> out, ScenarioRequest scenario, SimulationAssumptions assumed) {
         BigDecimal monthly = scenario.getAmount();
         int duration = scenario.getDurationMonths() != null ? scenario.getDurationMonths() : 120;
 
@@ -151,11 +166,11 @@ public class TradeoffAnalyzer {
             "Total spend per year if kept active."));
 
         out.add(t("10-year opportunity cost",
-            "₹" + fmtINR(futureValueAnnuity(monthly, ASSUMED_ANNUAL_RETURN, 120)),
-            "If you invested the same monthly amount at 8% annual return."));
+            "₹" + fmtINR(futureValueAnnuity(monthly, assumed.annualRate(), 120)),
+            "If you invested the same monthly amount at an assumed " + rate(assumed) + "% annual return."));
     }
 
-    private void addSavingsTradeoffs(List<Tradeoff> out, ScenarioRequest scenario) {
+    private void addSavingsTradeoffs(List<Tradeoff> out, ScenarioRequest scenario, SimulationAssumptions assumed) {
         BigDecimal monthly = scenario.getAmount().abs();
         int duration = scenario.getDurationMonths() != null ? scenario.getDurationMonths() : 120;
 
@@ -166,8 +181,8 @@ public class TradeoffAnalyzer {
             positive ? "Cumulative additional savings." : "Cumulative savings lost."));
 
         out.add(t("10-year compounded value",
-            "₹" + fmtINR(futureValueAnnuity(monthly, ASSUMED_ANNUAL_RETURN, 120)),
-            "If sustained for 10 years at 8% annual return."));
+            "₹" + fmtINR(futureValueAnnuity(monthly, assumed.annualRate(), 120)),
+            "If sustained for 10 years at an assumed " + rate(assumed) + "% annual return."));
     }
 
     private void addLoanTradeoffs(List<Tradeoff> out, ScenarioRequest scenario) {
@@ -195,11 +210,15 @@ public class TradeoffAnalyzer {
         return BigDecimal.valueOf(fv).setScale(2, RoundingMode.HALF_UP);
     }
 
-    // FV of a monthly annuity: P × ((1+r)^n − 1) / r
+    // FV of a monthly annuity: P × ((1+r)^n − 1) / r; P × n at a 0% return
     public BigDecimal futureValueAnnuity(BigDecimal monthly, double annualRate, int months) {
         double r = annualRate / 12.0;
-        double fv = monthly.doubleValue() * (Math.pow(1 + r, months) - 1) / r;
+        double fv = r == 0 ? monthly.doubleValue() * months : monthly.doubleValue() * (Math.pow(1 + r, months) - 1) / r;
         return BigDecimal.valueOf(fv).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private static String rate(SimulationAssumptions assumed) {
+        return SimulationAssumptions.format(assumed.annualReturnPercent());
     }
 
     private static Tradeoff t(String label, String value, String description) {

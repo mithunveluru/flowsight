@@ -17,11 +17,13 @@ public class SimulationResult {
     private BigDecimal yearlyImpact;
     private BigDecimal fiveYearImpact;
     private BigDecimal tenYearCost;              // simple linear cost over 10 years
-    private BigDecimal tenYearOpportunityCost;   // future value if invested at 8%
+    private BigDecimal tenYearOpportunityCost;   // future value if invested at assumptions.annualReturnPercent
 
     private FlexibilityScore flexibility;
     private Projection       projection;
     private List<Tradeoff>   tradeoffs;
     private List<ConsequenceInsight> insights;
     private GoalImpact       goalImpact;     // null when user has no active goals
+    private SimulationAssumptions assumptions;
+    private MonteCarloResult monteCarlo;     // null without a baseline (no complete month of history)
 }

@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 // 0–100 flexibility score from recurring health (35%), savings rate (35%), cash buffer (30%).
+// The buffer is how well monthly savings cover the user's usual swings in net cash flow when that
+// volatility is known; otherwise the share of income left uncommitted.
 @Service
 public class FlexibilityCalculator {
 
@@ -43,6 +45,7 @@ public class FlexibilityCalculator {
         double recurring  = Math.max(0, b.getMonthlyRecurring().doubleValue());
         double netSavings = b.getMonthlyNetSavings().doubleValue();
         double buffer     = b.getMonthlyDiscretionary().doubleValue();
+        BigDecimal volatility = b.getMonthlyNetVolatility();
 
         // recurring health: 1.0 at 0% locked in, 0.0 at 50%+
         double a = clamp(1.0 - (recurring / income) / 0.5);
@@ -50,8 +53,16 @@ public class FlexibilityCalculator {
         // savings rate: 1.0 at 30%+
         double b1 = clamp((netSavings / income) / 0.3);
 
-        // cash buffer: 1.0 at 20%+ uncommitted income
-        double c = clamp((buffer / income) / 0.2);
+        // cash buffer: 1.0 when savings cover two standard deviations of monthly swings,
+        // or at 20%+ uncommitted income when the swings are unknown
+        double c;
+        if (volatility == null) {
+            c = clamp((buffer / income) / 0.2);
+        } else if (volatility.signum() > 0) {
+            c = clamp(netSavings / (2 * volatility.doubleValue()));
+        } else {
+            c = netSavings > 0 ? 1.0 : 0.0;
+        }
 
         double total = a * W_RECURRING + b1 * W_SAVINGS + c * W_BUFFER;
         return (int) Math.round(total * 100);

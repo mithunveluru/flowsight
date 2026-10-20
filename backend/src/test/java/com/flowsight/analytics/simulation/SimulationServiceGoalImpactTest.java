@@ -6,6 +6,8 @@ import com.flowsight.dto.simulation.ScenarioType;
 import com.flowsight.dto.simulation.SimulationResult;
 import com.flowsight.entity.FinancialGoal;
 import com.flowsight.entity.GoalStatus;
+import com.flowsight.ml.forecast.ForecastService;
+import com.flowsight.ml.forecast.MonthlyHistory;
 import com.flowsight.repository.FinancialGoalRepository;
 import org.junit.jupiter.api.Test;
 
@@ -35,8 +37,12 @@ class SimulationServiceGoalImpactTest {
                 .currentAmount(BigDecimal.ZERO).targetDate(LocalDate.now().plusDays(365)).build()));
         ProjectionEngine projection = new ProjectionEngine();
 
+        ForecastService forecasts = mock(ForecastService.class);
+        when(forecasts.history(any(), any())).thenReturn(
+            MonthlyHistory.of(List.of(), null, LocalDate.now()));
+
         return new SimulationService(baselineCalculator, new FlexibilityCalculator(), projection,
-            new TradeoffAnalyzer(goals, projection), new ConsequenceInsightGenerator())
+            new TradeoffAnalyzer(goals, projection), new ConsequenceInsightGenerator(), forecasts, goals)
             .simulate(UUID.randomUUID(), scenario);
     }
 

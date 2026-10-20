@@ -21,4 +21,6 @@ public class FinancialBaseline {
     private String     topCategoryName;
     private BigDecimal topCategoryMonthlySpend;
     private boolean    hasEnoughData;
+    // Standard deviation of monthly net cash flow used by the flexibility buffer; null when not measured.
+    private BigDecimal monthlyNetVolatility;
 }
