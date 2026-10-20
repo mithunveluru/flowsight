@@ -55,13 +55,13 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3007,http://localhost:1420,tauri://localhost,http://tauri.localhost}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       RECEIPT_OCR_URL: ${RECEIPT_OCR_URL:-http://receipt-ocr:8000}
-      # ML stays off (rules only) until a token is set and a capability flag is enabled
+      # local stack serves models out of the box; every ML call still falls back to rules
       ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml-service:8000}
-      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-local-dev-ml-token}
       # capability switches must match the ml-service container's
-      ML_OCR_ENABLED: ${ML_OCR_ENABLED:-false}
+      ML_OCR_ENABLED: ${ML_OCR_ENABLED:-true}
       ML_OCR_TIMEOUT: ${ML_OCR_TIMEOUT:-60s}
-      ML_CATEGORIZER_ENABLED: ${ML_CATEGORIZER_ENABLED:-false}
+      ML_CATEGORIZER_ENABLED: ${ML_CATEGORIZER_ENABLED:-true}
       ML_CATEGORIZER_SHADOW: ${ML_CATEGORIZER_SHADOW:-false}
       ML_MERCHANT_EMBEDDINGS_ENABLED: ${ML_MERCHANT_EMBEDDINGS_ENABLED:-false}
       OCR_TESSERACT_LANGUAGES: ${OCR_TESSERACT_LANGUAGES:-eng}
@@ -101,13 +101,13 @@ services:
       context: ./ml-service
     container_name: flowsight-ml-service
     environment:
-      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-}
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-local-dev-ml-token}
       ML_MODEL_DIR: /models
-      ML_OCR_ENABLED: ${ML_OCR_ENABLED:-false}
+      ML_OCR_ENABLED: ${ML_OCR_ENABLED:-true}
       ML_OCR_LLM_ENABLED: ${ML_OCR_LLM_ENABLED:-false}
       ML_OCR_LLM_MODEL: ${ML_OCR_LLM_MODEL:-}
       ML_OCR_LLM_API_KEY: ${GROQ_API_KEY:-}
-      ML_CATEGORIZER_ENABLED: ${ML_CATEGORIZER_ENABLED:-false}
+      ML_CATEGORIZER_ENABLED: ${ML_CATEGORIZER_ENABLED:-true}
       ML_CATEGORIZER_SHADOW: ${ML_CATEGORIZER_SHADOW:-false}
       ML_MERCHANT_EMBEDDINGS_ENABLED: ${ML_MERCHANT_EMBEDDINGS_ENABLED:-false}
     volumes:
