@@ -73,6 +73,7 @@ class OcrOutput(BaseModel):
     text: str | None = None
     passes: int = 0
     vision_used: bool = False
+    vision_status: str = "off"
     reread: bool = False
 
 
@@ -108,7 +109,8 @@ class OcrCapability(Capability):
             except (binascii.Error, ValueError) as exc:
                 raise ValueError("image_base64 is not valid base64") from exc
             out = pipeline.run(data, runner, vision_config, transport)
-            return OcrOutput(**out.result, passes=out.passes, vision_used=out.vision_used, reread=out.reread)
+            return OcrOutput(**out.result, passes=out.passes, vision_used=out.vision_used,
+                             vision_status=out.vision_status, reread=out.reread)
 
         return predict
 
@@ -117,7 +119,7 @@ class OcrCapability(Capability):
 
     def output_summary(self, result: OcrOutput) -> dict:
         # no merchant names or amounts: decisions and process facts only
-        return {"decision": result.decision, "passes": result.passes, "vision": result.vision_used,
+        return {"decision": result.decision, "passes": result.passes, "vision": result.vision_status,
                 "reread": result.reread, "fields": {k: v.decision for k, v in result.fields.items()}}
 
     def confidence(self, result: OcrOutput) -> float | None:

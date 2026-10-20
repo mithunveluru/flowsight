@@ -70,6 +70,7 @@ class Outcome:
     passes: int
     vision_used: bool
     reread: bool
+    vision_status: str = "off"
 
 
 def run(data: bytes, runner: Runner, vision_config: vision.VisionConfig,
@@ -86,12 +87,14 @@ def run(data: bytes, runner: Runner, vision_config: vision.VisionConfig,
             break
 
     reading = None
+    vision_status = "off"
     if vision_config.enabled:
         first = parsed[0]
         words = [w for line in first.lines for w in line.words]
         boxes = images.pii_boxes(words, [(l.text, l.words) for l in first.lines])
         png = images.encode_png(images.mask(prepared, boxes))
-        reading = vision.read(vision_config, png, transport) if transport else vision.read(vision_config, png)
+        reading, vision_status = (vision.read_with_status(vision_config, png, transport) if transport
+                                  else vision.read_with_status(vision_config, png))
 
     reread = False
     total = reconcile(parsed, reading.total if reading else None)
@@ -103,7 +106,8 @@ def run(data: bytes, runner: Runner, vision_config: vision.VisionConfig,
             total = reconcile(parsed, reading.total)
 
     primary = parsed[total.pass_index if total.pass_index >= 0 else 0]
-    return Outcome(assemble(parsed, total, primary, reading, today), len(parsed), reading is not None, reread)
+    return Outcome(assemble(parsed, total, primary, reading, today), len(parsed), reading is not None, reread,
+                   vision_status)
 
 
 def assemble(parsed: list[Parsed], total: TotalResult, primary: Parsed, reading, today: date | None) -> dict:

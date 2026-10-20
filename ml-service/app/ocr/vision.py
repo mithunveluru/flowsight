@@ -5,6 +5,7 @@ ML_OCR_LLM_MODEL names a model; no model name is assumed."""
 import base64
 import json
 import logging
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -129,15 +130,45 @@ def parse_reading(content: str) -> VisionReading | None:
     return VisionReading(text("merchant"), text("date"), text("currency"), total, subtotal, numbers, items)
 
 
+# a model the provider refuses (retired, or not a vision model) is not retried on every receipt
+MODEL_RETRY_SECONDS = 600
+_refused_until: dict[str, float] = {}
+
+
 def read(config: VisionConfig, png: bytes, transport: Transport = _post) -> VisionReading | None:
+    return read_with_status(config, png, transport)[0]
+
+
+def read_with_status(config: VisionConfig, png: bytes, transport: Transport = _post) -> tuple[VisionReading | None, str]:
+    """The reading, and what happened: off, used, skipped, unavailable or failed (with a reason)."""
     if not config.enabled:
-        return None
+        return None, "off"
+    if _refused_until.get(config.model, 0.0) > time.monotonic():
+        return None, "skipped: model refused recently"
     body = json.dumps(request_body(config, png)).encode()
-    headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json"}
+    # the provider's edge rejects Python's default urllib user agent (Cloudflare error 1010)
+    headers = {"Authorization": f"Bearer {config.api_key}", "Content-Type": "application/json",
+               "User-Agent": "flowsight-ml-service"}
     try:
         raw = transport(config.url + "/chat/completions", body, headers, config.timeout)
         content = json.loads(raw)["choices"][0]["message"]["content"]
+    except urllib.error.HTTPError as exc:
+        detail = _error_body(exc)
+        if exc.code == 404 or (exc.code in (400, 403) and "model" in detail):
+            _refused_until[config.model] = time.monotonic() + MODEL_RETRY_SECONDS
+            log.warning("vision model %s refused (HTTP %s); skipping it for %ss", config.model, exc.code, MODEL_RETRY_SECONDS)
+            return None, f"unavailable: HTTP {exc.code}"
+        log.warning("vision pass failed: HTTP %s", exc.code)
+        return None, f"failed: HTTP {exc.code}"
     except (urllib.error.URLError, TimeoutError, OSError, KeyError, IndexError, TypeError, ValueError) as exc:
         log.warning("vision pass unavailable: %s", type(exc).__name__)
-        return None
-    return parse_reading(content) if isinstance(content, str) else None
+        return None, f"failed: {type(exc).__name__}"
+    reading = parse_reading(content) if isinstance(content, str) else None
+    return reading, "used" if reading else "failed: unreadable answer"
+
+
+def _error_body(exc: urllib.error.HTTPError) -> str:
+    try:
+        return exc.read().decode("utf-8", "replace").lower()
+    except Exception:
+        return ""

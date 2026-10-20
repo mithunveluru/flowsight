@@ -68,3 +68,14 @@ def test_a_failing_bootstrap_does_not_stop_the_service(tmp_path: Path):
     caps = health(client(tmp_path, [BrokenCapability(), CATEGORIZER]))
     assert caps["broken"]["bootstrap"] == "failed: OSError"
     assert caps["categorizer"]["active"]
+
+
+def test_merchant_embeddings_ship_with_the_seed_aliases(tmp_path: Path):
+    from app.merchant_embeddings import CAPABILITY as EMBEDDINGS
+
+    c = client(tmp_path, [EMBEDDINGS], ML_MERCHANT_EMBEDDINGS_ENABLED="true")
+    assert health(c)["merchant-embeddings"]["active"] == "seed-v16"
+
+    r = c.post("/v1/capabilities/merchant-embeddings/predict", headers=AUTH, json={"text": "YOUTUBE PREMIUN FAMILY"})
+    assert r.status_code == 200
+    assert r.json()["result"]["canonical"] == "YouTube Premium"

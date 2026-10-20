@@ -7,15 +7,19 @@ neighbour is close enough to use.
 """
 
 import json
+import shutil
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 
 from app.capability import Capability, Predictor
 from app.merchant_embeddings.vectors import NgramIndex
-from app.registry import ModelVersion
+from app.registry import ModelRegistry, ModelVersion
 
 ARTIFACT = "aliases.json"
+# built from the alias migration's seed rows by build.py --from-sql
+BUNDLED = Path(__file__).resolve().parent / "artifact"
+BASELINE_VERSION = "seed-v16"
 
 
 class MerchantInput(BaseModel):
@@ -45,6 +49,14 @@ class MerchantEmbeddings(Capability):
             return MerchantOutput(canonical=canonical, alias=alias, similarity=round(score, 4))
 
         return predict
+
+    def bootstrap(self, registry: ModelRegistry) -> ModelVersion:
+        target = registry.model_dir / self.name / BASELINE_VERSION
+        target.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(BUNDLED / ARTIFACT, target / ARTIFACT)
+        rows = len(json.loads((target / ARTIFACT).read_text(encoding="utf-8")))
+        return registry.register(self.name, BASELINE_VERSION, training_data={"aliases": rows, "source": "seed migration"},
+                                 status="active")
 
     def input_summary(self, payload: MerchantInput) -> dict:
         return {"length": len(payload.text), "words": len(payload.text.split())}

@@ -1,0 +1,1534 @@
+[
+{
+"alias": "youtube premium",
+"canonical": "YouTube Premium"
+},
+{
+"alias": "yt premium",
+"canonical": "YouTube Premium"
+},
+{
+"alias": "amazon prime",
+"canonical": "Amazon Prime"
+},
+{
+"alias": "prime video",
+"canonical": "Amazon Prime"
+},
+{
+"alias": "amzn prime",
+"canonical": "Amazon Prime"
+},
+{
+"alias": "apple music",
+"canonical": "Apple Music"
+},
+{
+"alias": "apple icloud",
+"canonical": "Apple iCloud"
+},
+{
+"alias": "microsoft 365",
+"canonical": "Microsoft 365"
+},
+{
+"alias": "office 365",
+"canonical": "Microsoft 365"
+},
+{
+"alias": "swiggy instamart",
+"canonical": "Swiggy Instamart"
+},
+{
+"alias": "instamart",
+"canonical": "Swiggy Instamart"
+},
+{
+"alias": "vi recharge",
+"canonical": "Vi"
+},
+{
+"alias": "disney plus",
+"canonical": "Disney+"
+},
+{
+"alias": "google one",
+"canonical": "Google One"
+},
+{
+"alias": "google storage",
+"canonical": "Google One"
+},
+{
+"alias": "emirates nbd",
+"canonical": "Emirates NBD"
+},
+{
+"alias": "jio mart",
+"canonical": "JioMart"
+},
+{
+"alias": "jiomart",
+"canonical": "JioMart"
+},
+{
+"alias": "hdfc life",
+"canonical": "HDFC Life"
+},
+{
+"alias": "icici prudential",
+"canonical": "ICICI Prudential"
+},
+{
+"alias": "icici lombard",
+"canonical": "ICICI Lombard"
+},
+{
+"alias": "sbi card",
+"canonical": "SBI Card"
+},
+{
+"alias": "sbi life",
+"canonical": "SBI Life"
+},
+{
+"alias": "tata 1mg",
+"canonical": "Tata 1mg"
+},
+{
+"alias": "1mg",
+"canonical": "Tata 1mg"
+},
+{
+"alias": "tata play",
+"canonical": "Tata Play"
+},
+{
+"alias": "tata sky",
+"canonical": "Tata Play"
+},
+{
+"alias": "tata cliq",
+"canonical": "Tata CLiQ"
+},
+{
+"alias": "air india",
+"canonical": "Air India"
+},
+{
+"alias": "delhi metro",
+"canonical": "Delhi Metro"
+},
+{
+"alias": "dmrc",
+"canonical": "Delhi Metro"
+},
+{
+"alias": "namma metro",
+"canonical": "Namma Metro"
+},
+{
+"alias": "bmrcl",
+"canonical": "Namma Metro"
+},
+{
+"alias": "cafe coffee day",
+"canonical": "Cafe Coffee Day"
+},
+{
+"alias": "barbeque nation",
+"canonical": "Barbeque Nation"
+},
+{
+"alias": "behrouz biryani",
+"canonical": "Behrouz Biryani"
+},
+{
+"alias": "saravana bhavan",
+"canonical": "Saravana Bhavan"
+},
+{
+"alias": "reliance fresh",
+"canonical": "Reliance Fresh"
+},
+{
+"alias": "reliance digital",
+"canonical": "Reliance Digital"
+},
+{
+"alias": "more retail",
+"canonical": "More"
+},
+{
+"alias": "natures basket",
+"canonical": "Nature's Basket"
+},
+{
+"alias": "avenue supermarts",
+"canonical": "DMart"
+},
+{
+"alias": "shoppers stop",
+"canonical": "Shoppers Stop"
+},
+{
+"alias": "apollo pharmacy",
+"canonical": "Apollo Pharmacy"
+},
+{
+"alias": "manipal hospitals",
+"canonical": "Manipal Hospitals"
+},
+{
+"alias": "lal pathlabs",
+"canonical": "Dr Lal PathLabs"
+},
+{
+"alias": "act fibernet",
+"canonical": "ACT Fibernet"
+},
+{
+"alias": "mahanagar gas",
+"canonical": "Mahanagar Gas"
+},
+{
+"alias": "indian oil",
+"canonical": "Indian Oil"
+},
+{
+"alias": "taj hotels",
+"canonical": "Taj Hotels"
+},
+{
+"alias": "delhi public school",
+"canonical": "Delhi Public School"
+},
+{
+"alias": "naturals salon",
+"canonical": "Naturals Salon"
+},
+{
+"alias": "passport seva",
+"canonical": "Passport Seva"
+},
+{
+"alias": "saudi electricity",
+"canonical": "Saudi Electricity"
+},
+{
+"alias": "national water",
+"canonical": "National Water Company"
+},
+{
+"alias": "riyadh metro",
+"canonical": "Riyadh Metro"
+},
+{
+"alias": "al baik",
+"canonical": "Al Baik"
+},
+{
+"alias": "dr cafe",
+"canonical": "Dr. Cafe"
+},
+{
+"alias": "panda retail",
+"canonical": "Panda"
+},
+{
+"alias": "panda hypermarket",
+"canonical": "Panda"
+},
+{
+"alias": "tamimi markets",
+"canonical": "Tamimi Markets"
+},
+{
+"alias": "nana direct",
+"canonical": "Nana"
+},
+{
+"alias": "united electronics",
+"canonical": "eXtra"
+},
+{
+"alias": "muvi cinemas",
+"canonical": "Muvi Cinemas"
+},
+{
+"alias": "al dawaa",
+"canonical": "Al Dawaa"
+},
+{
+"alias": "sulaiman al habib",
+"canonical": "Dr Sulaiman Al Habib"
+},
+{
+"alias": "bupa arabia",
+"canonical": "Bupa Arabia"
+},
+{
+"alias": "kingdom schools",
+"canonical": "Kingdom Schools"
+},
+{
+"alias": "king saud university",
+"canonical": "King Saud University"
+},
+{
+"alias": "fitness time",
+"canonical": "Fitness Time"
+},
+{
+"alias": "dubai taxi",
+"canonical": "Dubai Taxi"
+},
+{
+"alias": "dubai police",
+"canonical": "Dubai Police"
+},
+{
+"alias": "dubai parks",
+"canonical": "Dubai Parks"
+},
+{
+"alias": "dubai cares",
+"canonical": "Dubai Cares"
+},
+{
+"alias": "rta nol",
+"canonical": "RTA Nol"
+},
+{
+"alias": "nol card",
+"canonical": "RTA Nol"
+},
+{
+"alias": "rta parking",
+"canonical": "RTA Parking"
+},
+{
+"alias": "tim hortons",
+"canonical": "Tim Hortons"
+},
+{
+"alias": "shake shack",
+"canonical": "Shake Shack"
+},
+{
+"alias": "operation falafel",
+"canonical": "Operation Falafel"
+},
+{
+"alias": "lulu hypermarket",
+"canonical": "Lulu Hypermarket"
+},
+{
+"alias": "union coop",
+"canonical": "Union Coop"
+},
+{
+"alias": "sharaf dg",
+"canonical": "Sharaf DG"
+},
+{
+"alias": "ace hardware",
+"canonical": "ACE"
+},
+{
+"alias": "home centre",
+"canonical": "Home Centre"
+},
+{
+"alias": "du telecom",
+"canonical": "du"
+},
+{
+"alias": "empower cooling",
+"canonical": "Empower"
+},
+{
+"alias": "vox cinemas",
+"canonical": "VOX Cinemas"
+},
+{
+"alias": "reel cinemas",
+"canonical": "Reel Cinemas"
+},
+{
+"alias": "osn plus",
+"canonical": "OSN+"
+},
+{
+"alias": "aster pharmacy",
+"canonical": "Aster Pharmacy"
+},
+{
+"alias": "life pharmacy",
+"canonical": "Life Pharmacy"
+},
+{
+"alias": "nmc healthcare",
+"canonical": "NMC"
+},
+{
+"alias": "gems education",
+"canonical": "GEMS Education"
+},
+{
+"alias": "air arabia",
+"canonical": "Air Arabia"
+},
+{
+"alias": "fitness first",
+"canonical": "Fitness First"
+},
+{
+"alias": "booking com",
+"canonical": "Booking.com"
+},
+{
+"alias": "american express",
+"canonical": "American Express"
+},
+{
+"alias": "american airlines",
+"canonical": "American Airlines"
+},
+{
+"alias": "united airlines",
+"canonical": "United"
+},
+{
+"alias": "delta air lines",
+"canonical": "Delta"
+},
+{
+"alias": "delta airlines",
+"canonical": "Delta"
+},
+{
+"alias": "southwest airlines",
+"canonical": "Southwest"
+},
+{
+"alias": "whole foods",
+"canonical": "Whole Foods"
+},
+{
+"alias": "trader joes",
+"canonical": "Trader Joe's"
+},
+{
+"alias": "home depot",
+"canonical": "The Home Depot"
+},
+{
+"alias": "best buy",
+"canonical": "Best Buy"
+},
+{
+"alias": "new york times",
+"canonical": "The New York Times"
+},
+{
+"alias": "nytimes",
+"canonical": "The New York Times"
+},
+{
+"alias": "planet fitness",
+"canonical": "Planet Fitness"
+},
+{
+"alias": "panera bread",
+"canonical": "Panera Bread"
+},
+{
+"alias": "blue bottle",
+"canonical": "Blue Bottle Coffee"
+},
+{
+"alias": "burger king",
+"canonical": "Burger King"
+},
+{
+"alias": "pizza hut",
+"canonical": "Pizza Hut"
+},
+{
+"alias": "taco bell",
+"canonical": "Taco Bell"
+},
+{
+"alias": "con edison",
+"canonical": "Con Edison"
+},
+{
+"alias": "duke energy",
+"canonical": "Duke Energy"
+},
+{
+"alias": "pg e",
+"canonical": "PG&E"
+},
+{
+"alias": "at t",
+"canonical": "AT&T"
+},
+{
+"alias": "t mobile",
+"canonical": "T-Mobile"
+},
+{
+"alias": "state farm",
+"canonical": "State Farm"
+},
+{
+"alias": "progressive insurance",
+"canonical": "Progressive"
+},
+{
+"alias": "progressive ins",
+"canonical": "Progressive"
+},
+{
+"alias": "kaiser permanente",
+"canonical": "Kaiser Permanente"
+},
+{
+"alias": "quest diagnostics",
+"canonical": "Quest Diagnostics"
+},
+{
+"alias": "one medical",
+"canonical": "One Medical"
+},
+{
+"alias": "sallie mae",
+"canonical": "Sallie Mae"
+},
+{
+"alias": "wells fargo",
+"canonical": "Wells Fargo"
+},
+{
+"alias": "barnes noble",
+"canonical": "Barnes & Noble"
+},
+{
+"alias": "e zpass",
+"canonical": "E-ZPass"
+},
+{
+"alias": "mta nyct",
+"canonical": "MTA"
+},
+{
+"alias": "amc theatres",
+"canonical": "AMC Theatres"
+},
+{
+"alias": "amc theaters",
+"canonical": "AMC Theatres"
+},
+{
+"alias": "steam games",
+"canonical": "Steam"
+},
+{
+"alias": "playstation network",
+"canonical": "PlayStation Network"
+},
+{
+"alias": "great clips",
+"canonical": "Great Clips"
+},
+{
+"alias": "shell oil",
+"canonical": "Shell"
+},
+{
+"alias": "netflix",
+"canonical": "Netflix"
+},
+{
+"alias": "spotify",
+"canonical": "Spotify"
+},
+{
+"alias": "disney",
+"canonical": "Disney+ Hotstar"
+},
+{
+"alias": "hotstar",
+"canonical": "Disney+ Hotstar"
+},
+{
+"alias": "icloud",
+"canonical": "Apple iCloud"
+},
+{
+"alias": "adobe",
+"canonical": "Adobe"
+},
+{
+"alias": "github",
+"canonical": "GitHub"
+},
+{
+"alias": "openai",
+"canonical": "OpenAI"
+},
+{
+"alias": "chatgpt",
+"canonical": "OpenAI"
+},
+{
+"alias": "anthropic",
+"canonical": "Anthropic"
+},
+{
+"alias": "claude",
+"canonical": "Anthropic"
+},
+{
+"alias": "dropbox",
+"canonical": "Dropbox"
+},
+{
+"alias": "notion",
+"canonical": "Notion"
+},
+{
+"alias": "linkedin",
+"canonical": "LinkedIn"
+},
+{
+"alias": "canva",
+"canonical": "Canva"
+},
+{
+"alias": "figma",
+"canonical": "Figma"
+},
+{
+"alias": "zomato",
+"canonical": "Zomato"
+},
+{
+"alias": "swiggy",
+"canonical": "Swiggy"
+},
+{
+"alias": "blinkit",
+"canonical": "Blinkit"
+},
+{
+"alias": "bigbasket",
+"canonical": "BigBasket"
+},
+{
+"alias": "dunzo",
+"canonical": "Dunzo"
+},
+{
+"alias": "zepto",
+"canonical": "Zepto"
+},
+{
+"alias": "amazon",
+"canonical": "Amazon"
+},
+{
+"alias": "amzn",
+"canonical": "Amazon"
+},
+{
+"alias": "flipkart",
+"canonical": "Flipkart"
+},
+{
+"alias": "meesho",
+"canonical": "Meesho"
+},
+{
+"alias": "myntra",
+"canonical": "Myntra"
+},
+{
+"alias": "nykaa",
+"canonical": "Nykaa"
+},
+{
+"alias": "uber",
+"canonical": "Uber"
+},
+{
+"alias": "ola",
+"canonical": "Ola"
+},
+{
+"alias": "rapido",
+"canonical": "Rapido"
+},
+{
+"alias": "irctc",
+"canonical": "IRCTC"
+},
+{
+"alias": "makemytrip",
+"canonical": "MakeMyTrip"
+},
+{
+"alias": "goibibo",
+"canonical": "Goibibo"
+},
+{
+"alias": "starbucks",
+"canonical": "Starbucks"
+},
+{
+"alias": "mcdonalds",
+"canonical": "McDonald's"
+},
+{
+"alias": "dominos",
+"canonical": "Domino's"
+},
+{
+"alias": "kfc",
+"canonical": "KFC"
+},
+{
+"alias": "carrefour",
+"canonical": "Carrefour"
+},
+{
+"alias": "ikea",
+"canonical": "IKEA"
+},
+{
+"alias": "coursera",
+"canonical": "Coursera"
+},
+{
+"alias": "udemy",
+"canonical": "Udemy"
+},
+{
+"alias": "marriott",
+"canonical": "Marriott"
+},
+{
+"alias": "hilton",
+"canonical": "Hilton"
+},
+{
+"alias": "airbnb",
+"canonical": "Airbnb"
+},
+{
+"alias": "expedia",
+"canonical": "Expedia"
+},
+{
+"alias": "tabby",
+"canonical": "Tabby"
+},
+{
+"alias": "careem",
+"canonical": "Careem"
+},
+{
+"alias": "noon",
+"canonical": "Noon"
+},
+{
+"alias": "namshi",
+"canonical": "Namshi"
+},
+{
+"alias": "boots",
+"canonical": "Boots"
+},
+{
+"alias": "haldirams",
+"canonical": "Haldiram's"
+},
+{
+"alias": "chaayos",
+"canonical": "Chaayos"
+},
+{
+"alias": "dmart",
+"canonical": "DMart"
+},
+{
+"alias": "spencers",
+"canonical": "Spencer's"
+},
+{
+"alias": "ajio",
+"canonical": "Ajio"
+},
+{
+"alias": "decathlon",
+"canonical": "Decathlon"
+},
+{
+"alias": "croma",
+"canonical": "Croma"
+},
+{
+"alias": "westside",
+"canonical": "Westside"
+},
+{
+"alias": "hpcl",
+"canonical": "HPCL"
+},
+{
+"alias": "bpcl",
+"canonical": "BPCL"
+},
+{
+"alias": "iocl",
+"canonical": "Indian Oil"
+},
+{
+"alias": "fastag",
+"canonical": "FASTag"
+},
+{
+"alias": "bookmyshow",
+"canonical": "BookMyShow"
+},
+{
+"alias": "sonyliv",
+"canonical": "SonyLIV"
+},
+{
+"alias": "zee5",
+"canonical": "ZEE5"
+},
+{
+"alias": "jiocinema",
+"canonical": "JioCinema"
+},
+{
+"alias": "pvr",
+"canonical": "PVR"
+},
+{
+"alias": "inox",
+"canonical": "INOX"
+},
+{
+"alias": "medplus",
+"canonical": "MedPlus"
+},
+{
+"alias": "pharmeasy",
+"canonical": "PharmEasy"
+},
+{
+"alias": "practo",
+"canonical": "Practo"
+},
+{
+"alias": "lic",
+"canonical": "LIC"
+},
+{
+"alias": "zerodha",
+"canonical": "Zerodha"
+},
+{
+"alias": "groww",
+"canonical": "Groww"
+},
+{
+"alias": "cred",
+"canonical": "CRED"
+},
+{
+"alias": "byjus",
+"canonical": "Byju's"
+},
+{
+"alias": "unacademy",
+"canonical": "Unacademy"
+},
+{
+"alias": "fiitjee",
+"canonical": "FIITJEE"
+},
+{
+"alias": "indigo",
+"canonical": "IndiGo"
+},
+{
+"alias": "interglobe",
+"canonical": "IndiGo"
+},
+{
+"alias": "oyo",
+"canonical": "OYO"
+},
+{
+"alias": "redbus",
+"canonical": "redBus"
+},
+{
+"alias": "ihcl",
+"canonical": "Taj Hotels"
+},
+{
+"alias": "cleartrip",
+"canonical": "Cleartrip"
+},
+{
+"alias": "giveindia",
+"canonical": "GiveIndia"
+},
+{
+"alias": "albaik",
+"canonical": "Al Baik"
+},
+{
+"alias": "kudu",
+"canonical": "Kudu"
+},
+{
+"alias": "hungerstation",
+"canonical": "HungerStation"
+},
+{
+"alias": "jahez",
+"canonical": "Jahez"
+},
+{
+"alias": "herfy",
+"canonical": "Herfy"
+},
+{
+"alias": "barns",
+"canonical": "Barn's"
+},
+{
+"alias": "danube",
+"canonical": "Danube"
+},
+{
+"alias": "tamimi",
+"canonical": "Tamimi Markets"
+},
+{
+"alias": "othaim",
+"canonical": "Othaim"
+},
+{
+"alias": "jarir",
+"canonical": "Jarir Bookstore"
+},
+{
+"alias": "centrepoint",
+"canonical": "Centrepoint"
+},
+{
+"alias": "aldrees",
+"canonical": "Aldrees"
+},
+{
+"alias": "petromin",
+"canonical": "Petromin"
+},
+{
+"alias": "sasco",
+"canonical": "SASCO"
+},
+{
+"alias": "mawgif",
+"canonical": "Mawgif"
+},
+{
+"alias": "stc",
+"canonical": "STC"
+},
+{
+"alias": "mobily",
+"canonical": "Mobily"
+},
+{
+"alias": "zain",
+"canonical": "Zain"
+},
+{
+"alias": "shahid",
+"canonical": "Shahid"
+},
+{
+"alias": "webook",
+"canonical": "Webook"
+},
+{
+"alias": "anghami",
+"canonical": "Anghami"
+},
+{
+"alias": "nahdi",
+"canonical": "Nahdi Pharmacy"
+},
+{
+"alias": "mouwasat",
+"canonical": "Mouwasat"
+},
+{
+"alias": "tawuniya",
+"canonical": "Tawuniya"
+},
+{
+"alias": "tamara",
+"canonical": "Tamara"
+},
+{
+"alias": "saudia",
+"canonical": "Saudia"
+},
+{
+"alias": "flynas",
+"canonical": "flynas"
+},
+{
+"alias": "flyadeal",
+"canonical": "flyadeal"
+},
+{
+"alias": "almosafer",
+"canonical": "Almosafer"
+},
+{
+"alias": "haramain",
+"canonical": "Haramain Railway"
+},
+{
+"alias": "absher",
+"canonical": "Absher"
+},
+{
+"alias": "ehsan",
+"canonical": "Ehsan"
+},
+{
+"alias": "talabat",
+"canonical": "Talabat"
+},
+{
+"alias": "deliveroo",
+"canonical": "Deliveroo"
+},
+{
+"alias": "lulu",
+"canonical": "Lulu Hypermarket"
+},
+{
+"alias": "spinneys",
+"canonical": "Spinneys"
+},
+{
+"alias": "waitrose",
+"canonical": "Waitrose"
+},
+{
+"alias": "choithrams",
+"canonical": "Choithrams"
+},
+{
+"alias": "kibsons",
+"canonical": "Kibsons"
+},
+{
+"alias": "instashop",
+"canonical": "Instashop"
+},
+{
+"alias": "salik",
+"canonical": "Salik"
+},
+{
+"alias": "enoc",
+"canonical": "ENOC"
+},
+{
+"alias": "adnoc",
+"canonical": "ADNOC"
+},
+{
+"alias": "emarat",
+"canonical": "Emarat"
+},
+{
+"alias": "dewa",
+"canonical": "DEWA"
+},
+{
+"alias": "taqa",
+"canonical": "TAQA"
+},
+{
+"alias": "addc",
+"canonical": "TAQA"
+},
+{
+"alias": "sewa",
+"canonical": "SEWA"
+},
+{
+"alias": "etisalat",
+"canonical": "e&"
+},
+{
+"alias": "platinumlist",
+"canonical": "Platinumlist"
+},
+{
+"alias": "mediclinic",
+"canonical": "Mediclinic"
+},
+{
+"alias": "nmc",
+"canonical": "NMC"
+},
+{
+"alias": "axa",
+"canonical": "AXA"
+},
+{
+"alias": "sarwa",
+"canonical": "Sarwa"
+},
+{
+"alias": "kumon",
+"canonical": "Kumon"
+},
+{
+"alias": "emirates",
+"canonical": "Emirates"
+},
+{
+"alias": "flydubai",
+"canonical": "flydubai"
+},
+{
+"alias": "etihad",
+"canonical": "Etihad"
+},
+{
+"alias": "rotana",
+"canonical": "Rotana"
+},
+{
+"alias": "chipotle",
+"canonical": "Chipotle"
+},
+{
+"alias": "doordash",
+"canonical": "DoorDash"
+},
+{
+"alias": "grubhub",
+"canonical": "Grubhub"
+},
+{
+"alias": "panera",
+"canonical": "Panera Bread"
+},
+{
+"alias": "sweetgreen",
+"canonical": "Sweetgreen"
+},
+{
+"alias": "dunkin",
+"canonical": "Dunkin'"
+},
+{
+"alias": "kroger",
+"canonical": "Kroger"
+},
+{
+"alias": "safeway",
+"canonical": "Safeway"
+},
+{
+"alias": "costco",
+"canonical": "Costco"
+},
+{
+"alias": "instacart",
+"canonical": "Instacart"
+},
+{
+"alias": "aldi",
+"canonical": "Aldi"
+},
+{
+"alias": "publix",
+"canonical": "Publix"
+},
+{
+"alias": "target",
+"canonical": "Target"
+},
+{
+"alias": "walmart",
+"canonical": "Walmart"
+},
+{
+"alias": "wal mart",
+"canonical": "Walmart"
+},
+{
+"alias": "etsy",
+"canonical": "Etsy"
+},
+{
+"alias": "ebay",
+"canonical": "eBay"
+},
+{
+"alias": "nike",
+"canonical": "Nike"
+},
+{
+"alias": "macys",
+"canonical": "Macy's"
+},
+{
+"alias": "lyft",
+"canonical": "Lyft"
+},
+{
+"alias": "shell",
+"canonical": "Shell"
+},
+{
+"alias": "chevron",
+"canonical": "Chevron"
+},
+{
+"alias": "exxonmobil",
+"canonical": "ExxonMobil"
+},
+{
+"alias": "exxon",
+"canonical": "ExxonMobil"
+},
+{
+"alias": "mobil",
+"canonical": "ExxonMobil"
+},
+{
+"alias": "bp",
+"canonical": "BP"
+},
+{
+"alias": "mta",
+"canonical": "MTA"
+},
+{
+"alias": "ezpass",
+"canonical": "E-ZPass"
+},
+{
+"alias": "spothero",
+"canonical": "SpotHero"
+},
+{
+"alias": "amtrak",
+"canonical": "Amtrak"
+},
+{
+"alias": "verizon",
+"canonical": "Verizon"
+},
+{
+"alias": "xfinity",
+"canonical": "Xfinity"
+},
+{
+"alias": "comcast",
+"canonical": "Xfinity"
+},
+{
+"alias": "hulu",
+"canonical": "Hulu"
+},
+{
+"alias": "ticketmaster",
+"canonical": "Ticketmaster"
+},
+{
+"alias": "steampowered",
+"canonical": "Steam"
+},
+{
+"alias": "playstation",
+"canonical": "PlayStation Network"
+},
+{
+"alias": "cvs",
+"canonical": "CVS"
+},
+{
+"alias": "walgreens",
+"canonical": "Walgreens"
+},
+{
+"alias": "kaiser",
+"canonical": "Kaiser Permanente"
+},
+{
+"alias": "labcorp",
+"canonical": "Labcorp"
+},
+{
+"alias": "geico",
+"canonical": "GEICO"
+},
+{
+"alias": "chase",
+"canonical": "Chase"
+},
+{
+"alias": "amex",
+"canonical": "American Express"
+},
+{
+"alias": "robinhood",
+"canonical": "Robinhood"
+},
+{
+"alias": "vanguard",
+"canonical": "Vanguard"
+},
+{
+"alias": "chegg",
+"canonical": "Chegg"
+},
+{
+"alias": "nyu",
+"canonical": "NYU"
+},
+{
+"alias": "goodwill",
+"canonical": "Goodwill"
+},
+{
+"alias": "usps",
+"canonical": "USPS"
+},
+{
+"alias": "dmv",
+"canonical": "DMV"
+},
+{
+"alias": "tata power",
+"canonical": "Tata Power"
+},
+{
+"alias": "adani electric",
+"canonical": "Adani Electricity"
+},
+{
+"alias": "torrent power",
+"canonical": "Torrent Power"
+},
+{
+"alias": "jio",
+"canonical": "Jio"
+},
+{
+"alias": "airtel",
+"canonical": "Airtel"
+},
+{
+"alias": "vodafone",
+"canonical": "Vi"
+},
+{
+"alias": "bsnl",
+"canonical": "BSNL"
+},
+{
+"alias": "bescom",
+"canonical": "BESCOM"
+},
+{
+"alias": "bwssb",
+"canonical": "BWSSB"
+},
+{
+"alias": "hathway",
+"canonical": "Hathway"
+},
+{
+"alias": "apple",
+"canonical": "Apple"
+},
+{
+"alias": "google",
+"canonical": "Google"
+},
+{
+"alias": "microsoft",
+"canonical": "Microsoft"
+},
+{
+"alias": "coca cola",
+"canonical": "Coca-Cola"
+},
+{
+"alias": "emi",
+"canonical": "EMI"
+},
+{
+"alias": "home loan",
+"canonical": "Loan EMI"
+},
+{
+"alias": "car loan",
+"canonical": "Loan EMI"
+},
+{
+"alias": "personal loan",
+"canonical": "Loan EMI"
+},
+{
+"alias": "loan",
+"canonical": "Loan EMI"
+},
+{
+"alias": "rent",
+"canonical": "Rent"
+},
+{
+"alias": "electricity",
+"canonical": "Electricity"
+},
+{
+"alias": "electric",
+"canonical": "Electricity"
+},
+{
+"alias": "gas bill",
+"canonical": "Gas"
+},
+{
+"alias": "water bill",
+"canonical": "Water"
+},
+{
+"alias": "broadband",
+"canonical": "Broadband"
+},
+{
+"alias": "internet",
+"canonical": "Broadband"
+},
+{
+"alias": "yes bank",
+"canonical": "Yes Bank"
+},
+{
+"alias": "idfc first",
+"canonical": "IDFC FIRST Bank"
+},
+{
+"alias": "idfc",
+"canonical": "IDFC FIRST Bank"
+},
+{
+"alias": "hdfc",
+"canonical": "HDFC Bank"
+},
+{
+"alias": "icici",
+"canonical": "ICICI Bank"
+},
+{
+"alias": "sbi",
+"canonical": "SBI"
+},
+{
+"alias": "axis",
+"canonical": "Axis Bank"
+},
+{
+"alias": "kotak",
+"canonical": "Kotak Bank"
+},
+{
+"alias": "rbl",
+"canonical": "RBL Bank"
+},
+{
+"alias": "bajaj finance",
+"canonical": "Bajaj Finance"
+},
+{
+"alias": "bajaj finserv",
+"canonical": "Bajaj Finance"
+},
+{
+"alias": "al rajhi",
+"canonical": "Al Rajhi Bank"
+},
+{
+"alias": "saudi national bank",
+"canonical": "SNB"
+},
+{
+"alias": "snb",
+"canonical": "SNB"
+},
+{
+"alias": "riyad bank",
+"canonical": "Riyad Bank"
+},
+{
+"alias": "adcb",
+"canonical": "ADCB"
+},
+{
+"alias": "first abu dhabi bank",
+"canonical": "FAB"
+},
+{
+"alias": "fab",
+"canonical": "FAB"
+},
+{
+"alias": "mashreq",
+"canonical": "Mashreq"
+},
+{
+"alias": "cure fit",
+"canonical": "cure.fit"
+},
+{
+"alias": "curefit",
+"canonical": "cure.fit"
+},
+{
+"alias": "cult fit",
+"canonical": "cure.fit"
+},
+{
+"alias": "gold gym",
+"canonical": "Gold's Gym"
+},
+{
+"alias": "anytime fit",
+"canonical": "Anytime Fitness"
+}
+]
