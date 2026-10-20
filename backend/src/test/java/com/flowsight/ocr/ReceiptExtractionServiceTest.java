@@ -74,7 +74,8 @@ class ReceiptExtractionServiceTest {
         Path img = Files.write(dir.resolve("r.jpg"), new byte[]{1, 2, 3});
         MlOcrResult ml = new MlOcrResult("Lulu Hypermarket", "LULU HYPERMARKET", new BigDecimal("36.19"), "2999-01-01", "aed",
             null, List.of(), List.of(), null, null, List.of(), List.of(),
-            Map.of("amount", new MlOcrResult.Field(0.97, "ACCEPT", "arithmetic")), "ACCEPT", "Total AED 36.19");
+            Map.of("amount", new MlOcrResult.Field(0.97, "ACCEPT", "arithmetic")), "ACCEPT", "Total AED 36.19",
+            "unavailable: HTTP 404");
         when(mlClient.isActive(MlCapability.OCR)).thenReturn(true);
         when(mlClient.predict(eq(MlCapability.OCR), any(MlOcrRequest.class), eq(MlOcrResult.class), any(), any()))
             .thenReturn(new MlPrediction<>(ml, MlPrediction.Source.MODEL, "ocr-v1", 0.9));
@@ -88,7 +89,8 @@ class ReceiptExtractionServiceTest {
         // a future date from the model is dropped and asked for
         assertThat(e.result().getDate()).isNull();
         assertThat(e.result().getFields().get("date").decision()).isEqualTo(ReceiptDecision.ASK_USER);
-        assertThat(e.result().getEngineAttempts()).containsExactly("ML_SERVICE: ok", "TESSERACT: cross-check");
+        assertThat(e.result().getEngineAttempts())
+            .containsExactly("ML_SERVICE: ok (vision: unavailable: HTTP 404)", "TESSERACT: cross-check");
     }
 
     @Test

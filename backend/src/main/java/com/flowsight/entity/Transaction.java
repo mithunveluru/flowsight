@@ -53,6 +53,10 @@ public class Transaction {
     @Column(name = "merchant_raw", length = 255)
     private String merchantRaw;
 
+    // which resolver step named the merchant on this request (user rule, alias, embedding...); not stored
+    @Transient
+    private String merchantResolvedBy;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 100)
     private TransactionCategory category;

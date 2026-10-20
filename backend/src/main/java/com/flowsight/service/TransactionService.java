@@ -212,6 +212,7 @@ public class TransactionService {
             .transactionDate(tx.getTransactionDate())
             .description(tx.getDescription())
             .merchant(tx.getMerchant())
+            .merchantResolvedBy(tx.getMerchantResolvedBy())
             .category(tx.getCategory())
             .categoryDisplayName(tx.getCategory() != null ? tx.getCategory().getDisplayName() : null)
             .type(tx.getType())

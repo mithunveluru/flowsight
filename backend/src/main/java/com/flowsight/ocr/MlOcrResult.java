@@ -25,7 +25,9 @@ public record MlOcrResult(
     @JsonProperty("amount_candidates") List<Option> amountCandidates,
     Map<String, Field> fields,
     String decision,
-    String text
+    String text,
+    // off, used, or why the vision-model pass did not run (e.g. "unavailable: HTTP 404")
+    @JsonProperty("vision_status") String visionStatus
 ) {
 
     @JsonIgnoreProperties(ignoreUnknown = true)

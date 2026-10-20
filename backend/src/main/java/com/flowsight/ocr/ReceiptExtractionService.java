@@ -115,7 +115,8 @@ public class ReceiptExtractionService {
             attempts.add(PROVIDER_ML + ": no merchant or total");
             return Optional.empty();
         }
-        attempts.add(PROVIDER_ML + ": ok");
+        String vision = p.value().visionStatus();
+        attempts.add(PROVIDER_ML + ": ok" + (vision == null || "off".equals(vision) ? "" : " (vision: " + vision + ")"));
         OcrExtractionResult own = null;
         try {
             own = tesseract.extract(image);

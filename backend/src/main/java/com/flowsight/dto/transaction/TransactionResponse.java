@@ -25,6 +25,9 @@ public class TransactionResponse {
     private LocalDate transactionDate;
     private String description;
     private String merchant;
+    // resolver step that named the merchant; only on the response to the request that created it
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String merchantResolvedBy;
     private TransactionCategory category;
     private String categoryDisplayName;
     private TransactionType type;
