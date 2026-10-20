@@ -116,7 +116,91 @@ public class ReceiptExtractionService {
             return Optional.empty();
         }
         attempts.add(PROVIDER_ML + ": ok");
-        return Optional.of(new Extraction(PROVIDER_ML, p.modelVersion(), mapped));
+        OcrExtractionResult own = null;
+        try {
+            own = tesseract.extract(image);
+            attempts.add(PROVIDER_TESSERACT + ": cross-check");
+        } catch (OcrException e) {
+            attempts.add(PROVIDER_TESSERACT + ": cross-check unavailable");
+        }
+        return Optional.of(new Extraction(PROVIDER_ML, p.modelVersion(), own == null ? mapped : fuse(mapped, own)));
+    }
+
+    // Both engines run Tesseract with different preprocessing, so each field is taken from the one
+    // more sure of it (ties to the backend's own pipeline, which scores higher on the eval set).
+    // Two confident but different totals are never settled silently: the user picks.
+    static OcrExtractionResult fuse(OcrExtractionResult ml, OcrExtractionResult own) {
+        Map<String, FieldAssessment> mf = ml.getFields() == null ? Map.of() : ml.getFields();
+        Map<String, FieldAssessment> of = own.getFields() == null ? Map.of() : own.getFields();
+        Map<String, FieldAssessment> fields = new LinkedHashMap<>();
+
+        boolean mlMerchant = prefersMl(mf, of, ReceiptParserService.FIELD_MERCHANT, ml.getMerchant(), own.getMerchant());
+        boolean mlDate = prefersMl(mf, of, ReceiptParserService.FIELD_DATE, ml.getDate(), own.getDate());
+        boolean mlCurrency = prefersMl(mf, of, ReceiptParserService.FIELD_CURRENCY, ml.getCurrency(), own.getCurrency());
+        boolean mlAmount = prefersMl(mf, of, ReceiptParserService.FIELD_AMOUNT, ml.getAmount(), own.getAmount());
+        OcrExtractionResult amountSource = mlAmount ? ml : own;
+
+        fields.put(ReceiptParserService.FIELD_MERCHANT, agreed(
+            (mlMerchant ? mf : of).getOrDefault(ReceiptParserService.FIELD_MERCHANT, FieldAssessment.missing()),
+            ml.getMerchant() == null || own.getMerchant() == null || squash(ml.getMerchant()).equals(squash(own.getMerchant()))));
+        fields.put(ReceiptParserService.FIELD_DATE, agreed(
+            (mlDate ? mf : of).getOrDefault(ReceiptParserService.FIELD_DATE, FieldAssessment.missing()),
+            ml.getDate() == null || own.getDate() == null || ml.getDate().equals(own.getDate())));
+        fields.put(ReceiptParserService.FIELD_CURRENCY, agreed(
+            (mlCurrency ? mf : of).getOrDefault(ReceiptParserService.FIELD_CURRENCY, FieldAssessment.missing()),
+            ml.getCurrency() == null || own.getCurrency() == null || ml.getCurrency().equals(own.getCurrency())));
+
+        FieldAssessment chosenAmount = (mlAmount ? mf : of).get(ReceiptParserService.FIELD_AMOUNT);
+        FieldAssessment otherAmount = (mlAmount ? of : mf).get(ReceiptParserService.FIELD_AMOUNT);
+        BigDecimal other = mlAmount ? own.getAmount() : ml.getAmount();
+        List<ReceiptAmountOption> options = new ArrayList<>(
+            amountSource.getAmountCandidates() == null ? List.of() : amountSource.getAmountCandidates());
+        boolean conflict = amountSource.getAmount() != null && other != null
+            && amountSource.getAmount().compareTo(other) != 0;
+        if (conflict) {
+            if (options.stream().noneMatch(o -> o.amount().compareTo(other) == 0)) {
+                options.add(new ReceiptAmountOption(other, null, mlAmount ? "tesseract" : "ml-service"));
+            }
+            if (confidence(otherAmount) >= ReceiptDecision.HIGHLIGHT_AT) {
+                chosenAmount = FieldAssessment.ask(Math.min(confidence(chosenAmount), 0.5), "conflict:engines-disagree");
+            } else if (chosenAmount != null) {
+                chosenAmount = agreed(chosenAmount, false);
+            }
+        }
+        fields.put(ReceiptParserService.FIELD_AMOUNT, chosenAmount == null ? FieldAssessment.missing() : chosenAmount);
+        ReceiptDecision decision = worst(fields);
+
+        return amountSource.toBuilder()
+            .merchant(mlMerchant ? ml.getMerchant() : own.getMerchant())
+            .merchantRaw(mlMerchant ? ml.getMerchantRaw() : own.getMerchantRaw())
+            .date(mlDate ? ml.getDate() : own.getDate())
+            .currency(mlCurrency ? ml.getCurrency() : own.getCurrency())
+            // the backend's line items score higher on the eval set whichever engine read the total
+            .lineItems(own.getLineItems() != null && !own.getLineItems().isEmpty() ? own.getLineItems() : amountSource.getLineItems())
+            .amountCandidates(options.stream().limit(4).toList())
+            .fields(fields)
+            .confidence(fields.get(ReceiptParserService.FIELD_AMOUNT).confidence())
+            .decision(decision)
+            .requiresConfirmation(decision == ReceiptDecision.ASK_USER)
+            .build();
+    }
+
+    // taking the surer of two readings that disagree overstates how sure it is, so it is shown
+    // highlighted rather than accepted
+    private static FieldAssessment agreed(FieldAssessment f, boolean enginesAgree) {
+        if (enginesAgree || f.decision() != ReceiptDecision.ACCEPT) return f;
+        return FieldAssessment.of(Math.min(f.confidence(), ReceiptDecision.ACCEPT_AT - 0.01), f.basis() + "+engines-differ");
+    }
+
+    private static boolean prefersMl(Map<String, FieldAssessment> mf, Map<String, FieldAssessment> of,
+                                     String field, Object mlValue, Object ownValue) {
+        if (ownValue == null) return mlValue != null;
+        if (mlValue == null) return false;
+        return confidence(mf.get(field)) > confidence(of.get(field));
+    }
+
+    private static double confidence(FieldAssessment f) {
+        return f == null || f.confidence() == null ? 0.0 : f.confidence();
     }
 
     // ml-service output is validated again here: positive amounts, past dates, known currencies

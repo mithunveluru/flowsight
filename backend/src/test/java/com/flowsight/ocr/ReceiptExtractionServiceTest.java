@@ -88,7 +88,7 @@ class ReceiptExtractionServiceTest {
         // a future date from the model is dropped and asked for
         assertThat(e.result().getDate()).isNull();
         assertThat(e.result().getFields().get("date").decision()).isEqualTo(ReceiptDecision.ASK_USER);
-        verifyNoInteractions(tesseract);
+        assertThat(e.result().getEngineAttempts()).containsExactly("ML_SERVICE: ok", "TESSERACT: cross-check");
     }
 
     @Test
@@ -105,6 +105,58 @@ class ReceiptExtractionServiceTest {
         assertThat(e.provider()).isEqualTo(ReceiptExtractionService.PROVIDER_TESSERACT);
         assertThat(e.result().getEngineAttempts())
             .containsExactly("ML_SERVICE: REJECTED", "RECEIPT_OCR_SERVICE: HTTP 500", "TESSERACT: ok");
+    }
+
+    private static OcrExtractionResult engine(String merchant, double merchantConf, String amount, double amountConf) {
+        Map<String, FieldAssessment> fields = new LinkedHashMap<>();
+        fields.put("merchant", FieldAssessment.of(merchantConf, "m"));
+        fields.put("amount", FieldAssessment.of(amountConf, "a"));
+        fields.put("date", FieldAssessment.of(0.95, "d"));
+        fields.put("currency", FieldAssessment.of(0.97, "c"));
+        return OcrExtractionResult.builder().merchant(merchant).amount(amount == null ? null : new BigDecimal(amount))
+            .date(LocalDate.of(2024, 3, 9)).currency("AED").lineItems(List.of()).fields(fields).amountCandidates(List.of())
+            .decision(ReceiptDecision.ACCEPT).build();
+    }
+
+    @Test
+    void fusionTakesEachFieldFromTheEngineMoreSureOfIt() {
+        OcrExtractionResult r = ReceiptExtractionService.fuse(
+            engine("Lulu", 0.70, "36.19", 0.97), engine("Lulu Hypermarket", 0.92, "36.19", 0.80));
+
+        assertThat(r.getMerchant()).isEqualTo("Lulu Hypermarket");
+        assertThat(r.getAmount()).isEqualByComparingTo("36.19");
+        assertThat(r.getFields().get("amount").confidence()).isEqualTo(0.97);
+        // the engines read the merchant differently, so it is shown for review rather than accepted
+        assertThat(r.getFields().get("merchant").decision()).isEqualTo(ReceiptDecision.ACCEPT_WITH_HIGHLIGHT);
+        assertThat(r.getDecision()).isEqualTo(ReceiptDecision.ACCEPT_WITH_HIGHLIGHT);
+    }
+
+    @Test
+    void confidentEnginesThatDisagreeOnTheTotalAskTheUser() {
+        OcrExtractionResult r = ReceiptExtractionService.fuse(
+            engine("Lulu", 0.92, "36.19", 0.95), engine("Lulu", 0.92, "63.19", 0.90));
+
+        assertThat(r.getFields().get("amount").decision()).isEqualTo(ReceiptDecision.ASK_USER);
+        assertThat(r.getAmountCandidates()).extracting(o -> o.amount().toPlainString()).contains("63.19");
+        assertThat(r.isRequiresConfirmation()).isTrue();
+    }
+
+    @Test
+    void aWeakDissentingTotalDoesNotForceAQuestion() {
+        OcrExtractionResult r = ReceiptExtractionService.fuse(
+            engine("Lulu", 0.92, "36.19", 0.95), engine("Lulu", 0.92, "3.19", 0.40));
+
+        assertThat(r.getAmount()).isEqualByComparingTo("36.19");
+        assertThat(r.getFields().get("amount").decision()).isEqualTo(ReceiptDecision.ACCEPT_WITH_HIGHLIGHT);
+    }
+
+    @Test
+    void aFieldOnlyOneEngineReadIsKept() {
+        OcrExtractionResult r = ReceiptExtractionService.fuse(
+            engine(null, 0.0, "36.19", 0.95), engine("Lulu", 0.60, null, 0.0));
+
+        assertThat(r.getMerchant()).isEqualTo("Lulu");
+        assertThat(r.getAmount()).isEqualByComparingTo("36.19");
     }
 
     @Test
