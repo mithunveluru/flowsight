@@ -93,7 +93,8 @@ if [ "$MODE" = tesseract ]; then
               -Deval.merchants.input=/work/eval/merchants/cases.csv
               -Deval.merchants.output=/work/eval/out/pred-merchants.jsonl
               -Deval.recurring.input=/work/eval/out/recurring/cases.jsonl
-              -Deval.recurring.rulesOutput=/work/eval/out/pred-recurring-rules.jsonl)
+              -Deval.recurring.rulesOutput=/work/eval/out/pred-recurring-rules.jsonl
+              -Deval.recurring.modelInput=/work/eval/out/recurring-model-input.jsonl)
 elif [ "$MODE" = ml-service ]; then
   MVN_PROPS+=(-Deval.mlServiceUrl="${ML_SERVICE_URL:?ML_SERVICE_URL must be set}")
   DOCKER_ENV=(-e GROQ_API_KEY= -e ML_SERVICE_TOKEN)
@@ -119,6 +120,16 @@ if [ "$MODE" = tesseract ]; then
     -Deval.categorization.modelPred=/work/eval/out/pred-categorization-model.jsonl \
     -Deval.categorization.personalOutput=/work/eval/out/pred-categorization-personal.jsonl \
     -Deval.categorization.personalRepeatOutput=/work/eval/out/pred-categorization-personal-repeat.jsonl
+  # the recurring-scorer artifact on the backend's requests, then the model-path mapping and leak detectors
+  in_image -w /work/eval "$IMAGE" python3 recurring/predict_model.py \
+    --artifact /work/ml-service/app/recurring_scorer/artifact \
+    --input out/recurring-model-input.jsonl --out out/recurring-model-output.jsonl
+  in_image -w /work/backend "$IMAGE" \
+    mvn -q -B -Dmaven.repo.local=/m2/repository test -Dtest=RecurringEvalTest#writesModelPredictions \
+    -Dsurefire.failIfNoSpecifiedTests=false \
+    -Deval.recurring.input=/work/eval/out/recurring/cases.jsonl \
+    -Deval.recurring.modelPred=/work/eval/out/recurring-model-output.jsonl \
+    -Deval.recurring.modelOutput=/work/eval/out/pred-recurring-model.jsonl
 fi
 
 STATUS=0
@@ -140,6 +151,8 @@ if [ "$MODE" = tesseract ]; then
     --pred out/pred-merchants.jsonl --baseline baselines/merchants.json
   score recurring --suite recurring-rules --cases out/recurring/cases.jsonl \
     --pred out/pred-recurring-rules.jsonl --baseline baselines/recurring-rules.json
+  score recurring --suite recurring-model --cases out/recurring/cases.jsonl \
+    --pred out/pred-recurring-model.jsonl --baseline baselines/recurring-model.json
 fi
 
 echo "eval ($MODE) finished in $((SECONDS - START))s, exit $STATUS"

@@ -42,6 +42,7 @@ for the provider's rate limit. `ml-service` calls the `ocr` capability (start ml
 | `categorization-personal-repeat` | as above, split by row id: the user has already corrected other rows of the same merchant | same |
 | `merchants` | `MerchantNormalizationService.normalize`, `MerchantText.clean` and `MerchantResolver` (offline) | `merchants/cases.csv` (352 rows) |
 | `recurring-rules` | `RecurringDetectionService.detect` and `LeakDetectionService.analyze` (the rules, the fallback) as of each user's date | `recurring/generate.py`: 120 synthetic users (30 each IN/US/AE/SA, 3-18 months, about 55k debits) |
+| `recurring-model` | the ml-service recurring-scorer artifact (`ml-service/app/recurring_scorer/artifact`, numpy only, via `recurring/predict_model.py`) on the requests `RecurringDetectionService.scorerRequest` builds, mapped by `fromScores`, then `LeakDetectionService.analyzeWithModel` with each user's personal baseline | same |
 
 To score a new receipt pipeline, change `CurrentReceiptPipeline` only; the runner, data and
 scorer stay the same.
@@ -87,7 +88,10 @@ recurring. Leaks: `creep_*` against price steps (2-4 payments after the step), `
 against one service billed on two accounts, `overlap_*` against the leak's own definition
 applied to the truth (recurring subscriptions in the category that has the most of them),
 `drain_*` against coffee habits with at least 8 visits in the 3-month window (that last
-definition is a judgment, read it as indicative). Slices: region, history length (<= 6
+definition is a judgment, read it as indicative: the model path's personal baseline also
+flags frequent food delivery, which this truth does not call a drain). The scorer is trained
+only on its own corpus (`ml-service/app/recurring_scorer/corpus.py`), never on these users,
+but both generators were written by the same hand, so expect real histories to score lower. Slices: region, history length (<= 6
 months is short), recall per recurring kind and false-positive rate per negative kind. The
 info table also has the share shown as detected (confidence >= 0.5), next-date MAE and,
 where a pattern has one, the coverage and width of its next-date interval.
