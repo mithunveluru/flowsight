@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAnnounce } from "@/components/ui/announcer";
 import {
   Select,
   SelectContent,
@@ -17,245 +18,221 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { transactionApi } from "@/features/transactions/api";
+import { useCreateTransaction } from "@/features/transactions/hooks";
+import { CategoryDot } from "@/features/transactions/category-ui";
+import { CurrencySelect } from "@/features/transactions/currency-select";
+import { DEFAULT_CURRENCY, currencySymbol, parseAmount } from "@/features/transactions/currency";
+import { SavedTransactionPanel } from "@/features/transactions/saved-transaction";
+import { isoDate } from "@/features/query-core";
 import {
-  CATEGORY_META,
   CATEGORY_OPTIONS,
+  type Transaction,
   type TransactionCategory,
 } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
 const schema = z.object({
-  transactionDate: z.string().min(1, "Date is required"),
-  description: z.string().min(1, "Description is required").max(1000),
+  transactionDate: z.string().min(1, "Enter the date.").refine((d) => d <= isoDate(new Date()), "The date cannot be in the future."),
+  description: z.string().trim().min(1, "Describe the transaction.").max(1000),
   merchant: z.string().max(255).optional(),
-  amount: z.coerce
-    .number({ invalid_type_error: "Enter a valid amount" })
-    .positive("Amount must be greater than zero"),
+  amount: z.string().refine((v) => parseAmount(v) != null, "Enter an amount greater than zero, e.g. 249.50."),
   type: z.enum(["DEBIT", "CREDIT"]),
-  currency: z.string().default("INR"),
+  currency: z.string().regex(/^[A-Z]{3}$/, "Choose the currency."),
   category: z.string().optional(),
   notes: z.string().max(2000).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-export default function NewTransactionPage() {
-  const router = useRouter();
+const AUTO = "__auto__";
+
+export default function AddManuallyPage() {
+  const announce = useAnnounce();
+  const create = useCreateTransaction();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Transaction | null>(null);
+
+  const defaults: FormValues = {
+    type: "DEBIT",
+    currency: DEFAULT_CURRENCY,
+    amount: "",
+    description: "",
+    transactionDate: isoDate(new Date()),
+  };
 
   const {
     register,
     handleSubmit,
     control,
+    reset,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      type: "DEBIT",
-      currency: "INR",
-      transactionDate: new Date().toISOString().split("T")[0],
-    },
-  });
+  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaults });
+
+  const currency = watch("currency");
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
     try {
-      await transactionApi.create({
-        amount: data.amount,
+      const tx = await create.mutateAsync({
+        amount: parseAmount(data.amount)!,
         currency: data.currency,
         transactionDate: data.transactionDate,
-        description: data.description,
-        merchant: data.merchant || undefined,
+        description: data.description.trim(),
+        merchant: data.merchant?.trim() || undefined,
         type: data.type,
         category: (data.category as TransactionCategory) || undefined,
         notes: data.notes || undefined,
       });
-      router.push("/dashboard/transactions");
+      setSaved(tx);
+      announce("Transaction saved.");
     } catch (err) {
-      setServerError(
-        err instanceof ApiError ? err.message : "Failed to save transaction"
-      );
+      const msg = err instanceof ApiError ? err.message : "Could not save the transaction.";
+      setServerError(msg);
+      announce(msg, "assertive");
     }
+  };
+
+  const addAnother = () => {
+    reset({ ...defaults, currency, type: watch("type") });
+    setSaved(null);
   };
 
   return (
     <div className="max-w-xl animate-fade-in">
-      {/* Breadcrumb */}
       <Link
         href="/dashboard/transactions"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="h-3.5 w-3.5" />
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
         Back to transactions
       </Link>
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-foreground">Add manually</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          We will sort it into a category from what you write in the description.
+          Leave the category blank and we will suggest one, with how sure we are.
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-6">
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-          {serverError && (
-            <div className="rounded-md border border-warning/25 bg-warning-soft px-3 py-2.5 text-sm text-warning">
-              {serverError}
-            </div>
-          )}
+      {saved ? (
+        <SavedTransactionPanel transaction={saved} title="Transaction saved">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={addAnother}>
+              <Plus aria-hidden="true" />
+              Add another
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/transactions">Go to transactions</Link>
+            </Button>
+          </div>
+        </SavedTransactionPanel>
+      ) : (
+        <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+            {serverError && (
+              <div role="alert" className="rounded-md border border-warning/25 bg-warning-soft px-3 py-2.5 text-sm text-warning">
+                {serverError}
+              </div>
+            )}
 
-          {/* Row: Date + Type */}
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Date" error={errors.transactionDate?.message}>
-              <Input type="date" {...register("transactionDate")} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Date" required error={errors.transactionDate?.message}>
+                <Input type="date" max={isoDate(new Date())} {...register("transactionDate")} />
+              </Field>
+              <Field label="Type" error={errors.type?.message}>
+                <Controller
+                  name="type"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DEBIT">Debit (expense)</SelectItem>
+                        <SelectItem value="CREDIT">Credit (income)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </Field>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
+              <Field label="Amount" required error={errors.amount?.message}>
+                <div className="relative">
+                  <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    {currencySymbol(currency)}
+                  </span>
+                  <Input
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0.00"
+                    autoFocus
+                    className="pl-10 tabular-nums"
+                    {...register("amount")}
+                  />
+                </div>
+              </Field>
+              <Field label="Currency" required error={errors.currency?.message}>
+                <Controller
+                  name="currency"
+                  control={control}
+                  render={({ field }) => <CurrencySelect value={field.value} onChange={field.onChange} />}
+                />
+              </Field>
+            </div>
+
+            <Field label="Description" required error={errors.description?.message}>
+              <Input placeholder="e.g. Zomato order, Amazon purchase, Salary credit" {...register("description")} />
             </Field>
-            <Field label="Type" error={errors.type?.message}>
+
+            <Field label="Merchant" hint="Optional. We work it out from the description when blank." error={errors.merchant?.message}>
+              <Input placeholder="e.g. Zomato, Amazon, HDFC Bank" {...register("merchant")} />
+            </Field>
+
+            <Field label="Category" hint="Optional. Leave on Suggest for us to pick, and correct it after saving.">
               <Controller
-                name="type"
+                name="category"
                 control={control}
                 render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={(v) => field.onChange(v === AUTO ? undefined : v)} value={field.value ?? AUTO}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Suggest a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DEBIT">Debit (expense)</SelectItem>
-                      <SelectItem value="CREDIT">Credit (income)</SelectItem>
+                      <SelectItem value={AUTO}>Suggest a category</SelectItem>
+                      {CATEGORY_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <span className="flex items-center gap-2">
+                            <CategoryDot category={opt.value} />
+                            {opt.label}
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
               />
             </Field>
-          </div>
 
-          {/* Amount */}
-          <Field label="Amount" error={errors.amount?.message}>
-            <div className="flex items-center gap-2">
-              <span className="w-6 shrink-0 text-sm text-muted-foreground">₹</span>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                autoFocus
-                className="flex-1"
-                {...register("amount")}
-              />
+            <Field label="Notes" hint="Optional." error={errors.notes?.message}>
+              <Textarea className="min-h-[72px] resize-none" placeholder="Anything worth remembering" {...register("notes")} />
+            </Field>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="animate-spin" aria-hidden="true" />}
+                {isSubmitting ? "Saving" : "Save transaction"}
+              </Button>
+              <Button type="button" variant="outline" asChild>
+                <Link href="/dashboard/transactions">Cancel</Link>
+              </Button>
             </div>
-          </Field>
-
-          {/* Description */}
-          <Field label="Description" error={errors.description?.message}>
-            <Input
-              placeholder="e.g. Zomato order, Amazon purchase, Salary credit"
-              {...register("description")}
-            />
-          </Field>
-
-          {/* Merchant (optional) */}
-          <Field
-            label="Merchant"
-            optional
-            error={errors.merchant?.message}
-            hint="Override the auto-extracted merchant name"
-          >
-            <Input placeholder="e.g. Zomato, Amazon, HDFC Bank" {...register("merchant")} />
-          </Field>
-
-          {/* Category (optional override) */}
-          <Field
-            label="Category"
-            optional
-            hint="Leave blank and we will pick one from the description"
-          >
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={(v) => field.onChange(v === "__auto__" ? undefined : v)}
-                  value={field.value ?? "__auto__"}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Auto-detect" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__auto__">Auto-detect</SelectItem>
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "h-2 w-2 rounded-full",
-                              CATEGORY_META[opt.value].dot
-                            )}
-                          />
-                          {opt.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </Field>
-
-          {/* Notes */}
-          <Field label="Notes" optional error={errors.notes?.message}>
-            <textarea
-              className={cn(
-                "flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
-                "placeholder:text-muted-foreground resize-none",
-                "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              )}
-              placeholder="Optional notes..."
-              {...register("notes")}
-            />
-          </Field>
-
-          <div className="flex items-center gap-3 pt-1">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? "Saving" : "Save transaction"}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link href="/dashboard/transactions">Cancel</Link>
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  hint,
-  optional,
-  children,
-}: {
-  label: string;
-  error?: string;
-  hint?: string;
-  optional?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <Label>{label}</Label>
-        {optional && (
-          <span className="text-xs text-muted-foreground/70">(optional)</span>
-        )}
-      </div>
-      {children}
-      {hint && !error && (
-        <p className="text-xs text-muted-foreground/70">{hint}</p>
+          </form>
+        </div>
       )}
-      {error && <p className="text-xs text-warning">{error}</p>}
     </div>
   );
 }

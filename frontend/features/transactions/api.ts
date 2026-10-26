@@ -5,6 +5,7 @@ import type {
   Transaction,
   TransactionCategory,
   TransactionPage,
+  UpdateTransactionPayload,
 } from "./types";
 
 interface ListParams {
@@ -33,8 +34,13 @@ export const transactionApi = {
   create: (payload: CreateTransactionPayload) =>
     api.post<Transaction>("/api/v1/transactions", payload, { auth: true }),
 
-  update: (id: string, payload: Partial<CreateTransactionPayload> & { reviewed?: boolean }) =>
+  // merchant/category corrections record feedback and may return a ruleSuggestion
+  update: (id: string, payload: UpdateTransactionPayload) =>
     api.patch<Transaction>(`/api/v1/transactions/${id}`, payload, { auth: true }),
+
+  // unreviewed rows, least certain category first
+  reviewQueue: (limit = 20) =>
+    api.get<Transaction[]>(`/api/v1/transactions/review-queue?limit=${limit}`, { auth: true }),
 
   delete: (id: string) =>
     api.delete<void>(`/api/v1/transactions/${id}`, { auth: true }),

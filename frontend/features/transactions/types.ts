@@ -17,6 +17,21 @@ export type TransactionCategory =
   | "OTHER"
   | "UNCATEGORIZED";
 
+// Who decided the category; null on rows categorized before sources were recorded.
+export type CategorySource = "RULES" | "MODEL" | "PERSONAL" | "USER";
+
+export interface CategoryAlternative {
+  category: TransactionCategory;
+  probability: number;
+}
+
+export interface MerchantRuleSuggestion {
+  ruleId: string;
+  canonicalName: string | null;
+  category: TransactionCategory | null;
+  similarCount: number;
+}
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -29,9 +44,15 @@ export interface Transaction {
   type: TransactionType;
   source: TransactionSource;
   confidenceScore: number | null;
+  categorySource?: CategorySource | null;
+  categoryModelVersion?: string | null;
+  // the model's top three, best first; null unless the model categorized the row
+  categoryAlternatives?: CategoryAlternative[] | null;
   notes: string | null;
   reviewed: boolean;
   createdAt: string;
+  // only on a merchant/category correction that saved a rule
+  ruleSuggestion?: MerchantRuleSuggestion;
 }
 
 export interface TransactionPage {
@@ -54,6 +75,8 @@ export interface CreateTransactionPayload {
   category?: TransactionCategory;
   notes?: string;
 }
+
+export type UpdateTransactionPayload = Partial<CreateTransactionPayload> & { reviewed?: boolean };
 
 export interface BulkImportResult {
   totalRows: number;
