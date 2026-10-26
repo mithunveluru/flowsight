@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -17,7 +18,7 @@ import type {
   DateRangePreset,
 } from "@/features/analytics/types";
 import { CountUp, Reveal } from "@/components/motion/primitives";
-import { ContentBand, PageTitle, SectionHead, Stat, Surface } from "@/components/insight/page-kit";
+import { ContentBand, SectionHead, Stat, Surface } from "@/components/insight/page-kit";
 import { CategoryDonutChart, SpendTrendChart, TopMerchantsChart } from "./charts";
 import { ChartSkeleton } from "@/components/ui/chart-frame";
 
@@ -156,9 +157,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-sp-max">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Trends"
-        lead="How your money moves, where it goes, and the patterns behind it."
+        description="How your money moves, where it goes, and the patterns behind it."
       />
 
       <Tabs items={PRESETS} value={preset} onValueChange={setPreset} label="Date range" idPrefix="range" />

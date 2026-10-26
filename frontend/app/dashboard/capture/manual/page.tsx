@@ -30,7 +30,7 @@ import {
   type TransactionCategory,
 } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 import { markNewTransaction } from "@/features/transactions/new-row";
 import { toast } from "@/components/ui/toast";
 

@@ -2,62 +2,9 @@
 
 import * as React from "react";
 import { AlertTriangle } from "lucide-react";
+import { FullBleed } from "@/components/layout/full-bleed";
 import { Band } from "@/components/ui/band";
 import { cn } from "@/lib/utils";
-
-/** Title row for pages without a hero: h1, a lead line and the page's main actions. */
-export function PageTitle({
-  title,
-  lead,
-  actions,
-  className,
-}: {
-  title: React.ReactNode;
-  lead?: React.ReactNode;
-  actions?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-sp-wide", className)}>
-      <div className="min-w-0">
-        <h1 className="text-ty-section-title text-ink">{title}</h1>
-        {lead && <p className="mt-sp-sm max-w-prose text-ty-link text-ink-lead">{lead}</p>}
-      </div>
-      {actions && <div className="flex flex-wrap items-center gap-sp-xl">{actions}</div>}
-    </div>
-  );
-}
-
-/**
- * Breaks out of the shell's centred column so a band runs edge to edge. The shell column is
- * narrower than the window above 1152px, so the width is the window and the offset is half of
- * the difference; the clip keeps the scrollbar gutter from adding a horizontal scroll.
- */
-export function FullBleed({
-  children,
-  flushTop,
-  flushBottom,
-  className,
-}: {
-  children: React.ReactNode;
-  flushTop?: boolean;
-  flushBottom?: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        flushTop && "-mt-6 sm:-mt-8 lg:-mt-12",
-        flushBottom && "-mb-6 sm:-mb-8 lg:-mb-12",
-        className
-      )}
-      style={{ marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", width: "100vw" }}
-    >
-      <style>{"#main-content{overflow-x:clip}"}</style>
-      {children}
-    </div>
-  );
-}
 
 /** A tinted band across the window with the shell's content column inside; the canvas shows between bands. */
 export function ContentBand({

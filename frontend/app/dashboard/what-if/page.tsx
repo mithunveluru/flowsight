@@ -59,7 +59,8 @@ import {
 import { CountUp, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
 import { ChartPanel } from "@/components/insight/chart-parts";
 import { LineChart, type LineSeries } from "@/components/insight/line-chart";
-import { ContentBand, FullBleed, SectionHead, Surface } from "@/components/insight/page-kit";
+import { FullBleed } from "@/components/layout/full-bleed";
+import { ContentBand, SectionHead, Surface } from "@/components/insight/page-kit";
 import { ProgressBar } from "@/components/insight/progress";
 import { rupees, rupeesCompact } from "@/features/insights/format";
 import { cn } from "@/lib/utils";

@@ -24,7 +24,6 @@ import { useRecurring } from "@/features/recurring/hooks";
 import { useTransactions, useUncategorizedCount } from "@/features/transactions/hooks";
 import { monthToDate } from "@/features/query-core";
 import { ListItem, ListMotion } from "@/components/motion/list";
-import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { cn } from "@/lib/utils";
 import {
   advanceVisit,
@@ -480,7 +479,7 @@ export function RecentActivity() {
     body = <EmptyState compact as="h3" title="No transactions yet" description="Anything you capture shows up here first." />;
   } else {
     body = (
-      <Table className={TABLE_LOOK}>
+      <Table>
         <caption className="sr-only">The five most recent transactions</caption>
         <TableHeader>
           <TableRow>

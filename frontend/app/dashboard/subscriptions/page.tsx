@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle2, HelpCircle, RefreshCw, Repeat, Sparkles, Trash2, TrendingDown } from "lucide-react";
@@ -17,7 +18,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { StatusMarker } from "@/components/ui/signals";
 import { CountUp, Reveal } from "@/components/motion/primitives";
-import { Alert, PageTitle, Stat, Surface } from "@/components/insight/page-kit";
+import { Alert, Stat, Surface } from "@/components/insight/page-kit";
 import { cn } from "@/lib/utils";
 
 const fmtShort = (iso: string) =>
@@ -82,9 +83,10 @@ export default function RecurringPage() {
 
   return (
     <div className="space-y-sp-hero">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Subscriptions"
-        lead="The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right."
+        description="The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right."
         actions={
           <Button variant="outline" className="coarse:h-11" onClick={scan} disabled={scanning || loading}>
             <RefreshCw className={cn(scanning && "animate-spin")} aria-hidden="true" />

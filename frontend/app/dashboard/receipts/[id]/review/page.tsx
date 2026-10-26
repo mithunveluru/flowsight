@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { useReceipt } from "@/features/receipts/hooks";
 import { receiptStage } from "@/features/receipts/review-logic";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 import { SavedTransactionPanel } from "@/features/transactions/saved-transaction";
 import { ApiError } from "@/lib/api";
 import { ReceiptImagePanel } from "./receipt-image";

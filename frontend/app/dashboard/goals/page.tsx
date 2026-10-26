@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useState } from "react";
 import { CheckCircle2, CircleAlert, CircleCheck, CircleDot, Flag, Pencil, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -18,7 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/dialog";
 import { CountUp, Reveal } from "@/components/motion/primitives";
-import { Alert, ContentBand, PageTitle, SectionHead, Surface } from "@/components/insight/page-kit";
+import { Alert, ContentBand, SectionHead, Surface } from "@/components/insight/page-kit";
 import { ProgressBar, type ProgressTone } from "@/components/insight/progress";
 import { StatusMarker } from "@/components/ui/signals";
 import { goalsApi } from "@/features/goals/api";
@@ -97,9 +98,10 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-sp-max">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Goals"
-        lead="Save toward what matters, and watch your progress over time."
+        description="Save toward what matters, and watch your progress over time."
         actions={
           <Button size="sm" className="coarse:h-11" onClick={() => openForm(null)}>
             <Plus className="h-4 w-4" aria-hidden="true" /> New goal

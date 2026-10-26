@@ -12,7 +12,6 @@ import type { BulkImportResult } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
-import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { PREVIEW_ROWS, ROLE_LABEL, previewCsv, validateCsvFile, type ColumnRole, type CsvPreview } from "./csv-preview";
 
 const BOM = "﻿";
@@ -135,7 +134,7 @@ export function CsvImport() {
           </div>
 
           {selected.preview.rows.length > 0 && (
-            <Table containerClassName="border-t border-border" className={cn("text-sm", TABLE_LOOK)}>
+            <Table containerClassName="border-t border-border" className="text-sm">
               <TableCaption srOnly>First {PREVIEW_ROWS} rows of {selected.file.name}</TableCaption>
               <TableHeader>
                 <TableRow>

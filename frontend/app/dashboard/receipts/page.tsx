@@ -13,8 +13,7 @@ import { receiptStage, sortInbox, type ReceiptStage } from "@/features/receipts/
 import type { Receipt } from "@/features/receipts/types";
 import { formatMoney } from "@/features/transactions/currency";
 import { cn } from "@/lib/utils";
-import { TABLE_LOOK } from "@/features/shell-pages/table-look";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 
 const STAGE: Record<ReceiptStage, { label: string; icon: typeof Clock; tone: string }> = {
   draft: { label: "Needs review", icon: Clock, tone: "border-caution/25 bg-caution-soft text-caution" },
@@ -79,7 +78,7 @@ export default function ReceiptInboxPage() {
         <div className="overflow-hidden rounded-md">
           {/* relative keeps the sr-only header cell inside the scroller, where it would otherwise widen the page */}
           <div className="relative overflow-x-auto">
-            <table className={cn("w-full text-sm", TABLE_LOOK)}>
+            <table className="w-full text-sm">
               <caption className="sr-only">Receipts, those waiting for review first</caption>
               <thead>
                 <tr>

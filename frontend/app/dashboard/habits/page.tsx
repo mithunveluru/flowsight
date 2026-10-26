@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import Link from "next/link";
 import { ArrowRight, Check, X } from "lucide-react";
 import { useInsights, useRecommendationFeedback } from "@/features/insights/hooks";
@@ -18,7 +19,7 @@ import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { CountUp, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
 import { EvidenceChips, type Severity } from "@/components/ui/signals";
-import { ContentBand, PageTitle, SectionHead, Stat, Surface } from "@/components/insight/page-kit";
+import { ContentBand, SectionHead, Stat, Surface } from "@/components/insight/page-kit";
 import { cn } from "@/lib/utils";
 
 function formatINR(v: number) {
@@ -46,7 +47,7 @@ export default function InsightsPage() {
   if (query.isPending) {
     return (
       <div className="space-y-sp-hero">
-        <PageTitle title="Habits" />
+        <TitleRow rule={false} title="Habits" />
         <LoadingState variant="card" rows={3} label="Reading your spending habits" />
       </div>
     );
@@ -55,7 +56,7 @@ export default function InsightsPage() {
   if (query.isError) {
     return (
       <div className="space-y-sp-hero">
-        <PageTitle title="Habits" />
+        <TitleRow rule={false} title="Habits" />
         <ErrorState title="Habits did not load" error={query.error} onRetry={() => query.refetch()} />
       </div>
     );
@@ -71,9 +72,10 @@ export default function InsightsPage() {
 
   return (
     <div className="space-y-sp-hero">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Habits"
-        lead={
+        description={
           summary
             ? data.narrative ? summary : `In short: ${summary}.`
             : "The patterns in how you spend, what you could do about them, and what your regular choices add up to over time."

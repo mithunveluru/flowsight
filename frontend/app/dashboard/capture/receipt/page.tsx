@@ -20,7 +20,7 @@ import {
 } from "@/features/receipts/capture-logic";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 
 
 const ScanLine = dynamic(() => import("@/features/receipts/scan-line").then((m) => m.ScanLine), { ssr: false });

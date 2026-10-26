@@ -21,7 +21,6 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAnnounce } from "@/components/ui/announcer";
 import { RuleSuggestionCard } from "@/features/merchants/rule-suggestion";
-import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { takeNewTransaction } from "@/features/transactions/new-row";
 import { toast } from "@/components/ui/toast";
 import { transactionApi } from "@/features/transactions/api";
@@ -264,7 +263,7 @@ export function TransactionsTable() {
             containerRef={scrollRef}
             containerClassName="max-h-[68dvh] min-h-48"
             stickyHeader
-            className={cn("min-w-[980px] table-fixed", TABLE_LOOK)}
+            className="min-w-[980px] table-fixed"
             aria-rowcount={rows.length + 1}
           >
             <caption className="sr-only">Transactions, newest first. Merchant, category and notes can be edited in place.</caption>

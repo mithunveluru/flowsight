@@ -1,4 +1,4 @@
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 import { CsvImport } from "./csv-import";
 
 export default function ImportStatementPage() {

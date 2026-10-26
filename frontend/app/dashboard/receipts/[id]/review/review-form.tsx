@@ -30,7 +30,7 @@ import { CurrencySelect } from "@/features/transactions/currency-select";
 import { currencySymbol, formatMoney, normalizeCurrency, parseAmount } from "@/features/transactions/currency";
 import { CATEGORY_OPTIONS, type TransactionCategory } from "@/features/transactions/types";
 import { cn } from "@/lib/utils";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 import { ChipSettle, FillIn } from "@/features/receipts/review-motion";
 import { ReceiptImagePanel } from "./receipt-image";
 

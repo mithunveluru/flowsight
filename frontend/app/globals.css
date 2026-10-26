@@ -106,6 +106,30 @@
     transition: color var(--duration-fast) var(--ease-standard);
   }
   .link:hover { text-decoration: underline; color: hsl(var(--primary-hover)); }
+  /* a link inside running text is never told apart by colour alone */
+  .link-inline { text-decoration: underline; }
+
+  /* The shell page column; --page-pad-y is shared with the full-bleed offsets. */
+  .page-column {
+    --page-pad-y: 1.5rem;
+    padding-block: var(--page-pad-y);
+  }
+  @media (min-width: 640px) { .page-column { --page-pad-y: 2rem; } }
+  @media (min-width: 1024px) { .page-column { --page-pad-y: 3rem; } }
+
+  /* Edge to edge inside .page-column; the shell scroll area is the size container. */
+  .full-bleed {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
+  @supports (width: 1cqw) {
+    .full-bleed {
+      width: 100cqw;
+      margin-inline: calc(50% - 50cqw);
+    }
+  }
+  .full-bleed-top { margin-top: calc(-1 * var(--page-pad-y)); }
+  .full-bleed-bottom { margin-bottom: calc(-1 * var(--page-pad-y)); }
 
   /* Bands: full-bleed flat zones. Optional curved top edge for the lavender kind. */
   .band-curve-top {

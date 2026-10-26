@@ -7,7 +7,7 @@ import { Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/ui/states";
 import { TabPanel, Tabs } from "@/components/ui/tabs";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 const ReviewQueue = dynamic(() => import("./review-queue").then((m) => m.ReviewQueue), {
   loading: () => <LoadingState variant="list" rows={4} label="Loading transactions to check" />,
 });

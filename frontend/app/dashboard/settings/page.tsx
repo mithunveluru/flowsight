@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme";
 import { Reveal } from "@/components/motion/primitives";
-import { PageTitle, Surface } from "@/components/insight/page-kit";
+import { Surface } from "@/components/insight/page-kit";
 import { ProgressBar } from "@/components/insight/progress";
 import { accountApi } from "@/features/account/api";
 import type {
@@ -88,9 +89,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-sp-max">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Settings"
-        lead="Your profile, appearance, receipt analysis usage, and recent account activity."
+        description="Your profile, appearance, receipt analysis usage, and recent account activity."
       />
 
       <AppearanceCard />

@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, CreditCard, Droplets, Layers, RefreshCw, TrendingUp } from "lucide-react";
@@ -11,7 +12,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { leakEvidence } from "@/features/insights/evidence";
 import type { Severity } from "@/components/ui/signals";
 import { Collapse, CountUp, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
-import { PageTitle, Stat, Surface } from "@/components/insight/page-kit";
+import { Stat, Surface } from "@/components/insight/page-kit";
 import { useLeaks } from "@/features/leaks/hooks";
 import type { LeakDetectionResponse, LeakInsight, LeakType } from "@/features/leaks/types";
 import { cn } from "@/lib/utils";
@@ -41,9 +42,10 @@ export default function LeaksPage() {
 
   return (
     <div className="space-y-sp-hero">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Money drains"
-        lead="Forgotten subscriptions, creeping prices, small daily habits, and fees quietly adding up, with what you would save by fixing them."
+        description="Forgotten subscriptions, creeping prices, small daily habits, and fees quietly adding up, with what you would save by fixing them."
         actions={
           <Button variant="outline" className="coarse:h-11" onClick={() => query.refetch()} disabled={scanning || loading}>
             <RefreshCw className={cn(scanning && "animate-spin")} aria-hidden="true" />

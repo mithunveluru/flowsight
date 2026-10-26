@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Info } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { CaptureMenu } from "@/components/layout/capture-menu";
-import { TitleRow } from "@/features/shell-pages/title-row";
+import { TitleRow } from "@/components/layout/title-row";
 import { CountUp } from "@/components/motion/primitives";
 import { LoadingState, Skeleton } from "@/components/ui/states";
 import { useActivityBounds } from "@/features/analytics/hooks";

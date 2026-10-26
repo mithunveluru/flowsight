@@ -1,5 +1,6 @@
 "use client";
 
+import { TitleRow } from "@/components/layout/title-row";
 import { useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Pencil, Plus, Target, XCircle } from "lucide-react";
@@ -19,7 +20,7 @@ import {
   SheetTitle,
 } from "@/components/ui/dialog";
 import { CountUp, Reveal } from "@/components/motion/primitives";
-import { Alert, ContentBand, PageTitle, Stat, Surface } from "@/components/insight/page-kit";
+import { Alert, ContentBand, Stat, Surface } from "@/components/insight/page-kit";
 import { ProgressBar, type ProgressTone } from "@/components/insight/progress";
 import { StatusMarker } from "@/components/ui/signals";
 import {
@@ -100,9 +101,10 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-sp-max">
-      <PageTitle
+      <TitleRow
+        rule={false}
         title="Budgets"
-        lead="Set monthly limits per category, and watch progress throughout the month."
+        description="Set monthly limits per category, and watch progress throughout the month."
         actions={
           <Button size="sm" className="coarse:h-11" onClick={openNew}>
             <Plus className="h-4 w-4" aria-hidden="true" /> New budget
