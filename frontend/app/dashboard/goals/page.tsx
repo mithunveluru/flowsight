@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   CheckCircle2,
+  CircleAlert,
+  CircleCheck,
+  CircleDot,
   Flag,
   Plus,
   Sparkles,
@@ -19,6 +22,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusMarker } from "@/components/ui/signals";
 import { goalsApi } from "@/features/goals/api";
+import { useGoals } from "@/features/goals/hooks";
+import { assessReach, type ReachAssessment } from "@/features/goals/reach";
+import { useForecast } from "@/features/analytics/hooks";
+import { forecastEvidence } from "@/features/insights/evidence";
+import type { ForecastSeries } from "@/features/analytics/types";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState, LoadingState } from "@/components/ui/states";
 import type { Goal, GoalStatus, PaceStatus } from "@/features/goals/types";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -53,26 +63,18 @@ const contributionSchema = z.object({
 type ContributionValues = z.infer<typeof contributionSchema>;
 
 export default function GoalsPage() {
-  const [goals,    setGoals]    = useState<Goal[]>([]);
-  const [loading,  setLoading]  = useState(true);
+  const query = useGoals();
+  const forecast = useForecast(6);
+  const goals = query.data ?? [];
+  const loading = query.isPending;
   const [error,    setError]    = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing,  setEditing]  = useState<Goal | null>(null);
   const [contributingId, setContributingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setGoals(await goalsApi.list());
-      setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to load goals");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  const load = async () => {
+    await query.refetch();
+  };
 
   const handleDelete = async (id: string) => {
     await goalsApi.delete(id);
@@ -107,8 +109,10 @@ export default function GoalsPage() {
         </p>
       )}
 
-      {loading ? (
-        <LoadingSkeleton />
+      {query.isError && !query.data ? (
+        <ErrorState title="Goals did not load" error={query.error} onRetry={() => query.refetch()} />
+      ) : loading ? (
+        <LoadingState variant="card" rows={3} label="Loading goals" />
       ) : goals.length === 0 ? (
         <EmptyState onCreate={() => setShowForm(true)} />
       ) : (
@@ -151,6 +155,7 @@ export default function GoalsPage() {
                   <GoalCard
                     key={g.id}
                     goal={g}
+                    net={forecast.data?.net}
                     onEdit={() => { setEditing(g); setShowForm(true); }}
                     onDelete={() => handleDelete(g.id)}
                     onContribute={() => setContributingId(g.id)}
@@ -198,10 +203,53 @@ export default function GoalsPage() {
   );
 }
 
+const REACH_META: Record<ReachAssessment["reach"], { label: string; cls: string; icon: React.ElementType }> = {
+  reachable:   { label: "Within reach",              cls: "text-positive", icon: CircleCheck },
+  likely:      { label: "Likely reachable",          cls: "text-brand",    icon: CircleDot },
+  unlikely:    { label: "Unlikely at this pace",     cls: "text-caution",  icon: CircleAlert },
+  unreachable: { label: "Out of reach at this pace", cls: "text-warning",  icon: CircleAlert },
+};
+
+function ReachNote({ goal, net }: { goal: Goal; net: ForecastSeries | undefined }) {
+  const a = assessReach(goal, net);
+  if (!a || !net) return null;
+  const meta = REACH_META[a.reach];
+  const evidence = forecastEvidence(net.evidence);
+  return (
+    <div className="mt-3 border-t border-border pt-3 text-xs">
+      <p className={cn("flex flex-wrap items-center gap-1 font-medium", meta.cls)}>
+        <meta.icon className="h-3.5 w-3.5" aria-hidden="true" /> {meta.label}
+        <EvidenceDrawer
+          title={`${goal.name}: can you get there?`}
+          value={meta.label}
+          evidence={{
+            ...evidence,
+            method: `Compares what this goal still needs each month with your forecast net savings over the same months. ${evidence.method}`,
+            inputs: [
+              { label: "Still to save", value: formatINR(goal.remaining) },
+              { label: "Months to target", value: String(a.months) },
+              { label: "Needed per month", value: formatINR(a.requiredPerMonth) },
+              { label: "Forecast net per month", value: `${formatINR(a.expected)} (80% range ${formatINR(a.low80)} to ${formatINR(a.high80)})` },
+              { label: "Forecast months used", value: `${a.forecastMonths} of ${a.months}` },
+              ...(evidence.inputs ?? []),
+            ],
+          }}
+          trigger={<EvidenceTrigger label={`whether ${goal.name} is reachable`} />}
+        />
+      </p>
+      <p className="mt-1 text-muted-foreground">
+        Needs {formatINR(a.requiredPerMonth)} a month; forecast net is {formatINR(a.expected)} a month
+        {a.forecastMonths < a.months ? ` over the next ${a.forecastMonths} months` : ""}.
+      </p>
+    </div>
+  );
+}
+
 function GoalCard({
-  goal, onEdit, onDelete, onContribute,
+  goal, net, onEdit, onDelete, onContribute,
 }: {
   goal: Goal;
+  net?: ForecastSeries;
   onEdit:       () => void;
   onDelete:     () => void;
   onContribute?: () => void;
@@ -256,14 +304,16 @@ function GoalCard({
         )}
       </div>
 
+      {!isCompleted && <ReachNote goal={goal} net={net} />}
+
       <div className="mt-4 flex items-center justify-between gap-2">
         {!isCompleted && onContribute && (
           <Button size="sm" variant="outline" onClick={onContribute} className="flex-1">
             <Plus className="h-3 w-3" /> Contribute
           </Button>
         )}
-        <div className={cn("flex items-center gap-1", !isCompleted && "opacity-0 group-hover:opacity-100 transition-opacity")}>
-          <button onClick={onEdit}   className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"><Sparkles className="h-3.5 w-3.5" /></button>
+        <div className={cn("flex items-center gap-1", !isCompleted && "opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100")}>
+          <button onClick={onEdit} aria-label={`Edit ${goal.name}`} className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"><Sparkles className="h-3.5 w-3.5" /></button>
           <ConfirmButton onConfirm={onDelete} label="Delete goal" className="p-1.5" />
         </div>
       </div>
@@ -457,16 +507,6 @@ function ContributeDrawer({
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-40 rounded-lg skeleton" />
-      ))}
     </div>
   );
 }

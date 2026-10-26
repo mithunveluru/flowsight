@@ -24,3 +24,10 @@ export function useActivityBounds() {
     queryFn: analyticsApi.getActivityBounds,
   });
 }
+
+export function useForecast(months = 6) {
+  return useQuery({
+    queryKey: ["analytics", "forecast", months] as const,
+    queryFn: () => analyticsApi.getForecast(months),
+  });
+}

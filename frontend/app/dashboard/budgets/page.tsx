@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -29,6 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { budgetsApi } from "@/features/budgets/api";
+import { useBudgetSummary } from "@/features/budgets/hooks";
+import { paceView } from "@/features/budgets/pace";
+import { forecastEvidence } from "@/features/insights/evidence";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState, LoadingState } from "@/components/ui/states";
 import type { Budget, BudgetStatus, BudgetSummary } from "@/features/budgets/types";
 import {
   CATEGORY_OPTIONS,
@@ -57,25 +62,18 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function BudgetsPage() {
-  const [summary,  setSummary]  = useState<BudgetSummary | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
+  const query = useBudgetSummary();
+  const summary = query.data ?? null;
+  const loading = query.isPending;
+  const [actionError, setActionError] = useState<string | null>(null);
+  const error = actionError;
+  const setError = setActionError;
   const [showForm, setShowForm] = useState(false);
   const [editing,  setEditing]  = useState<Budget | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setSummary(await budgetsApi.summary());
-      setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Failed to load budgets");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  const load = async () => {
+    await query.refetch();
+  };
 
   const handleSave = async () => {
     setShowForm(false);
@@ -113,13 +111,15 @@ export default function BudgetsPage() {
       </div>
 
       {error && (
-        <p className="flex items-center gap-1.5 text-sm text-warning">
+        <p role="alert" className="flex items-center gap-1.5 text-sm text-warning">
           <XCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
 
-      {loading ? (
-        <LoadingSkeleton />
+      {query.isError && !summary ? (
+        <ErrorState title="Budgets did not load" error={query.error} onRetry={() => query.refetch()} />
+      ) : loading ? (
+        <LoadingState variant="stats" label="Loading budgets" />
       ) : summary && summary.budgetCount > 0 ? (
         <>
           {/* Summary header */}
@@ -190,6 +190,8 @@ function BudgetCard({
 }) {
   const meta = STATUS_META[budget.status];
   const pct = Math.min(100, budget.percentUsed);
+  const pace = paceView(budget);
+  const limit = budget.effectiveLimit ?? budget.monthlyLimit;
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-card p-5 group hover:border-muted-foreground/30 transition-colors">
@@ -221,25 +223,66 @@ function BudgetCard({
           <p className="text-sm text-foreground">
             <span className="font-semibold tabular-nums">{formatINR(budget.currentSpend)}</span>
             <span className="ml-1 text-xs text-muted-foreground/70">
-              of {formatINR(budget.monthlyLimit)}
+              of {formatINR(limit)}
             </span>
           </p>
           <p className="text-xs font-medium text-muted-foreground tabular-nums">
             {budget.percentUsed.toFixed(0)}%
           </p>
         </div>
-        {budget.projectedTotal > budget.monthlyLimit && (
-          <p className="text-xs text-caution flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            Projected {formatINR(budget.projectedTotal)} at current pace
+        {budget.rollover && budget.rolloverAmount != null && budget.rolloverAmount !== 0 && (
+          <p className="text-xs text-muted-foreground">
+            Includes {formatINR(budget.rolloverAmount)} carried over from earlier months.
           </p>
+        )}
+        {pace && (
+          <div className="pt-1">
+            <div
+              role="img"
+              aria-label={`Spent ${formatINR(budget.currentSpend)}. Projected month-end ${formatINR(pace.projected)}, likely between ${formatINR(pace.lower80)} and ${formatINR(pace.upper80)}. Limit ${formatINR(pace.limit)}.`}
+              className="relative h-2.5 rounded-full bg-muted"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute inset-y-0 rounded-full bg-caution/35"
+                style={{ left: `${pace.lowAt}%`, width: `${Math.max(1, pace.highAt - pace.lowAt)}%` }}
+              />
+              <span aria-hidden="true" className="absolute inset-y-0 left-0 rounded-full bg-foreground/70" style={{ width: `${pace.spentAt}%` }} />
+              <span aria-hidden="true" className="absolute -inset-y-0.5 w-0.5 bg-foreground" style={{ left: `calc(${pace.limitAt}% - 1px)` }} />
+            </div>
+            <p className={cn("mt-1.5 flex flex-wrap items-center gap-x-1 text-xs", pace.risk === "none" ? "text-muted-foreground" : "text-caution")}>
+              {pace.risk !== "none" && <AlertTriangle className="h-3 w-3" aria-hidden="true" />}
+              <span>
+                {pace.risk === "likely" ? "Likely over: " : pace.risk === "possible" ? "Could go over: " : "Month-end: "}
+                {formatINR(pace.projected)} projected (80% range {formatINR(pace.lower80)} to {formatINR(pace.upper80)})
+              </span>
+              {budget.pace?.evidence && (
+                <EvidenceDrawer
+                  title={`${budget.categoryDisplayName} month-end projection`}
+                  value={formatINR(pace.projected)}
+                  evidence={{
+                    ...forecastEvidence(budget.pace.evidence),
+                    inputs: [
+                      { label: "Spent so far", value: formatINR(budget.currentSpend) },
+                      { label: "Limit", value: formatINR(pace.limit) },
+                      { label: "Pace method", value: budget.pace.method },
+                      { label: "Share of month remaining", value: `${Math.round(budget.pace.remainingShare * 100)}%` },
+                      ...(forecastEvidence(budget.pace.evidence).inputs ?? []),
+                    ],
+                  }}
+                  trigger={<EvidenceTrigger label={`the ${budget.categoryDisplayName} projection`} />}
+                />
+              )}
+            </p>
+          </div>
         )}
       </div>
 
       {/* Hover actions */}
-      <div className="mt-4 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-4 flex items-center justify-end gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
         <button
           onClick={onEdit}
+          aria-label={`Edit ${budget.categoryDisplayName} budget`}
           className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground/80 hover:bg-muted"
         >
           <Wallet className="h-3.5 w-3.5" />
@@ -397,23 +440,6 @@ function BudgetFormDrawer({
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 rounded-lg skeleton" />
-        ))}
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-32 rounded-lg skeleton" />
-        ))}
       </div>
     </div>
   );

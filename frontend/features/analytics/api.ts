@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { ActivityBounds, AnalyticsOverview, AnalyticsTrend } from "./types";
+import type { ActivityBounds, AnalyticsOverview, AnalyticsTrend, CashFlowForecast } from "./types";
 
 export const analyticsApi = {
   getOverview: (from: string, to: string) =>
@@ -13,6 +13,9 @@ export const analyticsApi = {
       `/api/v1/analytics/trend?months=${months}`,
       { auth: true }
     ),
+
+  getForecast: (months = 6) =>
+    api.get<CashFlowForecast>(`/api/v1/forecast?months=${months}`, { auth: true }),
 
   // date range the user has data in; guides the UI when the current view is empty
   getActivityBounds: () =>
