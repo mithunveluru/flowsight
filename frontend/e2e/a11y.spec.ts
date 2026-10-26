@@ -17,6 +17,8 @@ async function receiptReviewUrl(page: Page): Promise<string> {
 }
 
 async function audit(page: Page, label: string) {
+  // let entrance fades finish so contrast is measured on settled colours
+  await page.waitForTimeout(1500);
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   for (const v of violations) {
     console.log(`axe ${label} ${v.impact} ${v.id} x${v.nodes.length}`);
@@ -46,6 +48,14 @@ for (const scheme of ["light", "dark"] as const) {
         ["today", "/dashboard"],
         ["transactions", "/dashboard/transactions"],
         ["what-if", "/dashboard/what-if"],
+        ["habits", "/dashboard/habits"],
+        ["leaks", "/dashboard/drains"],
+        ["recurring", "/dashboard/subscriptions"],
+        ["budgets", "/dashboard/budgets"],
+        ["goals", "/dashboard/goals"],
+        ["trends", "/dashboard/trends"],
+        ["reports", "/dashboard/reports"],
+        ["settings", "/dashboard/settings"],
       ];
       for (const [name, url] of routes) {
         test(name, async ({ page }) => {

@@ -6,25 +6,20 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
-  ArrowUpRight,
   CheckCircle2,
   Coins,
   CreditCard,
-  Gauge,
   Info,
   PiggyBank,
-  Sliders,
-  Sparkles,
-  Telescope,
   TrendingDown,
-  TrendingUp,
 } from "lucide-react";
-import dynamic from "next/dynamic";
-import { ChartFrame, ChartLegend, ChartSkeleton } from "@/components/ui/chart-frame";
+import { Badge } from "@/components/ui/badge";
+import { ChartLegend } from "@/components/ui/chart-frame";
 import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
 import { ErrorState } from "@/components/ui/states";
-import { Field as FormField } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { HeroBand } from "@/components/ui/band";
 import {
   Select,
   SelectContent,
@@ -61,14 +56,12 @@ import {
   CATEGORY_OPTIONS,
   type TransactionCategory,
 } from "@/features/transactions/types";
-import {
-  AnimatedNumber,
-  AnimatedSwitch,
-  FadeIn,
-  StaggerContainer,
-  StaggerItem,
-  motion,
-} from "@/components/motion/primitives";
+import { CountUp, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
+import { ChartPanel } from "@/components/insight/chart-parts";
+import { LineChart, type LineSeries } from "@/components/insight/line-chart";
+import { ContentBand, FullBleed, SectionHead, Surface } from "@/components/insight/page-kit";
+import { ProgressBar } from "@/components/insight/progress";
+import { rupees, rupeesCompact } from "@/features/insights/format";
 import { cn } from "@/lib/utils";
 
 function formatINR(v: number): string {
@@ -81,52 +74,42 @@ function formatINRSigned(v: number): string {
   return formatINR(0);
 }
 
-function formatINRCompact(v: number): string {
-  const abs = Math.abs(v);
-  const sign = v < 0 ? "−" : "";
-  if (abs >= 10_000_000) return `${sign}₹${(abs / 10_000_000).toFixed(1)}Cr`;
-  if (abs >= 100_000)    return `${sign}₹${(abs / 100_000).toFixed(1)}L`;
-  if (abs >= 1_000)      return `${sign}₹${(abs / 1_000).toFixed(0)}K`;
-  return `${sign}${formatINR(abs)}`;
-}
-
-const TIER_META: Record<FlexibilityTier, { label: string; cls: string; bar: string }> = {
-  EXCELLENT:   { label: "Excellent",   cls: "text-positive", bar: "bg-positive" },
-  GOOD:        { label: "Good",        cls: "text-brand",    bar: "bg-brand" },
-  FAIR:        { label: "Fair",        cls: "text-foreground/80",   bar: "bg-muted-foreground" },
-  TIGHT:       { label: "Tight",       cls: "text-caution",   bar: "bg-caution" },
-  CONSTRAINED: { label: "Constrained", cls: "text-warning",     bar: "bg-warning" },
+const TIER_META: Record<FlexibilityTier, { label: string; variant: "emerald" | "blue" | "slate" | "amber" | "red" }> = {
+  EXCELLENT: { label: "Excellent", variant: "emerald" },
+  GOOD: { label: "Good", variant: "blue" },
+  FAIR: { label: "Fair", variant: "slate" },
+  TIGHT: { label: "Tight", variant: "amber" },
+  CONSTRAINED: { label: "Constrained", variant: "red" },
 };
 
-const SEVERITY_META: Record<Severity, { dot: string; ring: string; icon: React.ElementType }> = {
-  POSITIVE: { dot: "bg-positive", ring: "border-positive/25", icon: CheckCircle2  },
-  NEUTRAL:  { dot: "bg-muted-foreground/70",   ring: "border-border",   icon: Info          },
-  CAUTION:  { dot: "bg-caution",   ring: "border-caution/25",   icon: AlertTriangle },
-  WARNING:  { dot: "bg-warning",     ring: "border-warning/25",     icon: AlertTriangle },
+const SEVERITY_ICON: Record<Severity, { icon: React.ElementType; cls: string; word: string }> = {
+  POSITIVE: { icon: CheckCircle2, cls: "text-positive", word: "Good news" },
+  NEUTRAL: { icon: Info, cls: "text-ink-meta", word: "Note" },
+  CAUTION: { icon: AlertTriangle, cls: "text-caution", word: "Caution" },
+  WARNING: { icon: AlertTriangle, cls: "text-warning", word: "Warning" },
 };
 
 const DEFAULT_SCENARIO: Record<ScenarioType, ScenarioRequest> = {
-  ONE_TIME_PURCHASE:  { type: "ONE_TIME_PURCHASE",  name: "New phone",       amount: 60000,  category: "SHOPPING"      },
-  RECURRING_EXPENSE:  { type: "RECURRING_EXPENSE",  name: "Streaming bundle", amount: 999,    category: "ENTERTAINMENT", durationMonths: 12 },
-  SAVINGS_ADJUSTMENT: { type: "SAVINGS_ADJUSTMENT", name: "Boost savings",   amount: 10000,  durationMonths: 12 },
-  LOAN_EMI:           { type: "LOAN_EMI",           name: "Vehicle loan",    amount: 1000000, annualInterestRate: 9.5, tenureMonths: 36 },
+  ONE_TIME_PURCHASE: { type: "ONE_TIME_PURCHASE", name: "New phone", amount: 60000, category: "SHOPPING" },
+  RECURRING_EXPENSE: { type: "RECURRING_EXPENSE", name: "Streaming bundle", amount: 999, category: "ENTERTAINMENT", durationMonths: 12 },
+  SAVINGS_ADJUSTMENT: { type: "SAVINGS_ADJUSTMENT", name: "Boost savings", amount: 10000, durationMonths: 12 },
+  LOAN_EMI: { type: "LOAN_EMI", name: "Vehicle loan", amount: 1000000, annualInterestRate: 9.5, tenureMonths: 36 },
 };
 
 const SCENARIO_TAB_META: Record<ScenarioType, { label: string; icon: React.ElementType }> = {
-  ONE_TIME_PURCHASE:  { label: "Buy something",   icon: Coins },
-  RECURRING_EXPENSE:  { label: "Add a subscription", icon: CreditCard },
-  SAVINGS_ADJUSTMENT: { label: "Adjust savings",     icon: PiggyBank },
-  LOAN_EMI:           { label: "Take a loan",        icon: TrendingDown },
+  ONE_TIME_PURCHASE: { label: "Buy something", icon: Coins },
+  RECURRING_EXPENSE: { label: "Add a subscription", icon: CreditCard },
+  SAVINGS_ADJUSTMENT: { label: "Adjust savings", icon: PiggyBank },
+  LOAN_EMI: { label: "Take a loan", icon: TrendingDown },
 };
 
-const FanChart = dynamic(() => import("./fan-chart"), {
-  ssr: false,
-  loading: () => <ChartSkeleton height={300} />,
-});
-const ProjectionChartLazy = dynamic(() => import("./projection-chart"), {
-  ssr: false,
-  loading: () => <ChartSkeleton height={280} />,
-});
+// slider span for the main amount of each scenario
+const AMOUNT_RANGE: Record<ScenarioType, { max: number; step: number }> = {
+  ONE_TIME_PURCHASE: { max: 500000, step: 1000 },
+  RECURRING_EXPENSE: { max: 20000, step: 100 },
+  SAVINGS_ADJUSTMENT: { max: 100000, step: 500 },
+  LOAN_EMI: { max: 5000000, step: 10000 },
+};
 
 export default function SimulatePage() {
   const [scenario, setScenario] = useState<ScenarioRequest>(DEFAULT_SCENARIO.ONE_TIME_PURCHASE);
@@ -135,7 +118,7 @@ export default function SimulatePage() {
   const [error,    setError]    = useState<string | null>(null);
   const [attempt,  setAttempt]  = useState(0);
 
-  // Debounced auto-simulation — keeps the page feeling alive without spamming the API
+  // Debounced auto-simulation keeps the page live without spamming the API
   useEffect(() => {
     if (!scenario.amount || scenario.amount <= 0) return;
     const t = setTimeout(async () => {
@@ -158,65 +141,54 @@ export default function SimulatePage() {
   }, []);
 
   return (
-    <div className="space-y-10">
-      {/* Page header */}
-      <FadeIn>
-        <header className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">What-if</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground max-w-2xl">
-              Thinking about a big purchase or a new commitment? See how it would affect your money, your breathing room, and your savings before you decide.
-            </p>
-          </div>
-          <Sliders className="h-5 w-5 text-muted-foreground mt-1.5" strokeWidth={1.5} />
-        </header>
-      </FadeIn>
+    <div>
+      <FullBleed flushTop>
+        <HeroBand
+          title="What-if"
+          lead="Thinking about a big purchase or a new commitment? See how it would affect your money, your breathing room, and your savings before you decide."
+        />
+      </FullBleed>
 
-      {/* Two-column on desktop: scenario builder (sticky) + results */}
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_1fr]">
-        {/* Scenario builder */}
-        <FadeIn delay={0.05}>
-          <aside className="lg:sticky lg:top-6 lg:self-start space-y-6">
-            <ScenarioBuilder
-              scenario={scenario}
-              onChange={setScenario}
-              onTypeChange={handleTypeChange}
-            />
+      <div className="h-sp-hero" aria-hidden="true" />
+
+      <ContentBand tone="blue" space="md">
+        <div className="grid gap-sp-max lg:grid-cols-[minmax(0,360px)_1fr]">
+          <aside className="lg:sticky lg:top-sp-giant lg:self-start">
+            <ScenarioBuilder scenario={scenario} onChange={setScenario} onTypeChange={handleTypeChange} />
           </aside>
-        </FadeIn>
 
-        {/* Results — stagger the stack into view */}
-        <section className="space-y-8">
-          {error && (
-            <ErrorState
-              title="The simulation did not run"
-              description={error}
-              onRetry={() => setAttempt((n) => n + 1)}
-            />
-          )}
+          <section aria-label="Results" className="min-w-0 space-y-sp-max">
+            {error && (
+              <ErrorState
+                title="The simulation did not run"
+                description={error}
+                onRetry={() => setAttempt((n) => n + 1)}
+              />
+            )}
 
-          {result ? (
-            <StaggerContainer className="space-y-8" stagger={0.06}>
-              <StaggerItem><ImpactSummary result={result} /></StaggerItem>
-              {result.monteCarlo && (
-                <StaggerItem><FanCard mc={result.monteCarlo} assumptions={result.assumptions} /></StaggerItem>
-              )}
-              {result.monteCarlo?.goal && (
-                <StaggerItem><GoalOddsCard odds={result.monteCarlo.goal} /></StaggerItem>
-              )}
-              <StaggerItem><FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} mc={result.monteCarlo} /></StaggerItem>
-              <StaggerItem><ProjectionChart projection={result.projection} /></StaggerItem>
-              <StaggerItem><TradeoffAnalysis tradeoffs={result.tradeoffs} /></StaggerItem>
-              <StaggerItem><ConsequenceInsights insights={result.insights} /></StaggerItem>
-              {!result.baseline.hasEnoughData && (
-                <StaggerItem><LowDataNotice /></StaggerItem>
-              )}
-            </StaggerContainer>
-          ) : (
-            <FadeIn delay={0.1}><LoadingState loading={loading} /></FadeIn>
-          )}
-        </section>
-      </div>
+            {result ? (
+              <Stagger className="space-y-sp-max" stagger={0.06}>
+                <StaggerItem><ImpactSummary result={result} /></StaggerItem>
+                {result.monteCarlo && (
+                  <StaggerItem><FanCard mc={result.monteCarlo} assumptions={result.assumptions} /></StaggerItem>
+                )}
+                {result.monteCarlo?.goal && (
+                  <StaggerItem><GoalOddsCard odds={result.monteCarlo.goal} /></StaggerItem>
+                )}
+                <StaggerItem><FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} mc={result.monteCarlo} /></StaggerItem>
+                <StaggerItem><ProjectionChart projection={result.projection} /></StaggerItem>
+                <StaggerItem><TradeoffAnalysis tradeoffs={result.tradeoffs} /></StaggerItem>
+                <StaggerItem><ConsequenceInsights insights={result.insights} /></StaggerItem>
+                {!result.baseline.hasEnoughData && (
+                  <StaggerItem><LowDataNotice /></StaggerItem>
+                )}
+              </Stagger>
+            ) : (
+              <Reveal><PendingState loading={loading} /></Reveal>
+            )}
+          </section>
+        </div>
+      </ContentBand>
     </div>
   );
 }
@@ -233,10 +205,9 @@ function ScenarioBuilder({
   const update = (partial: Partial<ScenarioRequest>) => onChange({ ...scenario, ...partial });
 
   return (
-    <div className="rounded-xl border bg-card p-5" style={{ borderColor: "hsl(var(--border))" }}>
-      {/* Scenario type tabs */}
-      <p className="stat-label mb-2">Scenario type</p>
-      <div className="grid grid-cols-2 gap-1.5">
+    <Surface tone="canvas">
+      <p className="text-sm font-medium text-ink" id="scenario-type">Scenario type</p>
+      <div role="group" aria-labelledby="scenario-type" className="mt-sp-sm grid grid-cols-2 gap-sp-sm">
         {(Object.keys(SCENARIO_TAB_META) as ScenarioType[]).map((t) => {
           const meta = SCENARIO_TAB_META[t];
           const Icon = meta.icon;
@@ -244,63 +215,45 @@ function ScenarioBuilder({
           return (
             <button
               key={t}
+              type="button"
+              aria-pressed={active}
               onClick={() => onTypeChange(t)}
               className={cn(
-                "flex flex-col items-start gap-1.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                active
-                  ? "border-foreground bg-muted/50"
-                  : "border-transparent bg-muted/40 hover:bg-muted"
+                "press flex min-h-11 flex-col items-start gap-sp-xs rounded-md px-sp-xl py-sp-xl text-left text-sm font-medium transition-colors duration-fast",
+                active ? "bg-primary text-primary-foreground" : "bg-chrome text-ink hover:bg-band"
               )}
             >
-              <Icon className="h-3.5 w-3.5 text-foreground/70" strokeWidth={1.75} />
-              <span className="text-xs font-medium text-foreground">{meta.label}</span>
+              <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
+              {meta.label}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-6 space-y-4">
-        {/* Name */}
+      <div className="mt-sp-giant space-y-sp-wide">
         <Field label="Name">
-          <input
+          <Input
             type="text"
             value={scenario.name ?? ""}
             onChange={(e) => update({ name: e.target.value })}
             placeholder="e.g. New phone"
-            className="input-base"
           />
         </Field>
 
-        {/* Type-specific fields */}
         {scenario.type === "ONE_TIME_PURCHASE" && (
           <>
-            <Field label="Amount">
-              <AmountInput
-                value={scenario.amount}
-                onChange={(v) => update({ amount: v })}
-              />
-            </Field>
+            <AmountField label="Amount" type={scenario.type} value={scenario.amount} onChange={(v) => update({ amount: v })} />
             <Field label="Category (optional)">
-              <CategorySelect
-                value={scenario.category}
-                onChange={(v) => update({ category: v })}
-              />
+              <CategorySelect value={scenario.category} onChange={(v) => update({ category: v })} />
             </Field>
           </>
         )}
 
         {scenario.type === "RECURRING_EXPENSE" && (
           <>
-            <Field label="Monthly amount">
-              <AmountInput value={scenario.amount} onChange={(v) => update({ amount: v })} />
-            </Field>
+            <AmountField label="Monthly amount" type={scenario.type} value={scenario.amount} onChange={(v) => update({ amount: v })} />
             <Field label="Duration (months)">
-              <NumberInput
-                value={scenario.durationMonths ?? 12}
-                onChange={(v) => update({ durationMonths: v })}
-                min={1}
-                max={120}
-              />
+              <NumberInput value={scenario.durationMonths ?? 12} onChange={(v) => update({ durationMonths: v })} min={1} max={120} />
             </Field>
             <Field label="Category (optional)">
               <CategorySelect value={scenario.category} onChange={(v) => update({ category: v })} />
@@ -315,61 +268,40 @@ function ScenarioBuilder({
                 value={scenario.amount >= 0 ? "INCREASE" : "DECREASE"}
                 onValueChange={(v) => update({ amount: v === "INCREASE" ? Math.abs(scenario.amount) : -Math.abs(scenario.amount) })}
               >
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="INCREASE">Increase savings</SelectItem>
                   <SelectItem value="DECREASE">Decrease savings</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Monthly amount">
-              <AmountInput
-                value={Math.abs(scenario.amount)}
-                onChange={(v) => update({ amount: scenario.amount < 0 ? -v : v })}
-              />
-            </Field>
+            <AmountField
+              label="Monthly amount"
+              type={scenario.type}
+              value={Math.abs(scenario.amount)}
+              onChange={(v) => update({ amount: scenario.amount < 0 ? -v : v })}
+            />
             <Field label="Duration (months)">
-              <NumberInput
-                value={scenario.durationMonths ?? 12}
-                onChange={(v) => update({ durationMonths: v })}
-                min={1}
-                max={120}
-              />
+              <NumberInput value={scenario.durationMonths ?? 12} onChange={(v) => update({ durationMonths: v })} min={1} max={120} />
             </Field>
           </>
         )}
 
         {scenario.type === "LOAN_EMI" && (
           <>
-            <Field label="Principal">
-              <AmountInput value={scenario.amount} onChange={(v) => update({ amount: v })} />
-            </Field>
+            <AmountField label="Principal" type={scenario.type} value={scenario.amount} onChange={(v) => update({ amount: v })} />
             <Field label="Annual interest rate (%)">
-              <NumberInput
-                value={scenario.annualInterestRate ?? 9.5}
-                onChange={(v) => update({ annualInterestRate: v })}
-                min={0}
-                max={36}
-                step={0.1}
-              />
+              <NumberInput value={scenario.annualInterestRate ?? 9.5} onChange={(v) => update({ annualInterestRate: v })} min={0} max={36} step={0.1} />
             </Field>
             <Field label="Tenure (months)">
-              <NumberInput
-                value={scenario.tenureMonths ?? 36}
-                onChange={(v) => update({ tenureMonths: v })}
-                min={1}
-                max={360}
-              />
+              <NumberInput value={scenario.tenureMonths ?? 36} onChange={(v) => update({ tenureMonths: v })} min={1} max={360} />
             </Field>
           </>
         )}
       </div>
 
-      <div className="mt-6 border-t border-border pt-5">
-        <FormField
-          label="Assumed yearly return (%)"
-          hint="Used for opportunity-cost figures. Leave blank for the default."
-        >
+      <div className="mt-sp-giant border-t border-border pt-sp-giant">
+        <Field label="Assumed yearly return (%)" hint="Used for opportunity-cost figures. Leave blank for the default.">
           <Input
             type="number"
             inputMode="decimal"
@@ -383,39 +315,55 @@ function ScenarioBuilder({
               update({ annualReturnPercent: v ?? undefined });
             }}
           />
-        </FormField>
+        </Field>
       </div>
 
-      <p className="mt-5 text-[11px] text-muted-foreground leading-relaxed">
+      <p className="mt-sp-giant text-xs text-ink-meta">
         The projection updates as you adjust values. It uses your last 3 months of transactions and active recurring patterns as the baseline.
       </p>
-    </div>
+    </Surface>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function AmountField({
+  label,
+  type,
+  value,
+  onChange,
+}: {
+  label: string;
+  type: ScenarioType;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const { max, step } = AMOUNT_RANGE[type];
   return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function AmountInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">INR</span>
-      <input
-        type="number"
-        value={value || ""}
-        onChange={(e) => onChange(Number(e.target.value) || 0)}
-        min={0}
-        step={100}
-        placeholder="0"
-        className="input-base flex-1"
-      />
-    </div>
+    <Field label={label}>
+      <div className="space-y-sp-xl">
+        <div className="flex items-center gap-sp-sm">
+          <span className="text-sm text-ink-meta">INR</span>
+          <Input
+            type="number"
+            value={value || ""}
+            onChange={(e) => onChange(Number(e.target.value) || 0)}
+            min={0}
+            step={100}
+            placeholder="0"
+            className="flex-1"
+          />
+        </div>
+        <input
+          type="range"
+          aria-label={`${label} slider`}
+          min={0}
+          max={Math.max(max, value)}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="block h-11 w-full cursor-pointer accent-primary"
+        />
+      </div>
+    </Field>
   );
 }
 
@@ -429,14 +377,13 @@ function NumberInput({
   step?: number;
 }) {
   return (
-    <input
+    <Input
       type="number"
       value={value || ""}
       onChange={(e) => onChange(Number(e.target.value) || 0)}
       min={min}
       max={max}
       step={step}
-      className="input-base"
     />
   );
 }
@@ -452,7 +399,7 @@ function CategorySelect({
       value={value ?? "__none__"}
       onValueChange={(v) => onChange(v === "__none__" ? undefined : (v as TransactionCategory))}
     >
-      <SelectTrigger aria-label="Category" className="h-10"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+      <SelectTrigger aria-label="Category"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">No category</SelectItem>
         {CATEGORY_OPTIONS.map((opt) => (
@@ -463,60 +410,52 @@ function CategorySelect({
   );
 }
 
+function Delta({ value, children }: { value: number; children: React.ReactNode }) {
+  const Icon = value > 0 ? ArrowUp : value < 0 ? ArrowDown : null;
+  return (
+    <span className="inline-flex items-center gap-sp-xs">
+      {Icon && <Icon className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />}
+      {children}
+      <span className="sr-only">{value > 0 ? ", gain" : value < 0 ? ", loss" : ""}</span>
+    </span>
+  );
+}
+
 function ImpactSummary({ result }: { result: SimulationResult }) {
   const positive = result.monthlyImpact >= 0;
+  const oneTime = result.scenario.type === "ONE_TIME_PURCHASE";
 
   const cards = [
     {
       label: "Monthly cashflow impact",
-      value: result.scenario.type === "ONE_TIME_PURCHASE"
-        ? formatINR(0)
-        : formatINRSigned(result.monthlyImpact),
-      hint: result.scenario.type === "ONE_TIME_PURCHASE"
-        ? "One-time outlay"
-        : positive ? "Net inflow" : "Net outflow",
-      icon: positive ? TrendingUp : TrendingDown,
-      accent: positive ? "text-positive" : "text-warning",
+      value: oneTime ? 0 : result.monthlyImpact,
+      format: formatINRSigned,
+      hint: oneTime ? "One-time outlay" : positive ? "Net inflow" : "Net outflow",
     },
-    {
-      label: "Yearly impact",
-      value: formatINRCompact(result.yearlyImpact),
-      hint: "Total over 12 months",
-      icon: Coins,
-      accent: result.yearlyImpact >= 0 ? "text-positive" : "text-warning",
-    },
-    {
-      label: "5-year cumulative",
-      value: formatINRCompact(result.fiveYearImpact),
-      hint: "Total over 60 months",
-      icon: Coins,
-      accent: result.fiveYearImpact >= 0 ? "text-positive" : "text-warning",
-    },
+    { label: "Yearly impact", value: result.yearlyImpact, format: rupeesCompact, hint: "Total over 12 months" },
+    { label: "5-year cumulative", value: result.fiveYearImpact, format: rupeesCompact, hint: "Total over 60 months" },
     {
       label: "10-year opportunity cost",
-      value: formatINRCompact(result.tenYearOpportunityCost),
+      value: result.tenYearOpportunityCost,
+      format: rupeesCompact,
       hint: result.assumptions ? `If invested at ${assumptionText(result.assumptions)}` : "If invested",
-      icon: Telescope,
-      accent: "text-foreground",
     },
   ];
 
   return (
-    <div
-      className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 overflow-hidden rounded-xl border bg-card"
-      style={{ borderColor: "hsl(var(--border))" }}
-    >
+    <Surface tone="canvas" className="grid grid-cols-2 gap-sp-giant lg:grid-cols-4">
       {cards.map((c) => (
-        <div key={c.label} className="px-5 py-4">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <c.icon className="h-3 w-3 text-muted-foreground" strokeWidth={2} />
-            <p className="stat-label">{c.label}</p>
-          </div>
-          <p className={cn("stat-value text-2xl tabular-nums", c.accent)}>{c.value}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{c.hint}</p>
+        <div key={c.label} className="min-w-0">
+          <p className="text-sm text-ink-meta">{c.label}</p>
+          <p className="mt-sp-xs text-ty-subhead tabular-nums text-ink">
+            <Delta value={c.value}>
+              <CountUp value={Math.round(c.value)} format={c.format} />
+            </Delta>
+          </p>
+          <p className="mt-sp-xs text-xs text-ink-meta">{c.hint}</p>
         </div>
       ))}
-    </div>
+    </Surface>
   );
 }
 
@@ -529,104 +468,76 @@ function FlexibilityCard({
   baseline: FinancialBaseline;
   mc?: MonteCarloResult | null;
 }) {
-  const currentMeta   = TIER_META[flexibility.currentTier];
-  const projectedMeta = TIER_META[flexibility.projectedTier];
   const delta = flexibility.deltaPercent;
 
-  return (
-    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
-      <div className="flex items-start gap-3 mb-5">
-        <Gauge className="h-4 w-4 text-muted-foreground mt-0.5" strokeWidth={1.75} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">Breathing room</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            How much room you&apos;d have to absorb surprises and pursue what comes next.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto_1fr]">
-        {/* Current */}
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Current</p>
-          <p className="stat-value text-3xl tabular-nums">
-            <AnimatedNumber value={flexibility.currentScore} duration={0.6} />
-            <span className="text-base text-muted-foreground">/100</span>
-          </p>
-          <p className={cn("text-sm font-medium", currentMeta.cls)}>{currentMeta.label}</p>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <motion.div
-              className={cn("h-full", currentMeta.bar)}
-              initial={{ width: 0 }}
-              animate={{ width: `${flexibility.currentScore}%` }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        </div>
-
-        {/* Arrow + delta — switches its color/sign smoothly with content */}
-        <AnimatedSwitch viewKey={String(Math.sign(delta)) + Math.abs(delta).toFixed(1)} className="text-center hidden sm:block">
-          <div className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
-            delta >= 0
-              ? "border-positive/25 bg-positive-soft text-positive"
-              : "border-warning/25    bg-warning-soft    text-warning"
-          )}>
-            {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-            {Math.abs(delta).toFixed(1)}%
-          </div>
-        </AnimatedSwitch>
-
-        {/* Projected */}
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">After this decision</p>
-          <p className="stat-value text-3xl tabular-nums">
-            <AnimatedNumber value={flexibility.projectedScore} duration={0.6} />
-            <span className="text-base text-muted-foreground">/100</span>
-          </p>
-          <p className={cn("text-sm font-medium", projectedMeta.cls)}>{projectedMeta.label}</p>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <motion.div
-              className={cn("h-full", projectedMeta.bar)}
-              initial={{ width: 0 }}
-              animate={{ width: `${flexibility.projectedScore}%` }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-5 text-xs text-muted-foreground leading-relaxed">
-        {flexibility.explanation}
+  const Column = ({ title, score, tier }: { title: string; score: number; tier: FlexibilityTier }) => (
+    <div className="space-y-sp-sm">
+      <p className="text-sm text-ink-meta">{title}</p>
+      <p className="text-ty-section-title tabular-nums text-ink">
+        <CountUp value={score} duration={0.6} />
+        <span className="text-ty-link text-ink-meta">/100</span>
       </p>
+      <Badge variant={TIER_META[tier].variant}>{TIER_META[tier].label}</Badge>
+      <ProgressBar value={score} label={`${title} breathing room score`} valueText={`${score} out of 100, ${TIER_META[tier].label}`} />
+    </div>
+  );
+
+  return (
+    <Surface tone="canvas">
+      <SectionHead
+        as="h3"
+        title="Breathing room"
+        lead="How much room you would have to absorb surprises and pursue what comes next."
+        className="mb-sp-giant"
+      />
+
+      <div className="grid items-center gap-sp-giant sm:grid-cols-[1fr_auto_1fr]">
+        <Column title="Current" score={flexibility.currentScore} tier={flexibility.currentTier} />
+        <Badge variant={delta >= 0 ? "emerald" : "red"} className="hidden gap-sp-xs sm:inline-flex">
+          {delta >= 0 ? <ArrowUp className="h-3 w-3" aria-hidden="true" /> : <ArrowDown className="h-3 w-3" aria-hidden="true" />}
+          {delta >= 0 ? "+" : "−"}{Math.abs(delta).toFixed(1)}%
+        </Badge>
+        <Column title="After this decision" score={flexibility.projectedScore} tier={flexibility.projectedTier} />
+      </div>
+
+      <p className="mt-sp-giant text-sm text-ink-body">{flexibility.explanation}</p>
       {mc && (
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+        <p className="mt-sp-xl flex flex-wrap items-center gap-x-sp-sm text-sm text-ink-body">
           <span>
             Across simulated futures the score after this decision is typically{" "}
-            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p10}</span> to{" "}
-            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p90}</span> (median{" "}
-            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p50}</span>).
+            <span className="font-medium tabular-nums text-ink">{mc.flexibility.p10}</span> to{" "}
+            <span className="font-medium tabular-nums text-ink">{mc.flexibility.p90}</span> (median{" "}
+            <span className="font-medium tabular-nums text-ink">{mc.flexibility.p50}</span>).
           </span>
           <EvidenceDrawer
             title="Breathing room range"
             value={`${mc.flexibility.p10} to ${mc.flexibility.p90}`}
             evidence={flexibilityEvidence(mc.baselineFlexibility, mc.flexibility, mc)}
-            trigger={<EvidenceTrigger label="the breathing room range" />}
+            trigger={<EvidenceTrigger label="the breathing room range" className="coarse:h-11 coarse:min-w-11" />}
           />
         </p>
       )}
 
-      {/* Baseline footnote */}
       {baseline.hasEnoughData && (
-        <div className="mt-4 grid gap-2 text-[11px] text-muted-foreground sm:grid-cols-3">
-          <span>Income: <span className="font-medium text-foreground tabular-nums">{formatINR(baseline.monthlyIncome)}/mo</span></span>
-          <span>Spend: <span className="font-medium text-foreground tabular-nums">{formatINR(baseline.monthlySpend)}/mo</span></span>
-          <span>Recurring: <span className="font-medium text-foreground tabular-nums">{formatINR(baseline.monthlyRecurring)}/mo</span></span>
-        </div>
+        <dl className="mt-sp-giant grid gap-sp-sm text-xs text-ink-meta sm:grid-cols-3">
+          {[
+            ["Income", baseline.monthlyIncome],
+            ["Spend", baseline.monthlySpend],
+            ["Recurring", baseline.monthlyRecurring],
+          ].map(([k, v]) => (
+            <div key={k as string} className="flex gap-sp-xs">
+              <dt>{k}:</dt>
+              <dd className="font-medium tabular-nums text-ink">{formatINR(v as number)}/mo</dd>
+            </div>
+          ))}
+        </dl>
       )}
-    </div>
+    </Surface>
   );
 }
+
+const PRIMARY = "hsl(var(--chart-spend))";
+const SLATE = "hsl(var(--chart-axis))";
 
 function ProjectionChart({ projection }: { projection: Projection }) {
   const data = useMemo(
@@ -638,67 +549,132 @@ function ProjectionChart({ projection }: { projection: Projection }) {
       })),
     [projection]
   );
+  const series = useMemo<LineSeries[]>(
+    () => [
+      { key: "after", label: "With it", color: PRIMARY, marker: "circle", values: data.map((d) => d.after) },
+      { key: "before", label: "Current", color: SLATE, marker: "square", dash: "5 4", values: data.map((d) => d.before) },
+    ],
+    [data]
+  );
   const last = data.at(-1);
 
   return (
-    <ChartFrame
-      title="12-month projection"
-      description="Cumulative savings position, current trajectory vs simulated."
-      summary={last ? `After ${data.length} months: ${formatINR(last.before)} on the current trajectory, ${formatINR(last.after)} with this decision.` : undefined}
-      state={data.length ? "ready" : "empty"}
-      height={280}
-      legend={
-        <ChartLegend
-          items={[
-            { label: "Current trajectory", color: "hsl(var(--chart-axis))" },
-            { label: "With this decision", color: "hsl(var(--chart-spend))" },
-          ]}
+    <Surface tone="canvas">
+      <ChartPanel
+        title="12-month projection"
+        description="Cumulative savings position, current trajectory against simulated."
+        summary={last ? `After ${data.length} months: ${formatINR(last.before)} on the current trajectory, ${formatINR(last.after)} with this decision.` : undefined}
+        state={data.length ? "ready" : "empty"}
+        height={280}
+        legend={
+          <ChartLegend
+            className="justify-start"
+            items={[
+              { label: "With this decision", color: PRIMARY, marker: "circle" },
+              { label: "Current trajectory", color: SLATE, variant: "dashed", marker: "square" },
+            ]}
+          />
+        }
+      >
+        <LineChart
+          categories={data.map((d) => d.month)}
+          series={series}
+          height={280}
+          format={rupees}
+          formatAxis={rupeesCompact}
+          ariaLabel="Cumulative savings, current trajectory against simulated"
         />
-      }
-    >
-      <ProjectionChartLazy data={data} height={280} />
-    </ChartFrame>
+      </ChartPanel>
+    </Surface>
   );
 }
 
 function FanCard({ mc, assumptions }: { mc: MonteCarloResult; assumptions?: SimulationAssumptions }) {
   const rows = useMemo(() => fanRows(mc.fan, mc.baselineFan), [mc.fan, mc.baselineFan]);
+  const series = useMemo<LineSeries[]>(
+    () => [
+      {
+        key: "p50",
+        label: "Median",
+        color: PRIMARY,
+        marker: "circle",
+        values: rows.map((r) => r.p50),
+        lower: rows.map((r) => r.p10),
+        upper: rows.map((r) => r.p90),
+      },
+      { key: "baseP50", label: "Without it", color: SLATE, marker: "square", dash: "5 4", values: rows.map((r) => r.baseP50) },
+    ],
+    [rows]
+  );
   const last = rows.at(-1);
+
   return (
-    <ChartFrame
-      title="Range of outcomes"
-      description="Cumulative savings from today across thousands of simulated futures that replay your own month-to-month swings."
-      summary={fanSummary(mc.fan)}
-      state={rows.length ? "ready" : "empty"}
-      emptyTitle="No simulated paths"
-      height={300}
-      actions={
-        <EvidenceDrawer
-          title="Range of outcomes"
-          value={last ? `${formatINRCompact(last.p10)} to ${formatINRCompact(last.p90)} at month ${last.month}` : undefined}
-          evidence={monteCarloEvidence(mc, assumptions)}
-          trigger={<EvidenceTrigger label="the range of outcomes" />}
-        />
-      }
-      legend={
-        <div className="space-y-2">
-          <ChartLegend
-            items={[
-              { label: "Median with this decision", color: "hsl(var(--chart-spend))" },
-              { label: "Middle 80% of futures", color: "hsl(var(--chart-spend) / 0.35)" },
-              { label: "Median without it", color: "hsl(var(--chart-axis))", variant: "dashed" },
-            ]}
+    <Surface tone="canvas">
+      <ChartPanel
+        title="Range of outcomes"
+        description="Cumulative savings from today across thousands of simulated futures that replay your own month-to-month swings."
+        summary={fanSummary(mc.fan)}
+        state={rows.length ? "ready" : "empty"}
+        emptyTitle="No simulated paths"
+        height={300}
+        actions={
+          <EvidenceDrawer
+            title="Range of outcomes"
+            value={last ? `${rupeesCompact(last.p10)} to ${rupeesCompact(last.p90)} at month ${last.month}` : undefined}
+            evidence={monteCarloEvidence(mc, assumptions)}
+            trigger={<EvidenceTrigger label="the range of outcomes" className="coarse:h-11 coarse:min-w-11" />}
           />
-          {assumptions && (
-            <p className="text-caption">
-              Return assumption: {assumptionText(assumptions)}. {assumptions.label}
+        }
+        legend={
+          <div className="space-y-sp-sm">
+            <ChartLegend
+              className="justify-start"
+              items={[
+                { label: "Median with this decision", color: PRIMARY, marker: "circle" },
+                { label: "Median without it", color: SLATE, variant: "dashed", marker: "square" },
+              ]}
+            />
+            <p className="flex items-center gap-sp-sm text-xs text-ink-meta">
+              <span aria-hidden="true" className="h-3 w-6 rounded-sm" style={{ backgroundColor: PRIMARY, opacity: 0.16 }} />
+              Shaded band: the middle 80% of futures.
             </p>
-          )}
-        </div>
-      }
-    >
-      <FanChart rows={rows} height={300} />
-    </ChartFrame>
+            {assumptions && (
+              <p className="text-xs text-ink-meta">
+                Return assumption: {assumptionText(assumptions)}. {assumptions.label}
+              </p>
+            )}
+          </div>
+        }
+      >
+        <LineChart
+          categories={rows.map((r) => r.label)}
+          series={series}
+          height={300}
+          format={rupees}
+          formatAxis={rupeesCompact}
+          ariaLabel="Range of simulated savings outcomes by month"
+          tooltipRows={(i) => {
+            const row = rows[i];
+            if (!row) return null;
+            return (
+              <dl className="space-y-sp-xs tabular-nums">
+                {[
+                  ["High", row.p90],
+                  ["Median", row.p50],
+                  ["Low", row.p10],
+                  ...(row.baseP50 != null ? [["Without", row.baseP50]] : []),
+                ].map(([k, v]) => (
+                  <div key={k as string} className="flex justify-between gap-sp-xl">
+                    <dt>{k}</dt>
+                    <dd className="text-ink">{rupees(v as number)}</dd>
+                  </div>
+                ))}
+              </dl>
+            );
+          }}
+        />
+      </ChartPanel>
+    </Surface>
   );
 }
 
@@ -706,116 +682,94 @@ function GoalOddsCard({ odds }: { odds: NonNullable<MonteCarloResult["goal"]> })
   const t = goalOddsText(odds);
   const pct = Math.round(odds.probabilityByTargetDate * 100);
   return (
-    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
-      <p className="text-sm font-semibold text-foreground">Chance of reaching {odds.goalName}</p>
-      <p className="mt-2 stat-value text-3xl tabular-nums">{percent(odds.probabilityByTargetDate)}</p>
-      <div
-        role="meter"
-        aria-label={`Chance of reaching ${odds.goalName} by ${odds.targetDate}`}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={pct}
-        className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"
-      >
-        <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">
+    <Surface tone="canvas">
+      <h3 className="text-ty-subhead text-ink">Chance of reaching {odds.goalName}</h3>
+      <p className="mt-sp-sm text-ty-section-title tabular-nums text-ink">{percent(odds.probabilityByTargetDate)}</p>
+      <ProgressBar
+        className="mt-sp-xl"
+        value={pct}
+        label={`Chance of reaching ${odds.goalName} by ${odds.targetDate}`}
+        valueText={`${pct} percent`}
+      />
+      <p className="mt-sp-xl text-sm text-ink-body">
         By {odds.targetDate}; {t.baseline}. About {formatINR(odds.remaining)} still to save.
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">{t.reach}.</p>
-    </div>
+      <p className="mt-sp-xs text-sm text-ink-meta">{t.reach}.</p>
+    </Surface>
   );
 }
 
 function TradeoffAnalysis({ tradeoffs }: { tradeoffs: Tradeoff[] }) {
   if (tradeoffs.length === 0) return null;
-
   return (
-    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
-      <div className="flex items-start gap-3 mb-5">
-        <Sparkles className="h-4 w-4 text-muted-foreground mt-0.5" strokeWidth={1.75} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">Key tradeoffs</p>
-          <p className="text-xs text-muted-foreground mt-0.5">The concrete numbers behind this decision.</p>
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
+    <Surface tone="canvas">
+      <SectionHead as="h3" title="Key tradeoffs" lead="The concrete numbers behind this decision." className="mb-sp-giant" />
+      <div className="grid gap-sp-wide sm:grid-cols-3">
         {tradeoffs.map((t, i) => (
-          <div key={i} className="rounded-lg bg-muted/40 px-4 py-3.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.label}</p>
-            <p className="mt-1.5 text-base font-semibold tabular-nums text-foreground">{t.value}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{t.description}</p>
+          <div key={i} className="rounded-md bg-chrome p-sp-wide">
+            <p className="text-sm text-ink-meta">{t.label}</p>
+            <p className="mt-sp-xs text-ty-subhead tabular-nums text-ink">{t.value}</p>
+            <p className="mt-sp-xs text-xs text-ink-meta">{t.description}</p>
           </div>
         ))}
       </div>
-    </div>
+    </Surface>
   );
 }
 
 function ConsequenceInsights({ insights }: { insights: ConsequenceInsight[] }) {
   if (insights.length === 0) return null;
-
   return (
-    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
-      <div className="flex items-start gap-3 mb-5">
-        <ArrowUpRight className="h-4 w-4 text-muted-foreground mt-0.5" strokeWidth={1.75} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">Consequences</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Plain-language read-outs grounded in your data.</p>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {insights.map((ins, i) => (
-          <InsightRow key={i} insight={ins} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function InsightRow({ insight }: { insight: ConsequenceInsight }) {
-  const meta = SEVERITY_META[insight.severity];
-  return (
-    <div className="flex items-start gap-3">
-      <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", meta.dot)} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">{insight.title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{insight.description}</p>
-      </div>
-    </div>
+    <Surface tone="canvas">
+      <SectionHead as="h3" title="Consequences" lead="Plain-language read-outs grounded in your data." className="mb-sp-giant" />
+      <ul className="space-y-sp-xl">
+        {insights.map((ins, i) => {
+          const meta = SEVERITY_ICON[ins.severity];
+          return (
+            <li key={i} className="flex items-start gap-sp-xl">
+              <meta.icon className={cn("mt-0.5 h-4 w-4 shrink-0", meta.cls)} aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-ink">
+                  <span className="sr-only">{meta.word}: </span>
+                  {ins.title}
+                </p>
+                <p className="mt-sp-xs text-sm text-ink-body">{ins.description}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Surface>
   );
 }
 
 function LowDataNotice() {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-caution/25 bg-caution-soft px-4 py-3">
-      <Info className="h-4 w-4 text-caution shrink-0 mt-0.5" />
+    <div className="flex items-start gap-sp-xl rounded-md bg-caution-soft p-sp-wide">
+      <Info className="mt-0.5 h-4 w-4 shrink-0 text-caution" aria-hidden="true" />
       <div>
         <p className="text-sm font-medium text-caution">Limited baseline data</p>
-        <p className="mt-0.5 text-xs text-caution">
+        <p className="mt-sp-xs text-sm text-caution">
           A few months of history make the projection more reliable.{" "}
-          <Link href="/dashboard/transactions" className="underline">Add transactions →</Link>
+          <Link href="/dashboard/transactions" className="underline">Add transactions</Link>
         </p>
       </div>
     </div>
   );
 }
 
-function LoadingState({ loading }: { loading: boolean }) {
+function PendingState({ loading }: { loading: boolean }) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-xl border bg-card"
-           style={{ borderColor: "hsl(var(--border))" }}>
+    <div className="space-y-sp-wide">
+      <div className="grid grid-cols-2 gap-sp-wide lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="skeleton h-24" />
+          <div key={i} className="skeleton h-24 rounded-md" />
         ))}
       </div>
-      <div className="skeleton h-48 rounded-xl" />
-      <div className="skeleton h-72 rounded-xl" />
+      <div className="skeleton h-48 rounded-md" />
+      <div className="skeleton h-72 rounded-md" />
       {!loading && (
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-sm text-ink-meta">
           Adjust the scenario on the left to see how this decision plays out.
         </p>
       )}

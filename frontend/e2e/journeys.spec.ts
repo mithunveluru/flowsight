@@ -87,8 +87,8 @@ test.describe("what-if", () => {
     await page.goto("/dashboard/what-if");
     const fan = page.getByRole("figure", { name: "Range of outcomes" });
     await expect(fan).toBeVisible();
-    await expect(fan.locator(".recharts-area-area").first()).toBeAttached();
-    await expect(fan.locator(".recharts-line-curve").first()).toBeAttached();
+    await expect(fan.locator("[data-chart-band]").first()).toBeAttached();
+    await expect(fan.locator("svg path:not([data-chart-band])").first()).toBeAttached();
   });
 });
 
