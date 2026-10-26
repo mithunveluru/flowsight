@@ -1,34 +1,51 @@
 "use client";
 
-// Shared motion primitives; every one gates on prefers-reduced-motion.
+// Shared motion primitives. Only transform, opacity, clip-path and stroke offset animate;
+// under prefers-reduced-motion every primitive becomes a short fade with no travel.
 
 import {
   AnimatePresence,
-  motion,
+  LazyMotion,
+  domAnimation,
+  m,
   useInView,
   useMotionValue,
   useReducedMotion,
-  useTransform,
   animate as fmAnimate,
   type MotionProps,
-  type Transition,
   type Variants,
 } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import {
+  DURATION_MS,
+  EASE_LOOP,
+  EASE_STANDARD,
+  EASE_EXIT,
+  countUpValue,
+  drawStart,
+  drift,
+  enterTransition,
+} from "./tokens";
 
-// ease-out-quint
-export const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-// ease-in-out for ambient loops
-export const EASE_LOOP = [0.45, 0, 0.55, 1] as const;
+export { EASE_LOOP, EASE_STANDARD, EASE_EXIT };
+// ease-out alias kept for existing call sites
+export const EASE_OUT = EASE_STANDARD;
+
+const s = (ms: number) => ms / 1000;
 
 export const DURATION = {
-  fast:   0.18,
-  base:   0.28,
-  slow:   0.48,
-  hero:   0.7,
+  fast: s(DURATION_MS.fast),
+  base: s(DURATION_MS.base),
+  slow: s(DURATION_MS.slow),
+  hero: s(DURATION_MS.reveal),
+  reveal: s(DURATION_MS.reveal),
+  draw: s(DURATION_MS.draw),
 } as const;
 
-const baseEnter: Transition = { duration: DURATION.base, ease: EASE_OUT };
+/** Loads the animation features once for the whole tree; `m` components are inert without it. */
+export function MotionRoot({ children }: { children: React.ReactNode }) {
+  return <LazyMotion features={domAnimation}>{children}</LazyMotion>;
+}
 
 interface FadeInProps {
   children: React.ReactNode;
@@ -38,84 +55,26 @@ interface FadeInProps {
   className?: string;
 }
 
-export function FadeIn({
-  children, delay = 0, duration = DURATION.base, yOffset = 6, className,
-}: FadeInProps) {
+export function FadeIn({ children, delay = 0, duration = DURATION.base, yOffset = 6, className }: FadeInProps) {
   const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
-
   return (
-    <motion.div
+    <m.div
       className={className}
-      initial={{ opacity: 0, y: yOffset }}
+      initial={{ opacity: 0, y: drift(reduced, yOffset) }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration, delay, ease: EASE_OUT }}
+      transition={enterTransition(reduced, duration, delay)}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
-const staggerContainerVariants: Variants = {
-  hidden: { opacity: 1 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
-  },
-};
-
-const staggerItemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: DURATION.base, ease: EASE_OUT },
-  },
-};
-
-export function StaggerContainer({
-  children, className, stagger = 0.06,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  stagger?: number;
-}) {
-  const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
-
-  return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden:  { opacity: 1 },
-        visible: { opacity: 1, transition: { staggerChildren: stagger, delayChildren: 0.04 } },
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-export function StaggerItem({
-  children, className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
-
-  return (
-    <motion.div className={className} variants={staggerItemVariants}>
-      {children}
-    </motion.div>
-  );
-}
-
-export function RevealOnScroll({
-  children, delay = 0, className, yOffset = 14,
+/** Fades and rises into place the first time it scrolls into view. */
+export function Reveal({
+  children,
+  delay = 0,
+  className,
+  yOffset = 8,
 }: {
   children: React.ReactNode;
   delay?: number;
@@ -125,126 +84,169 @@ export function RevealOnScroll({
   const ref = useRef<HTMLDivElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const reduced = useReducedMotion();
-
-  if (reduced) return <div className={className}>{children}</div>;
+  const hidden = { opacity: 0, y: drift(reduced, yOffset) };
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       className={className}
-      initial={{ opacity: 0, y: yOffset }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: yOffset }}
-      transition={{ duration: DURATION.slow, delay, ease: EASE_OUT }}
+      initial={hidden}
+      animate={inView ? { opacity: 1, y: 0 } : hidden}
+      transition={enterTransition(reduced, DURATION.reveal, delay)}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
-interface AnimatedNumberProps {
+export const RevealOnScroll = Reveal;
+
+const STAGGER_STEP_S = 0.06;
+
+export function Stagger({
+  children,
+  className,
+  stagger = STAGGER_STEP_S,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  stagger?: number;
+}) {
+  const reduced = useReducedMotion();
+  const variants: Variants = {
+    hidden: { opacity: 1 },
+    visible: { opacity: 1, transition: { staggerChildren: reduced ? 0 : stagger, delayChildren: reduced ? 0 : 0.04 } },
+  };
+  return (
+    <m.div className={className} initial="hidden" animate="visible" variants={variants}>
+      {children}
+    </m.div>
+  );
+}
+
+export const StaggerContainer = Stagger;
+
+export function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
+  const variants: Variants = {
+    hidden: { opacity: 0, y: drift(reduced, 10) },
+    visible: { opacity: 1, y: 0, transition: enterTransition(reduced, DURATION.base) },
+  };
+  return (
+    <m.div className={className} variants={variants}>
+      {children}
+    </m.div>
+  );
+}
+
+interface CountUpProps {
   value: number;
   // format the in-flight value for display
   format?: (v: number) => string;
+  // seconds; the spec window is 0.9 to 1.2
   duration?: number;
   className?: string;
 }
 
-export function AnimatedNumber({
+/** Counts from the displayed value to `value`; retargets mid-flight; jumps to the end under reduced motion. */
+export function CountUp({
   value,
   format = (v) => v.toLocaleString("en-IN"),
-  duration = 0.8,
+  duration = DURATION.draw,
   className,
-}: AnimatedNumberProps) {
+}: CountUpProps) {
   const reduced = useReducedMotion();
   const [display, setDisplay] = useState(reduced ? value : 0);
   const motionValue = useMotionValue(reduced ? value : 0);
-  const lastTarget = useRef(value);
 
   useEffect(() => {
-    if (reduced) {
-      setDisplay(value);
-      return;
-    }
+    if (reduced) return;
     const controls = fmAnimate(motionValue, value, {
       duration,
-      ease: EASE_OUT,
+      ease: EASE_STANDARD,
       onUpdate: (v) => setDisplay(Math.round(v)),
     });
-    lastTarget.current = value;
     return () => controls.stop();
   }, [value, duration, reduced, motionValue]);
 
-  return <span className={className}>{format(display)}</span>;
+  return <span className={className}>{format(countUpValue(reduced, value, display))}</span>;
 }
 
-// AmbientGlow: subtle floating gradient for hero backgrounds; two slow drifting layers.
+export const AnimatedNumber = CountUp;
 
-export function AmbientGlow({ className }: { className?: string }) {
+/** Draws an SVG path from start to end. Render inside an <svg>; animates stroke offset only. */
+export function DrawLine({
+  d,
+  className,
+  stroke = "currentColor",
+  strokeWidth = 2,
+  duration = DURATION.draw,
+  delay = 0,
+  ...rest
+}: {
+  d: string;
+  className?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  duration?: number;
+  delay?: number;
+} & Omit<React.SVGProps<SVGPathElement>, "d" | "ref" | "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart">) {
   const reduced = useReducedMotion();
-
   return (
-    <div className={"pointer-events-none absolute inset-0 overflow-hidden " + (className ?? "")}>
-      <motion.div
-        className="absolute -top-1/3 -left-1/4 h-[140%] w-[60%] rounded-full"
-        style={{
-          background:
-            "radial-gradient(50% 50% at 50% 50%, hsl(var(--brand) / 0.08), transparent 70%)",
-          filter: "blur(40px)",
-        }}
-        animate={reduced ? undefined : { x: [0, 24, 0], y: [0, -18, 0] }}
-        transition={{ duration: 22, repeat: Infinity, ease: EASE_LOOP }}
-      />
-      <motion.div
-        className="absolute -bottom-1/3 -right-1/4 h-[140%] w-[60%] rounded-full"
-        style={{
-          background:
-            "radial-gradient(50% 50% at 50% 50%, hsl(var(--positive) / 0.05), transparent 70%)",
-          filter: "blur(40px)",
-        }}
-        animate={reduced ? undefined : { x: [0, -20, 0], y: [0, 14, 0] }}
-        transition={{ duration: 28, repeat: Infinity, ease: EASE_LOOP, delay: 4 }}
-      />
-    </div>
+    <m.path
+      d={d}
+      className={className}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      initial={{ pathLength: drawStart(reduced), opacity: reduced ? 0 : 1 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={reduced ? enterTransition(true, duration) : { duration, delay, ease: EASE_STANDARD }}
+      {...rest}
+    />
   );
 }
 
-// AnimatedSwitch: fades/slides between content keyed by viewKey.
+/** Kept for call sites; flat identity draws no ambient gradients. */
+export function AmbientGlow(_: { className?: string }) {
+  return null;
+}
 
+// AnimatedSwitch: fades between content keyed by viewKey.
 export function AnimatedSwitch({
-  viewKey, children, className,
+  viewKey,
+  children,
+  className,
 }: {
   viewKey: string;
   children: React.ReactNode;
   className?: string;
 }) {
   const reduced = useReducedMotion();
-  if (reduced) return <div className={className}>{children}</div>;
-
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div
+      <m.div
         key={viewKey}
         className={className}
-        initial={{ opacity: 0, y: 6 }}
+        initial={{ opacity: 0, y: drift(reduced, 6) }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: DURATION.fast, ease: EASE_OUT }}
+        exit={{ opacity: 0, y: drift(reduced, -4), transition: { duration: DURATION.fast, ease: EASE_EXIT } }}
+        transition={enterTransition(reduced, DURATION.base)}
       >
         {children}
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }
 
-export function PulseDot({
-  className,
-  color = "hsl(var(--brand))",
-}: { className?: string; color?: string }) {
+export function PulseDot({ className, color = "hsl(var(--brand))" }: { className?: string; color?: string }) {
   const reduced = useReducedMotion();
   return (
     <span className={"relative inline-flex h-2 w-2 " + (className ?? "")}>
       {!reduced && (
-        <motion.span
+        <m.span
           className="absolute inset-0 rounded-full"
           style={{ backgroundColor: color }}
           animate={{ scale: [1, 2], opacity: [0.55, 0] }}
@@ -256,7 +258,7 @@ export function PulseDot({
   );
 }
 
-// Collapse: height-auto disclosure body; renders or unmounts instantly under reduced motion.
+// Collapse: disclosure body that fades in and out. Height is not animated; the content below jumps.
 export function Collapse({
   open,
   children,
@@ -269,28 +271,23 @@ export function Collapse({
   id?: string;
   className?: string;
 }) {
-  const reduced = useReducedMotion();
-  if (reduced) return open ? <div id={id} className={className}>{children}</div> : null;
-
   return (
     <AnimatePresence initial={false}>
       {open && (
-        <motion.div
+        <m.div
           key="collapse"
           id={id}
           className={className}
-          style={{ overflow: "hidden" }}
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: DURATION.base, ease: EASE_OUT }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: DURATION.base, ease: EASE_STANDARD } }}
+          exit={{ opacity: 0, transition: { duration: DURATION.fast, ease: EASE_EXIT } }}
         >
           {children}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );
 }
 
-export { motion, AnimatePresence };
+export { m as motion, AnimatePresence };
 export type { MotionProps };

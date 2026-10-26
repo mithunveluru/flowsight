@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionRoot } from "@/components/motion/primitives";
 import { AnnouncerProvider } from "@/components/ui/announcer";
 import { ThemeProvider } from "@/components/ui/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,7 +36,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider delayDuration={300}>
-          <AnnouncerProvider>{children}</AnnouncerProvider>
+          <MotionRoot>
+            <AnnouncerProvider>{children}</AnnouncerProvider>
+          </MotionRoot>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
