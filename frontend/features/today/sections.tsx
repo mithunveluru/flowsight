@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowUpRight, Check, CircleDot, Sparkles, TrendingDown, X } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, CircleDot, Sparkles, TrendingDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { CategoryPill } from "@/components/ui/category-pill";
+import { CountUp } from "@/components/motion/primitives";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/data-table";
 import { ChartFrame, ChartLegend, ChartSkeleton } from "@/components/ui/chart-frame";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
@@ -22,6 +23,8 @@ import { useRecentReceipts } from "@/features/receipts/hooks";
 import { useRecurring } from "@/features/recurring/hooks";
 import { useTransactions, useUncategorizedCount } from "@/features/transactions/hooks";
 import { monthToDate } from "@/features/query-core";
+import { ListItem, ListMotion } from "@/features/shell-pages/list-motion";
+import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { cn } from "@/lib/utils";
 import {
   advanceVisit,
@@ -79,9 +82,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={`${id}-title`} className={cn("space-y-4", className)}>
-      <div className="flex min-h-7 items-center justify-between gap-3">
-        <h2 id={`${id}-title`} tabIndex={-1} className="text-title focus:outline-none">
+    <section aria-labelledby={`${id}-title`} className={cn("space-y-sp-wide", className)}>
+      <div className="flex min-h-7 items-center justify-between gap-3 border-b border-border pb-sp-sm">
+        <h2 id={`${id}-title`} tabIndex={-1} className="text-ty-subhead focus:outline-none">
           {title}
         </h2>
         {action}
@@ -95,7 +98,7 @@ function SeeAll({ href, children }: { href: string; children: React.ReactNode })
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-sm text-primary transition-colors duration-fast hover:underline coarse:min-h-11"
     >
       {children}
       <ArrowUpRight className="h-3 w-3" strokeWidth={2} aria-hidden="true" />
@@ -169,20 +172,20 @@ export function WhatChanged({ userId }: { userId: string | undefined }) {
 
   return (
     <Section id="changed" title="What changed since your last visit">
-      <Card padding="none">{body}</Card>
+      {body}
     </Section>
   );
 }
 
 function ChangeList({ changes }: { changes: Change[] }) {
   return (
-    <ul className="divide-y divide-border">
+    <ul className="space-y-sp-xxs">
       {changes.map((c) => (
         <li key={c.id}>
-          <Link href={c.href} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-muted/50">
-            <CircleDot className="h-4 w-4 shrink-0 text-brand" strokeWidth={1.75} aria-hidden="true" />
+          <Link href={c.href} className="flex items-center gap-3 rounded-md px-sp-xl py-sp-xl transition-colors duration-fast hover:bg-chrome">
+            <CircleDot className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} aria-hidden="true" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-foreground">{c.label}</span>
+              <span className="block truncate text-sm font-medium text-ink">{c.label}</span>
               {c.detail && <span className="block truncate text-caption">{c.detail}</span>}
             </span>
             <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden="true" />
@@ -228,9 +231,10 @@ export function NeedsAttention() {
             description="No receipts waiting, no budgets near their limit, no missed payments and no goals behind."
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className="relative space-y-3">
+            <ListMotion>
             {items.map((item) => (
-              <li key={item.id}>
+              <ListItem key={item.id}>
                 <SignalCard
                   severity={item.severity}
                   title={item.title}
@@ -242,8 +246,9 @@ export function NeedsAttention() {
                 >
                   <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
                 </SignalCard>
-              </li>
+              </ListItem>
             ))}
+            </ListMotion>
           </ul>
         )}
         {missing.length > 0 && (
@@ -298,10 +303,11 @@ export function YouCouldRecover({ userId }: { userId: string | undefined }) {
           description="We look at the last three months for overlapping subscriptions, price increases, frequent small spends and bank fees. Nothing stood out."
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="relative space-y-3">
+          <ListMotion>
           {drains.map((leak) => (
-            <li key={drainKey(leak)}>
-              <Card padding="md" className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <ListItem key={drainKey(leak)}>
+              <div className="flex flex-col gap-3 rounded-md bg-chrome p-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <h3 className="text-title">{leak.title}</h3>
                   <p className="mt-1 text-supporting">{leak.description}</p>
@@ -325,9 +331,10 @@ export function YouCouldRecover({ userId }: { userId: string | undefined }) {
                     </p>
                   </EvidenceDrawer>
                 </div>
-              </Card>
-            </li>
+              </div>
+            </ListItem>
           ))}
+          </ListMotion>
         </ul>
       );
   }
@@ -370,7 +377,7 @@ export function ThisMonth({ earliest }: { earliest: string | null | undefined })
     const net = o.netCashflow;
     body = (
       <div className="space-y-5">
-        <Card padding="md">
+        <div className="rounded-md bg-band-blue p-5">
           <dl className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <dt className="stat-label flex items-center gap-1">
@@ -390,14 +397,17 @@ export function ThisMonth({ earliest }: { earliest: string | null | undefined })
                   trigger={<EvidenceTrigger label="net cashflow this month" />}
                 />
               </dt>
-              <dd className={cn("stat-value mt-1", net < 0 && "text-warning")}>
-                {net < 0 ? "−" : ""}
-                {formatRupees(Math.abs(net))}
+              <dd className={cn("stat-value mt-1 flex items-center gap-1.5", net < 0 && "text-warning")}>
+                {net < 0 && <ArrowDownRight className="h-6 w-6 shrink-0" strokeWidth={2} aria-hidden="true" />}
+                <span>
+                  {net < 0 ? "−" : ""}
+                  <CountUp value={Math.abs(net)} format={formatRupees} />
+                </span>
               </dd>
             </div>
             <div>
               <dt className="stat-label">Spent so far</dt>
-              <dd className="stat-value-sm mt-1">{formatRupees(o.totalSpend)}</dd>
+              <dd className="stat-value-sm mt-1"><CountUp value={o.totalSpend} format={formatRupees} /></dd>
             </div>
             <div>
               <dt className="stat-label flex items-center gap-1">
@@ -416,13 +426,13 @@ export function ThisMonth({ earliest }: { earliest: string | null | undefined })
                 )}
               </dt>
               {typical ? (
-                <dd className="stat-value-sm mt-1">{formatRupees(typical.average)}</dd>
+                <dd className="stat-value-sm mt-1"><CountUp value={typical.average} format={formatRupees} /></dd>
               ) : (
                 <dd className="mt-1.5 text-caption">Needs a full month of history</dd>
               )}
             </div>
           </dl>
-        </Card>
+        </div>
         <ChartFrame
           title="Spending by month"
           description={typical ? "Dashed line: typical month" : undefined}
@@ -436,7 +446,7 @@ export function ThisMonth({ earliest }: { earliest: string | null | undefined })
               <ChartLegend
                 items={[
                   { label: "Spent", color: "hsl(var(--chart-spend))" },
-                  { label: "Typical month", color: "hsl(var(--muted-foreground))", variant: "dashed" },
+                  { label: "Typical month", color: "hsl(var(--chart-axis))", variant: "dashed" },
                 ]}
               />
             ) : undefined
@@ -470,30 +480,40 @@ export function RecentActivity() {
     body = <EmptyState compact as="h3" title="No transactions yet" description="Anything you capture shows up here first." />;
   } else {
     body = (
-      <ul className="divide-y divide-border">
-        {transactions.data.content.slice(0, 5).map((tx) => (
-          <li key={tx.id} className="flex items-center gap-3 px-5 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{tx.merchant ?? tx.description}</p>
-              <p className="mt-0.5 text-caption">{formatDay(tx.transactionDate)}</p>
-            </div>
-            <CategoryPill category={tx.category} className="hidden sm:inline-flex" />
-            <span className={cn("shrink-0 text-sm font-medium tabular-nums", tx.type === "DEBIT" ? "text-foreground" : "text-positive")}>
-              <span className="sr-only">{tx.type === "DEBIT" ? "Spent " : "Received "}</span>
-              <span aria-hidden="true">{tx.type === "DEBIT" ? "−" : "+"}</span>
-              {formatRupees(Number(tx.amount))}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <Table className={TABLE_LOOK}>
+        <caption className="sr-only">The five most recent transactions</caption>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="px-sp-xl">Merchant</TableHead>
+            <TableHead className="hidden px-sp-xl sm:table-cell">Category</TableHead>
+            <TableHead align="right" className="px-sp-xl">Amount</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {transactions.data.content.slice(0, 5).map((tx) => (
+            <TableRow key={tx.id}>
+              <TableCell className="px-sp-xl">
+                <p className="truncate text-sm font-medium text-ink">{tx.merchant ?? tx.description}</p>
+                <p className="mt-0.5 text-xs text-ink-meta">{formatDay(tx.transactionDate)}</p>
+              </TableCell>
+              <TableCell className="hidden px-sp-xl sm:table-cell">
+                <CategoryPill category={tx.category} />
+              </TableCell>
+              <TableCell align="right" className={cn("whitespace-nowrap px-sp-xl font-medium", tx.type === "DEBIT" ? "text-ink" : "text-positive")}>
+                <span className="sr-only">{tx.type === "DEBIT" ? "Spent " : "Received "}</span>
+                <span aria-hidden="true">{tx.type === "DEBIT" ? "−" : "+"}</span>
+                {formatRupees(Number(tx.amount))}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
   }
 
   return (
     <Section id="recent" title="Recent activity" action={<SeeAll href="/dashboard/transactions">All transactions</SeeAll>}>
-      <Card padding="none" className="overflow-hidden">
-        {body}
-      </Card>
+      {body}
     </Section>
   );
 }
@@ -535,7 +555,7 @@ export function SetupChecklist({ userId }: { userId: string | undefined }) {
         </Button>
       }
     >
-      <Card padding="md">
+      <div className="rounded-md bg-chrome p-5">
         <p className="text-caption">
           {done} of {items.length} done
         </p>
@@ -544,12 +564,12 @@ export function SetupChecklist({ userId }: { userId: string | undefined }) {
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm transition-colors hover:bg-muted"
+                className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm transition-colors duration-fast hover:bg-band coarse:min-h-11"
               >
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border",
                     item.done ? "border-positive bg-positive text-primary-foreground" : "border-input"
                   )}
                 >
@@ -563,7 +583,7 @@ export function SetupChecklist({ userId }: { userId: string | undefined }) {
             </li>
           ))}
         </ol>
-      </Card>
+      </div>
     </Section>
   );
 }

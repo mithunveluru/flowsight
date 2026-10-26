@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Info } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { CaptureMenu } from "@/components/layout/capture-menu";
+import { TitleRow } from "@/features/shell-pages/title-row";
+import { CountUp } from "@/components/motion/primitives";
 import { LoadingState, Skeleton } from "@/components/ui/states";
 import { useActivityBounds } from "@/features/analytics/hooks";
 import { useSampleDataStatus } from "@/features/onboarding/hooks";
@@ -54,17 +56,19 @@ export default function TodayPage() {
 
   return (
     <div className="space-y-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-display">Today</h1>
-          <p className="mt-1.5 text-supporting">
-            {hello ? `${hello}${firstName ? `, ${firstName}` : ""}. ` : ""}
-            Here&apos;s what changed and what needs you.
-          </p>
-          <Freshness bounds={bounds} />
-        </div>
-        <CaptureMenu />
-      </header>
+      <TitleRow
+        title="Today"
+        description={
+          <>
+            <p>
+              {hello ? `${hello}${firstName ? `, ${firstName}` : ""}. ` : ""}
+              Here&apos;s what changed and what needs you.
+            </p>
+            <Freshness bounds={bounds} />
+          </>
+        }
+        actions={<CaptureMenu />}
+      />
 
       <PartialHistoryNote earliest={bounds.data?.earliestTransactionDate} count={bounds.data?.totalTransactionCount} />
 
@@ -91,8 +95,8 @@ function Freshness({ bounds }: { bounds: ReturnType<typeof useActivityBounds> })
   const { totalTransactionCount: count, latestTransactionDate: latest } = bounds.data;
   if (count === 0) return null;
   return (
-    <p className="mt-1 text-caption">
-      {count.toLocaleString("en-IN")} {count === 1 ? "transaction" : "transactions"}
+    <p className="mt-1 text-xs text-ink-meta">
+      <CountUp value={count} /> {count === 1 ? "transaction" : "transactions"}
       {latest && ` · latest dated ${formatDay(latest)}`}
     </p>
   );
@@ -105,17 +109,17 @@ function PartialHistoryNote({ earliest, count }: { earliest: string | null | und
 
   const offerSample = sample.isSuccess && !sample.data.present;
   return (
-    <div role="note" className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm">
+    <div role="note" className="flex items-start gap-3 rounded-md bg-band-blue px-4 py-3 text-sm">
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
       <p className="text-foreground">
         Trends, habits and money drains need about a month of history; you have {days} {days === 1 ? "day" : "days"}.{" "}
-        <Link href="/dashboard/capture/import" className="font-medium underline underline-offset-4">
+        <Link href="/dashboard/capture/import" className="font-medium text-primary underline underline-offset-4">
           Import a statement
         </Link>
         {offerSample && (
           <>
             {" "}or{" "}
-            <Link href="/dashboard/welcome" className="font-medium underline underline-offset-4">
+            <Link href="/dashboard/welcome" className="font-medium text-primary underline underline-offset-4">
               explore with sample data
             </Link>
           </>
