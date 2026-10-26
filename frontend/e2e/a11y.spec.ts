@@ -24,6 +24,7 @@ async function audit(page: Page, label: string) {
     console.log(`axe ${label} ${v.impact} ${v.id} x${v.nodes.length}`);
     for (const n of v.nodes) console.log(`    ${n.target.join(" ")} :: ${n.html.slice(0, 160)} :: ${(n.any[0] ?? n.all[0] ?? n.none[0])?.message ?? ""}`);
   }
+  console.log(`axe-count ${label} total=${violations.length} blocking=${violations.filter((v) => v.impact === "serious" || v.impact === "critical").length}`);
   const blocking = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(blocking.map((v) => `${v.id} (${v.impact}) ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
 }
@@ -32,14 +33,26 @@ for (const scheme of ["light", "dark"] as const) {
   test.describe(`accessibility ${scheme}`, () => {
     test.use({ colorScheme: scheme });
 
-    test("login", async ({ browser }) => {
-      const context = await browser.newContext({ colorScheme: scheme });
-      const page = await context.newPage();
-      await page.goto("/auth/login");
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await audit(page, `${scheme} login`);
-      await context.close();
-    });
+    const publicRoutes: [string, string][] = [
+      ["landing", "/"],
+      ["login", "/auth/login"],
+      ["register", "/auth/register"],
+      ["forgot-password", "/auth/forgot-password"],
+      ["reset-password", "/auth/reset-password?token=none"],
+      ["privacy", "/privacy"],
+      ["terms", "/terms"],
+      ["not-found", "/no-such-page"],
+    ];
+    for (const [name, url] of publicRoutes) {
+      test(name, async ({ browser }) => {
+        const context = await browser.newContext({ colorScheme: scheme });
+        const page = await context.newPage();
+        await page.goto(url);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        await audit(page, `${scheme} ${name}`);
+        await context.close();
+      });
+    }
 
     test.describe("signed in", () => {
       test.use({ storageState: ".e2e-state/seeded-user.json" });
@@ -56,6 +69,12 @@ for (const scheme of ["light", "dark"] as const) {
         ["trends", "/dashboard/trends"],
         ["reports", "/dashboard/reports"],
         ["settings", "/dashboard/settings"],
+        ["welcome", "/dashboard/welcome"],
+        ["receipts", "/dashboard/receipts"],
+        ["capture-receipt", "/dashboard/capture/receipt"],
+        ["capture-import", "/dashboard/capture/import"],
+        ["capture-manual", "/dashboard/capture/manual"],
+        ["reports-monthly", "/dashboard/reports/monthly?from=2026-01-01&to=2026-01-31"],
       ];
       for (const [name, url] of routes) {
         test(name, async ({ page }) => {
