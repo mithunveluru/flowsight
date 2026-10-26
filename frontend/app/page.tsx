@@ -2,295 +2,217 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
-  BarChart3,
   Brain,
-  Receipt,
-  Shield,
-  Sliders,
-  Repeat,
-  TrendingDown,
   CheckCircle2,
+  Receipt,
+  Repeat,
+  Sliders,
+  TrendingDown,
 } from "lucide-react";
-import { FadeIn, RevealOnScroll } from "@/components/motion/primitives";
+import { Band } from "@/components/ui/band";
+import { Button } from "@/components/ui/button";
+import { TextLink } from "@/components/ui/text-link";
+import { Logo } from "@/components/layout/logo";
+import { HeroArt } from "@/components/landing/hero-art";
+import { LazyEffects } from "@/components/landing/lazy-effects";
+import "@/components/landing/landing.css";
+
+const navLinks = [
+  { label: "Features", href: "#features" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Security", href: "#security" },
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-card">
-      {/* Navigation */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2.5">
-              <Logo />
-              <span className="text-sm font-semibold tracking-tight text-foreground">
+    <div data-landing className="min-h-screen bg-canvas">
+      <Band tone="navy" space="none" bleed className="lp-hero">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-12">
+          <header className="flex min-h-bar items-center justify-between gap-sp-giant">
+            <div className="flex items-center gap-sp-max">
+              <Link href="/" className="flex min-h-11 items-center gap-sp-lg text-ty-button text-on-primary">
+                <Logo />
                 FlowSight
+              </Link>
+              <nav aria-label="Primary" className="hidden items-center gap-sp-giant md:flex">
+                {navLinks.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="text-ty-nav-link text-on-primary/85 hover:text-on-primary hover:underline"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
+            <div className="flex items-center gap-sp-xl">
+              <Link
+                href="/auth/login"
+                className="flex min-h-11 items-center text-ty-nav-link text-on-primary/85 hover:text-on-primary hover:underline"
+              >
+                Sign in
+              </Link>
+              <Button asChild size="default" className="bg-on-primary text-primary-deep hover:bg-band-blue">
+                <Link href="/auth/register">Get started</Link>
+              </Button>
+            </div>
+          </header>
+
+          <div className="pb-sp-band pt-sp-hero lg:pb-sp-page lg:pt-sp-band">
+            <h1 className="text-ty-hero-title text-on-primary md:text-ty-display">
+              <span className="lp-line" style={{ "--i": 0 } as React.CSSProperties}>
+                <span>Understand the decisions</span>
               </span>
-            </Link>
-            <nav className="hidden items-center gap-6 md:flex">
-              {[
-                { label: "Features", href: "#features" },
-                { label: "How it works", href: "#how-it-works" },
-                { label: "Security", href: "#security" },
-              ].map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              <span className="lp-line" style={{ "--i": 1 } as React.CSSProperties}>
+                <span>behind your finances.</span>
+              </span>
+            </h1>
+            <div className="mt-sp-giant grid items-center gap-sp-hero lg:mt-sp-max lg:grid-cols-[1.1fr_1fr]">
+              <div>
+                <p
+                  className="lp-rise max-w-xl text-ty-body-lg text-on-primary/90 md:text-ty-lead"
+                  style={{ "--i": 0 } as React.CSSProperties}
                 >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth/login"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/auth/register"
-              className="inline-flex h-8 items-center rounded-md bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/85"
-            >
-              Get started
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero — layered depth: faint dot grid + one soft brand tint, masked
-          toward the copy so the texture never fights the type. */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(hsl(var(--border)) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            maskImage:
-              "radial-gradient(65% 90% at 70% 10%, black 30%, transparent 75%)",
-            WebkitMaskImage:
-              "radial-gradient(65% 90% at 70% 10%, black 30%, transparent 75%)",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(50% 50% at 50% 50%, hsl(var(--brand) / 0.07), transparent 70%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-16">
-          <div className="max-w-2xl">
-            <FadeIn>
-              <h1 className="mb-5 text-[2.75rem] font-semibold leading-[1.15] tracking-tight text-foreground">
-                Understand the decisions
-                <br />
-                behind your finances.
-              </h1>
-            </FadeIn>
-            <FadeIn delay={0.08}>
-              <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
-                FlowSight turns everyday financial activity into a clearer picture: the leaks worth recovering, the consequences of the next decision, and the patterns your bank statement does not show.
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.16}>
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/auth/register"
-                  className="group inline-flex h-10 items-center gap-2 rounded-md bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary/85"
+                  FlowSight turns everyday financial activity into a clearer picture: the leaks worth recovering, the
+                  consequences of the next decision, and the patterns your bank statement does not show.
+                </p>
+                <div
+                  className="lp-rise mt-sp-max flex flex-wrap items-center gap-sp-wide"
+                  style={{ "--i": 1 } as React.CSSProperties}
                 >
-                  Get started
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex h-10 items-center rounded-md border border-border bg-card px-5 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted/50"
-                >
-                  See how it works
-                </a>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats strip */}
-      <section className="border-y border-border bg-muted/50">
-        <div className="mx-auto max-w-7xl px-6 py-10">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label}>
-                <div className="text-2xl font-semibold tabular-nums text-foreground">
-                  {stat.value}
+                  <Button asChild size="lg" className="bg-on-primary text-primary-deep hover:bg-band-blue">
+                    <Link href="/auth/register">
+                      Get started
+                      <ArrowRight />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-on-primary bg-transparent text-on-primary hover:bg-on-primary/10"
+                  >
+                    <a href="#how-it-works">See how it works</a>
+                  </Button>
                 </div>
-                <div className="mt-0.5 text-sm text-muted-foreground">{stat.label}</div>
               </div>
-            ))}
+              <HeroArt />
+            </div>
           </div>
         </div>
-      </section>
+      </Band>
 
-      {/* Features */}
-      <section id="features" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-10">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-            A clearer layer on top of your finances
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            From everyday spending to a picture you can actually act on, in one place.
+      <Band tone="canvas" id="features" space="xl">
+        <div data-reveal="wipe" className="max-w-2xl">
+          <h2 className="text-ty-section-title text-ink">A clearer layer on top of your finances</h2>
+          <p className="mt-sp-wide text-ty-body-lg text-ink-lead">
+            From everyday spending to a picture you can act on, in one place.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <ul className="mt-sp-hero grid gap-x-sp-hero gap-y-sp-hero sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
-            <RevealOnScroll key={feature.title} delay={(i % 3) * 0.06}>
-              <div className="card-tactile h-full p-6">
-                <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground">
-                  <feature.icon className="h-4 w-4" />
-                </div>
-                <h3 className="mb-1.5 text-sm font-semibold text-foreground">
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
-              </div>
-            </RevealOnScroll>
+            <li key={feature.title} data-reveal style={{ "--i": i % 3 } as React.CSSProperties}>
+              <feature.icon className="h-7 w-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
+              <h3 className="mt-sp-wide text-ty-subhead text-ink">{feature.title}</h3>
+              <p className="mt-sp-sm text-ty-body text-ink-list">{feature.description}</p>
+            </li>
           ))}
-        </div>
-      </section>
+        </ul>
+      </Band>
 
-      {/* How it works */}
-      <section id="how-it-works" className="border-y border-border bg-muted/50">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="mb-10">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              From data to decisions in minutes
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Three steps to a clearer view of your finances.
+      <Band tone="lavender" curved id="how-it-works" space="xl">
+        <div data-reveal="wipe" className="max-w-2xl">
+          <h2 className="text-ty-section-title text-ink">From data to decisions in minutes</h2>
+          <p className="mt-sp-wide text-ty-body-lg text-ink-lead">Three steps to a clearer view of your finances.</p>
+        </div>
+        <ol className="mt-sp-hero grid gap-sp-hero md:grid-cols-3">
+          {steps.map((step, i) => (
+            <li key={step.title} data-reveal style={{ "--i": i } as React.CSSProperties}>
+              <span className="text-ty-section-title text-primary" aria-hidden="true">
+                {i + 1}
+              </span>
+              <h3 className="mt-sp-sm text-ty-subhead text-ink">{step.title}</h3>
+              <p className="mt-sp-sm text-ty-body text-ink-list">{step.description}</p>
+            </li>
+          ))}
+        </ol>
+      </Band>
+
+      <Band tone="canvas" id="security" space="xl">
+        <div className="grid gap-sp-hero lg:grid-cols-2 lg:gap-sp-page">
+          <div data-reveal="wipe">
+            <h2 className="text-ty-section-title text-ink">Built around your privacy</h2>
+            <p className="mt-sp-wide text-ty-body-lg text-ink-lead">
+              FlowSight is private by design. We never ask for your banking login, never connect directly to your bank,
+              and never share or sell your data.
             </p>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {steps.map((step, i) => (
-              <RevealOnScroll key={step.title} delay={i * 0.08}>
-                <div className="relative">
-                  <div className="mb-4 flex h-8 w-8 items-center justify-center rounded-full border border-muted-foreground/30 bg-card text-xs font-semibold text-foreground/80">
-                    {i + 1}
-                  </div>
-                  {i < steps.length - 1 && (
-                    <div className="absolute left-4 top-4 hidden h-px w-full -translate-y-0.5 bg-border md:block" />
-                  )}
-                  <h3 className="mb-2 text-sm font-semibold text-foreground">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {step.description}
-                  </p>
-                </div>
-              </RevealOnScroll>
+          <ul className="grid gap-sp-wide sm:grid-cols-2">
+            {trustPoints.map((point, i) => (
+              <li
+                key={point}
+                data-reveal
+                style={{ "--i": i % 2 } as React.CSSProperties}
+                className="flex items-start gap-sp-lg text-ty-body text-ink-list"
+              >
+                <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-positive" strokeWidth={1.75} aria-hidden="true" />
+                {point}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-      </section>
 
-      {/* Trust / Security */}
-      <section id="security" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="flex flex-col gap-10 md:flex-row md:items-start md:gap-20">
-          <div className="md:w-1/2">
-            <h2 className="mb-3 text-2xl font-semibold tracking-tight text-foreground">
-              Built around your privacy
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              FlowSight is private by design. We never ask for your banking login, never connect directly to your bank, and never share or sell your data.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:w-1/2 sm:grid-cols-2">
-            {trustPoints.map((point) => (
-              <div key={point} className="flex items-start gap-2.5 text-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
-                <span className="text-foreground/80">{point}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA section */}
-      <section className="bg-primary">
-        <div className="mx-auto max-w-7xl px-6 py-16">
+        <div data-reveal className="mt-sp-page flex flex-wrap items-center justify-between gap-sp-giant">
           <div className="max-w-xl">
-            <h2 className="mb-3 text-2xl font-semibold tracking-tight text-white">
-              Ready to see your finances clearly?
-            </h2>
-            <p className="mb-8 text-white/60">
-              Start free. No credit card needed. Everything FlowSight does, included.
-            </p>
-            <Link
-              href="/auth/register"
-              className="inline-flex h-10 items-center gap-2 rounded-md bg-card px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-            >
+            <h2 className="text-ty-section-title text-ink">Ready to see your finances clearly?</h2>
+            <p className="mt-sp-sm text-ty-body-lg text-ink-lead">Start free. No credit card needed.</p>
+          </div>
+          <Button asChild size="lg">
+            <Link href="/auth/register">
               Create your account
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight />
             </Link>
-          </div>
+          </Button>
         </div>
-      </section>
+      </Band>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2.5">
-              <Logo />
-              <span className="text-sm font-semibold text-foreground">FlowSight</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground/70">
-              <Link href="/privacy" className="transition-colors hover:text-foreground">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="transition-colors hover:text-foreground">
-                Terms of Service
-              </Link>
-              <span>© 2026 FlowSight</span>
-            </div>
+      <Band as="footer" tone="band" space="md">
+        <div className="flex flex-col items-start justify-between gap-sp-wide sm:flex-row sm:items-center">
+          <div className="flex items-center gap-sp-lg text-ty-button text-ink">
+            <Logo />
+            FlowSight
+          </div>
+          <div className="flex flex-wrap items-center gap-x-sp-giant gap-y-sp-sm text-ty-caption">
+            <TextLink href="/privacy">Privacy Policy</TextLink>
+            <TextLink href="/terms">Terms of Service</TextLink>
+            <span className="text-ink-meta">© 2026 FlowSight</span>
           </div>
         </div>
-      </footer>
+      </Band>
+
+      <LazyEffects />
     </div>
   );
 }
-
-// Data
-
-const stats = [
-  { value: "94.6%", label: "Categorization accuracy" },
-  { value: "850+", label: "Patterns detected" },
-  { value: "2,400+", label: "People tracking with FlowSight" },
-  { value: "<2s", label: "Per-transaction analysis" },
-];
 
 const features = [
   {
     icon: Activity,
     title: "Spending patterns",
-    description:
-      "Late-night splurges, weekend overruns, and lifestyle creep, spotted before they add up.",
+    description: "Late-night splurges, weekend overruns, and lifestyle creep, spotted before they add up.",
   },
   {
     icon: TrendingDown,
     title: "Money worth recovering",
     description:
-      "Duplicate subscriptions, creeping prices, small daily habits, and fees, with how much you'd save by fixing each.",
+      "Duplicate subscriptions, creeping prices, small daily habits, and fees, with how much you would save by fixing each.",
   },
   {
     icon: Sliders,
     title: "Decisions, before you make them",
     description:
-      "See the real cost of a big purchase: the monthly hit, how much it delays your savings, and how much breathing room you'd give up.",
+      "See the real cost of a big purchase: the monthly hit, how much it delays your savings, and how much breathing room you would give up.",
   },
   {
     icon: Receipt,
@@ -300,33 +222,29 @@ const features = [
   },
   {
     icon: Repeat,
-    title: "Subscriptions & bills",
-    description:
-      "Every recurring charge in one place, so price hikes and forgotten free trials never slip past you.",
+    title: "Subscriptions and bills",
+    description: "Every recurring charge in one place, so price hikes and forgotten free trials never slip past you.",
   },
   {
     icon: Brain,
     title: "Suggestions made for you",
     description:
-      "Practical tips grounded in how you actually spend and what you're saving toward, never generic advice.",
+      "Practical tips grounded in how you actually spend and what you are saving toward, never generic advice.",
   },
 ];
 
 const steps = [
   {
     title: "Add your spending",
-    description:
-      "Upload a bank statement, type in a transaction, or snap a receipt. We tidy up the rest.",
+    description: "Upload a bank statement, type in a transaction, or snap a receipt. We tidy up the rest.",
   },
   {
     title: "We make sense of it",
-    description:
-      "We sort every transaction, spot your patterns, and find the money worth recovering.",
+    description: "We sort every transaction, spot your patterns, and find the money worth recovering.",
   },
   {
     title: "Act on what matters",
-    description:
-      "See what you can save, try out a decision before you commit, and follow tips ranked by impact.",
+    description: "See what you can save, try out a decision before you commit, and follow tips ranked by impact.",
   },
 ];
 
@@ -335,31 +253,6 @@ const trustPoints = [
   "Passwords are encrypted, never stored as plain text",
   "We never connect directly to your bank",
   "Your data is never shared or sold",
-  "Everything you enter is checked before it's saved",
+  "Everything you enter is checked before it is saved",
   "You only ever see your own information",
 ];
-
-// Logo mark
-
-function Logo() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect width="20" height="20" rx="4" fill="#0f172a" />
-      <path
-        d="M5 13.5L8.5 9.5L11.5 12L15 7"
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="15" cy="7" r="1.25" fill="white" />
-    </svg>
-  );
-}
