@@ -1,246 +1,180 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileImage,
-  Loader2,
-  Plus,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Clock, FileImage, Loader2, Plus, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ConfirmButton } from "@/components/ui/confirm-button";
-import { receiptApi } from "@/features/receipts/api";
-import type { Receipt, ReceiptPage } from "@/features/receipts/types";
 import { CategoryPill } from "@/components/ui/category-pill";
+import { ConfirmButton } from "@/components/ui/confirm-button";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
+import { useAnnounce } from "@/components/ui/announcer";
+import { RECENT_RECEIPTS_SIZE, useDeleteReceipt, useReceipts } from "@/features/receipts/hooks";
+import { receiptStage, sortInbox, type ReceiptStage } from "@/features/receipts/review-logic";
+import type { Receipt } from "@/features/receipts/types";
+import { formatMoney } from "@/features/transactions/currency";
 import { cn } from "@/lib/utils";
 
-export default function ReceiptsPage() {
-  const [page, setPage] = useState<ReceiptPage | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
+const STAGE: Record<ReceiptStage, { label: string; icon: typeof Clock; tone: string }> = {
+  draft: { label: "Needs review", icon: Clock, tone: "border-caution/25 bg-caution-soft text-caution" },
+  failed: { label: "Could not read", icon: XCircle, tone: "border-warning/25 bg-warning-soft text-warning" },
+  processing: { label: "Reading", icon: Loader2, tone: "border-brand/25 bg-brand-soft text-brand" },
+  confirmed: { label: "Confirmed", icon: CheckCircle2, tone: "border-positive/25 bg-positive-soft text-positive" },
+};
+
+export default function ReceiptInboxPage() {
+  const [page, setPage] = useState(0);
+  const announce = useAnnounce();
+  // page 0 is the same request the sidebar badge makes, so it is already cached
+  const { data, error, isPending, refetch } = useReceipts(page, RECENT_RECEIPTS_SIZE);
+  const remove = useDeleteReceipt();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setPage(await receiptApi.list(currentPage));
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage]);
-
-  useEffect(() => { load(); }, [load]);
+  const rows = useMemo(() => sortInbox(data?.content ?? []), [data]);
+  const drafts = rows.filter((r) => receiptStage(r) === "draft").length;
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      await receiptApi.delete(id);
-      await load();
+      await remove.mutateAsync(id);
+      announce("Receipt deleted.");
+    } catch {
+      announce("Could not delete that receipt.", "assertive");
     } finally {
       setDeletingId(null);
     }
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Receipts</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {page?.totalElements != null ? `${page.totalElements} total` : ""}
+          <h1 className="text-headline">Receipt inbox</h1>
+          <p className="mt-0.5 text-supporting">
+            {data ? `${data.totalElements} total${drafts ? ` · ${drafts} waiting for your review` : ""}` : " "}
           </p>
         </div>
         <Button size="sm" asChild>
           <Link href="/dashboard/capture/receipt">
-            <Plus className="h-4 w-4" />
-            Scan a receipt
+            <Plus aria-hidden="true" />
+            Scan receipt
           </Link>
         </Button>
       </div>
 
-      {/* Table */}
-      <div className="card-refined overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  File
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Extracted
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Date
-                </th>
-                <th className="w-10 px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border/60 last:border-0">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="skeleton h-4 w-4 rounded" />
-                        <div className="skeleton h-3.5 w-36 rounded" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5"><div className="skeleton h-5 w-20 rounded-md" /></td>
-                    <td className="px-4 py-3.5"><div className="skeleton h-3.5 w-28 rounded" /></td>
-                    <td className="px-4 py-3.5"><div className="skeleton h-3.5 w-20 rounded" /></td>
-                    <td className="px-4 py-3.5" />
-                  </tr>
-                ))
-              ) : !page?.content.length ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center">
-                    <FileImage className="mx-auto h-8 w-8 text-muted-foreground/30 mb-3" />
-                    <p className="text-sm font-medium text-foreground">No receipts yet</p>
-                    <p className="mt-1 text-xs text-muted-foreground/70">
-                      Scan one to capture the merchant, amount, and date in seconds.
-                    </p>
-                    <Button size="sm" className="mt-4" asChild>
-                      <Link href="/dashboard/capture/receipt">Scan a receipt</Link>
-                    </Button>
-                  </td>
+      {isPending ? (
+        <LoadingState variant="table" rows={6} label="Loading receipts" />
+      ) : error ? (
+        <ErrorState title="Receipts did not load" error={error} onRetry={() => refetch()} />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={<FileImage />}
+          title="No receipts yet"
+          description="Scan one to capture the merchant, amount and date in seconds."
+          action={
+            <Button asChild>
+              <Link href="/dashboard/capture/receipt">Scan receipt</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <div className="card-refined overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Receipts, those waiting for review first</caption>
+              <thead>
+                <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <th scope="col" className="px-4 py-3">Receipt</th>
+                  <th scope="col" className="px-4 py-3">Status</th>
+                  <th scope="col" className="px-4 py-3">Details</th>
+                  <th scope="col" className="px-4 py-3">Scanned</th>
+                  <th scope="col" className="w-10 px-4 py-3"><span className="sr-only">Delete</span></th>
                 </tr>
-              ) : (
-                page.content.map((r) => (
-                  <ReceiptRow
-                    key={r.id}
-                    receipt={r}
-                    onDelete={handleDelete}
-                    deleting={deletingId === r.id}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {page && page.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <span className="text-xs text-muted-foreground">
-              Page {page.number + 1} of {page.totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon-sm" disabled={page.first}
-                onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon-sm" disabled={page.last}
-                onClick={() => setCurrentPage((p) => p + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <ReceiptRow key={r.id} receipt={r} onDelete={handleDelete} deleting={deletingId === r.id} />
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
+              <span className="text-xs text-muted-foreground">
+                Page {data.number + 1} of {data.totalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon-sm" aria-label="Previous page" disabled={data.first} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                  <ChevronLeft aria-hidden="true" />
+                </Button>
+                <Button variant="outline" size="icon-sm" aria-label="Next page" disabled={data.last} onClick={() => setPage((p) => p + 1)}>
+                  <ChevronRight aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function ReceiptRow({
-  receipt,
-  onDelete,
-  deleting,
-}: {
-  receipt: Receipt;
-  onDelete: (id: string) => void;
-  deleting: boolean;
-}) {
+function ReceiptRow({ receipt, onDelete, deleting }: { receipt: Receipt; onDelete: (id: string) => void; deleting: boolean }) {
+  const stage = receiptStage(receipt);
+  const { label, icon: Icon, tone } = STAGE[stage];
   const tx = receipt.transaction;
+  const x = receipt.extraction;
+  const review = `/dashboard/receipts/${receipt.id}/review`;
+  const currency = tx?.currency ?? receipt.currency ?? x?.currency;
 
   return (
-    <tr className="border-b border-border/60 last:border-0 hover:bg-muted/50 transition-colors">
-      {/* File */}
+    <tr className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
       <td className="px-4 py-3">
-        <Link href={`/dashboard/receipts/${receipt.id}`}
-          className="flex items-center gap-2.5 hover:text-brand">
-          <FileImage className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-          <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
-            {receipt.fileName}
-          </span>
+        <Link href={review} className="flex items-center gap-2.5 font-medium text-foreground hover:text-brand">
+          <FileImage className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="max-w-[14rem] truncate">{receipt.fileName}</span>
         </Link>
-        <p className="mt-0.5 text-xs text-muted-foreground/70 ml-6.5">
-          {(receipt.fileSize / 1024).toFixed(0)} KB
-        </p>
+        <p className="ml-[1.625rem] text-xs text-muted-foreground">{Math.max(1, Math.round(receipt.fileSize / 1024))} KB</p>
       </td>
-
-      {/* Status */}
       <td className="px-4 py-3">
-        <StatusBadge status={receipt.status} />
+        <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium", tone)}>
+          <Icon className={cn("h-3 w-3", stage === "processing" && "animate-spin")} aria-hidden="true" />
+          {label}
+        </span>
       </td>
-
-      {/* Extracted data */}
       <td className="px-4 py-3">
         {tx ? (
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">
-                {tx.currency} {Number(tx.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium tabular-nums">{formatMoney(tx.amount, tx.currency)}</span>
               {tx.category && <CategoryPill category={tx.category} />}
             </div>
-            {tx.merchant && (
-              <p className="text-xs text-muted-foreground mt-0.5">{tx.merchant}</p>
-            )}
+            {tx.merchant && <p className="mt-0.5 text-xs text-muted-foreground">{tx.merchant}</p>}
           </div>
-        ) : receipt.status === "COMPLETED" ? (
-          <Link
-            href={`/dashboard/receipts/${receipt.id}/review`}
-            className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:text-brand"
-          >
-            Review &amp; confirm
+        ) : stage === "draft" ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {(x?.merchant || x?.amount != null) && (
+              <span className="text-xs text-muted-foreground">
+                {[x?.merchant, x?.amount != null ? formatMoney(x.amount, currency) : null].filter(Boolean).join(" · ")}
+              </span>
+            )}
+            <Link href={review} className="text-xs font-medium text-brand hover:underline">
+              Review and confirm
+            </Link>
+          </div>
+        ) : stage === "failed" ? (
+          <Link href={review} className="text-xs font-medium text-brand hover:underline">
+            Open and enter by hand
           </Link>
         ) : (
-          <span className="text-xs text-muted-foreground/70">—</span>
+          <span className="text-xs text-muted-foreground">Reading the receipt</span>
         )}
       </td>
-
-      {/* Date */}
-      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-        {new Date(receipt.createdAt).toLocaleDateString("en-IN", {
-          day: "numeric", month: "short", year: "numeric",
-        })}
+      <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
+        {new Date(receipt.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
       </td>
-
-      {/* Delete */}
       <td className="px-4 py-3">
-        <ConfirmButton
-          onConfirm={() => onDelete(receipt.id)}
-          busy={deleting}
-          label="Delete receipt"
-        />
+        <ConfirmButton onConfirm={() => onDelete(receipt.id)} busy={deleting} label={`Delete ${receipt.fileName}`} />
       </td>
     </tr>
-  );
-}
-
-function StatusBadge({ status }: { status: Receipt["status"] }) {
-  const map = {
-    PENDING:    { icon: Clock,         label: "Pending",    cls: "border-border bg-muted/50 text-muted-foreground" },
-    PROCESSING: { icon: Loader2,       label: "Processing", cls: "border-brand/25 bg-brand-soft text-brand" },
-    COMPLETED:  { icon: CheckCircle2,  label: "Completed",  cls: "border-positive/25 bg-positive-soft text-positive" },
-    FAILED:     { icon: XCircle,       label: "Failed",     cls: "border-warning/25 bg-warning-soft text-warning" },
-  } as const;
-
-  const { icon: Icon, label, cls } = map[status];
-  return (
-    <span className={cn("inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium", cls)}>
-      <Icon className={cn("h-3 w-3", status === "PROCESSING" && "animate-spin")} />
-      {label}
-    </span>
   );
 }

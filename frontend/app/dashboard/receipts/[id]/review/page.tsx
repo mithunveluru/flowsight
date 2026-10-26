@@ -1,482 +1,114 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  FileImage,
-  Loader2,
-  PenLine,
-  XCircle,
-} from "lucide-react";
+import { useParams } from "next/navigation";
+import { ArrowLeft, ArrowRight, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { receiptApi } from "@/features/receipts/api";
-import type { Receipt } from "@/features/receipts/types";
-import {
-  CATEGORY_OPTIONS,
-  type TransactionCategory,
-} from "@/features/transactions/types";
+import { ErrorState, LoadingState } from "@/components/ui/states";
+import { useReceipt } from "@/features/receipts/hooks";
+import { receiptStage } from "@/features/receipts/review-logic";
+import { SavedTransactionPanel } from "@/features/transactions/saved-transaction";
 import { ApiError } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { ReceiptImagePanel } from "./receipt-image";
+import { ReviewForm } from "./review-form";
 
-const schema = z.object({
-  merchant: z.string().min(1, "Merchant name is required").max(255),
-  amount: z.coerce
-    .number({ invalid_type_error: "Enter a valid amount" })
-    .positive("Amount must be greater than zero"),
-  date: z.string().min(1, "Date is required"),
-  category: z.string().optional(),
-  notes: z.string().max(500).optional(),
-  currency: z.string().default("INR"),
-});
-
-type FormValues = z.infer<typeof schema>;
+const BackLink = () => (
+  <Link
+    href="/dashboard/receipts"
+    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+  >
+    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+    Back to receipt inbox
+  </Link>
+);
 
 export default function ReceiptReviewPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const router = useRouter();
+  const id = useParams().id as string;
+  const { data: receipt, error, isPending, refetch } = useReceipt(id);
 
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [serverError, setServerError] = useState<string | null>(null);
+  if (isPending) return <LoadingState variant="card" rows={4} label="Loading the receipt" className="max-w-4xl" />;
 
-  useEffect(() => {
-    receiptApi.getById(id)
-      .then(setReceipt)
-      .catch(() => setReceipt(null))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) {
+  if (error || !receipt) {
+    const missing = error instanceof ApiError && error.status === 404;
     return (
-      <div className="flex h-48 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
+      <div className="max-w-2xl space-y-4">
+        <BackLink />
+        <ErrorState
+          title={missing ? "Receipt not found" : "This receipt did not load"}
+          description={missing ? "It may have been deleted." : undefined}
+          error={missing ? undefined : error}
+          onRetry={missing ? undefined : () => refetch()}
+        />
       </div>
     );
   }
 
-  if (!receipt) {
+  const stage = receiptStage(receipt);
+
+  if (stage === "processing") {
     return (
-      <div className="max-w-2xl">
-        <p className="text-sm text-muted-foreground">Receipt not found.</p>
-        <Link href="/dashboard/receipts" className="mt-4 inline-flex items-center gap-1.5 text-sm text-brand hover:underline">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to receipts
-        </Link>
+      <div className="max-w-2xl space-y-4">
+        <BackLink />
+        <LoadingState variant="card" rows={3} label="Reading the receipt. This can take up to a minute." />
+        <p className="text-supporting">Reading the receipt. This page updates by itself when it is ready.</p>
       </div>
     );
   }
 
-  // OCR failed completely — show fallback
-  if (receipt.status === "FAILED") {
-    return <OcrFailureFallback receipt={receipt} />;
+  if (stage === "confirmed") {
+    return (
+      <div className="max-w-xl animate-fade-in space-y-5">
+        <BackLink />
+        <h1 className="text-headline">Receipt confirmed</h1>
+        <SavedTransactionPanel transaction={receipt.transaction!} title="Saved to your transactions">
+          <Button asChild variant="outline">
+            <Link href="/dashboard/transactions">
+              View transactions
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
+        </SavedTransactionPanel>
+      </div>
+    );
   }
 
-  // Already confirmed — show success state
-  if (receipt.transaction) {
-    return <AlreadyConfirmed receipt={receipt} />;
-  }
-
-  return (
-    <ReviewForm
-      receipt={receipt}
-      serverError={serverError}
-      onServerError={setServerError}
-      onSuccess={() => router.push("/dashboard/transactions")}
-    />
-  );
-}
-
-function ReviewForm({
-  receipt,
-  serverError,
-  onServerError,
-  onSuccess,
-}: {
-  receipt: Receipt;
-  serverError: string | null;
-  onServerError: (e: string | null) => void;
-  onSuccess: () => void;
-}) {
-  const extraction = receipt.extraction;
-  const confidence = receipt.confidence;
-  const requiresConfirmation = receipt.requiresConfirmation;
-
-  const defaultDate = extraction?.date
-    ? extraction.date.split("T")[0]   // ISO date from backend may include time
-    : new Date().toISOString().split("T")[0];
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      merchant: extraction?.merchant ?? "",
-      amount:   extraction?.amount   ?? undefined,
-      date:     defaultDate,
-      currency: "INR",
-    },
-  });
-
-  const onSubmit = async (data: FormValues) => {
-    onServerError(null);
-    try {
-      await receiptApi.confirm(receipt.id, {
-        merchant: data.merchant,
-        amount:   data.amount,
-        date:     data.date,
-        category: (data.category as TransactionCategory) || undefined,
-        notes:    data.notes || undefined,
-        currency: data.currency,
-      });
-      onSuccess();
-    } catch (err) {
-      onServerError(
-        err instanceof ApiError ? err.message : "Failed to save transaction"
-      );
-    }
-  };
-
-  return (
-    <div className="max-w-xl animate-fade-in space-y-6">
-      {/* Back link + heading */}
-      <div>
-        <Link
-          href="/dashboard/receipts"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to receipts
-        </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Review receipt</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Confirm the details below before saving the transaction.
-            </p>
-          </div>
-          <ConfidenceBadge confidence={confidence} />
-        </div>
-      </div>
-
-      {/* Receipt file info */}
-      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-muted/50 px-4 py-3">
-        <FileImage className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-        <span className="text-sm text-foreground/80 truncate">{receipt.fileName}</span>
-        {receipt.ocrProvider && (
-          <span className="ml-auto shrink-0 rounded border border-border bg-card px-1.5 py-0.5 text-xs text-muted-foreground">
-            {receipt.ocrProvider === "RECEIPT_OCR_SERVICE" ? "Vision model" : "Text scan"}
-          </span>
-        )}
-      </div>
-
-      {/* Low-confidence warning */}
-      {requiresConfirmation && (
-        <div className="flex items-start gap-3 rounded-lg border border-caution/25 bg-caution-soft p-4">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-caution mt-0.5" />
-          <p className="text-sm text-caution">
-            We are less certain about the amount we extracted. It may have caught a sub-total or tax line instead of the final total. Please confirm before saving.
-          </p>
-        </div>
-      )}
-
-      {/* Partial OCR warning */}
-      {!extraction?.successful && receipt.status === "COMPLETED" && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 p-4">
-          <PenLine className="h-5 w-5 shrink-0 text-muted-foreground mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-foreground/80">A few details need your review</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Add the missing values below, or{" "}
-              <Link href="/dashboard/capture/manual" className="text-brand hover:underline">
-                enter the transaction manually
-              </Link>
-              .
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Editable form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Merchant */}
-        <div className="space-y-1.5">
-          <Label htmlFor="merchant">
-            Merchant name
-            {!extraction?.merchant && <RequiredDot />}
-          </Label>
-          <Input
-            id="merchant"
-            {...register("merchant")}
-            placeholder="e.g. Walmart, Starbucks"
-            autoFocus={!extraction?.merchant}
-            className={cn(errors.merchant && "border-warning/40")}
-          />
-          {errors.merchant && (
-            <p className="text-xs text-warning">{errors.merchant.message}</p>
-          )}
-        </div>
-
-        {/* Amount + currency */}
-        <div className="space-y-1.5">
-          <Label htmlFor="amount">
-            Total amount
-            {requiresConfirmation && (
-              <span className="ml-1.5 inline-flex items-center gap-1 rounded border border-caution/25 bg-caution-soft px-1.5 py-0.5 text-xs font-medium text-caution">
-                <AlertTriangle className="h-3 w-3" /> Verify
-              </span>
-            )}
-          </Label>
-          <div className="flex items-center gap-2">
-            <span className="w-6 shrink-0 text-sm text-muted-foreground">₹</span>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              {...register("amount")}
-              placeholder="0.00"
-              autoFocus={requiresConfirmation && !!extraction?.merchant}
-              onFocus={(e) => e.target.select()}
-              className={cn(
-                "flex-1",
-                errors.amount && "border-warning/40",
-                requiresConfirmation && "border-caution/50"
-              )}
-            />
-          </div>
-          {errors.amount && (
-            <p className="text-xs text-warning">{errors.amount.message}</p>
-          )}
-        </div>
-
-        {/* Date */}
-        <div className="space-y-1.5">
-          <Label htmlFor="date">Transaction date</Label>
-          <Input
-            id="date"
-            type="date"
-            {...register("date")}
-            max={new Date().toISOString().split("T")[0]}
-            className={cn(errors.date && "border-warning/40")}
-          />
-          {errors.date && (
-            <p className="text-xs text-warning">{errors.date.message}</p>
-          )}
-        </div>
-
-        {/* Category */}
-        <div className="space-y-1.5">
-          <Label>Category</Label>
-          <Controller
-            name="category"
-            control={control}
-            render={({ field }) => (
-              <Select
-                value={field.value ?? "__auto__"}
-                onValueChange={(v) => field.onChange(v === "__auto__" ? undefined : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Auto-detect" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__auto__">Auto-detect</SelectItem>
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        {/* Notes */}
-        <div className="space-y-1.5">
-          <Label htmlFor="notes">Notes (optional)</Label>
-          <Input
-            id="notes"
-            {...register("notes")}
-            placeholder="Add a note about this transaction"
-            maxLength={500}
-          />
-        </div>
-
-        {/* Line items (read-only) */}
-        {extraction?.lineItems && extraction.lineItems.length > 0 && (
-          <details className="rounded-lg border border-border bg-card">
-            <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground/80 select-none">
-              Line items ({extraction.lineItems.length})
-            </summary>
-            <div className="divide-y divide-border/60 px-4 pb-3">
-              {extraction.lineItems.map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-foreground/80">{item.itemName ?? "—"}</span>
-                  <span className="text-sm text-muted-foreground tabular-nums">
-                    {item.itemPrice != null
-                      ? `₹${Number(item.itemPrice).toFixed(2)}`
-                      : "—"}
-                  </span>
-                </div>
-              ))}
+  if (stage === "failed") {
+    return (
+      <div className="animate-fade-in space-y-5">
+        <BackLink />
+        <h1 className="text-headline">Review receipt</h1>
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <ReceiptImagePanel receipt={receipt} />
+          <div className="space-y-4">
+            <div role="alert" className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft p-4">
+              <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-medium text-warning">We could not read this receipt</p>
+                <p className="mt-0.5 text-xs text-warning">
+                  {receipt.errorMessage ?? "No details could be extracted from this image."}
+                </p>
+              </div>
             </div>
-          </details>
-        )}
-
-        {/* Server error */}
-        {serverError && (
-          <p className="flex items-center gap-1.5 text-sm text-warning">
-            <XCircle className="h-4 w-4 shrink-0" />
-            {serverError}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-1">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4" />
-                Confirm and save
-              </>
-            )}
-          </Button>
-          <Button type="button" variant="outline" asChild>
-            <Link href="/dashboard/capture/manual">Enter manually instead</Link>
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function OcrFailureFallback({ receipt }: { receipt: Receipt }) {
-  return (
-    <div className="max-w-xl space-y-5 animate-fade-in">
-      <Link
-        href="/dashboard/receipts"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to receipts
-      </Link>
-
-      <div className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft p-4">
-        <XCircle className="h-5 w-5 shrink-0 text-warning mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-warning">Receipt analysis could not complete</p>
-          <p className="mt-0.5 text-xs text-warning">
-            {receipt.errorMessage ?? "We could not extract details from this image."}
-          </p>
+            <p className="text-supporting">
+              You can still record it by typing the details from the image
+              {receipt.imageAvailable ? " shown here" : ""}.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/dashboard/capture/manual">
+                  Enter it manually
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/capture/receipt">Try another photo</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      <p className="text-sm text-muted-foreground">
-        You can still record this transaction by entering the details manually.
-      </p>
-
-      <div className="flex items-center gap-3">
-        <Button asChild>
-          <Link href="/dashboard/capture/manual">
-            Enter transaction manually
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard/capture/receipt">Try uploading again</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function AlreadyConfirmed({ receipt }: { receipt: Receipt }) {
-  const tx = receipt.transaction!;
-  return (
-    <div className="max-w-xl space-y-5 animate-fade-in">
-      <Link
-        href="/dashboard/receipts"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to receipts
-      </Link>
-
-      <div className="flex items-start gap-3 rounded-lg border border-positive/25 bg-positive-soft p-4">
-        <CheckCircle2 className="h-5 w-5 shrink-0 text-positive mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-positive">This receipt is confirmed</p>
-          <p className="mt-0.5 text-xs text-positive">
-            The transaction for <strong>{tx.merchant ?? "unknown merchant"}</strong> has been saved.
-          </p>
-        </div>
-      </div>
-
-      <Button asChild>
-        <Link href="/dashboard/transactions">
-          View transactions
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </Button>
-    </div>
-  );
-}
-
-function ConfidenceBadge({ confidence }: { confidence: number | null }) {
-  if (confidence == null) return null;
-
-  const tier =
-    confidence >= 0.65 ? "HIGH"
-    : confidence >= 0.40 ? "MEDIUM"
-    : "LOW";
-
-  const styles = {
-    HIGH:   "border-positive/25 bg-positive-soft text-positive",
-    MEDIUM: "border-caution/25  bg-caution-soft  text-caution",
-    LOW:    "border-warning/25    bg-warning-soft    text-warning",
-  };
-
-  const label = {
-    HIGH:   "Confident",
-    MEDIUM: "Review recommended",
-    LOW:    "Needs review",
-  };
-
-  return (
-    <span className={cn(
-      "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-      styles[tier]
-    )}>
-      {label[tier]}
-    </span>
-  );
-}
-
-function RequiredDot() {
-  return <span className="ml-1 text-caution text-xs">*</span>;
+  return <ReviewForm receipt={receipt} />;
 }
