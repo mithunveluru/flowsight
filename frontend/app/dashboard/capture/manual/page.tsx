@@ -30,6 +30,9 @@ import {
   type TransactionCategory,
 } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
+import { TitleRow } from "@/features/shell-pages/title-row";
+import { markNewTransaction } from "@/features/transactions/new-row";
+import { toast } from "@/components/ui/toast";
 
 const schema = z.object({
   transactionDate: z.string().min(1, "Enter the date.").refine((d) => d <= isoDate(new Date()), "The date cannot be in the future."),
@@ -85,6 +88,8 @@ export default function AddManuallyPage() {
         notes: data.notes || undefined,
       });
       setSaved(tx);
+      markNewTransaction(tx.id);
+      toast({ title: "Transaction added", tone: "success" });
       announce("Transaction saved.");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Could not save the transaction.";
@@ -99,21 +104,19 @@ export default function AddManuallyPage() {
   };
 
   return (
-    <div className="max-w-xl animate-fade-in">
-      <Link
-        href="/dashboard/transactions"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Back to transactions
-      </Link>
-
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Add manually</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Leave the category blank and we will suggest one, with how sure we are.
-        </p>
-      </div>
+    <div className="max-w-xl space-y-sp-giant">
+      <TitleRow
+        title="Add manually"
+        description="Leave the category blank and we will suggest one, with how sure we are."
+        actions={
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/dashboard/transactions">
+              <ArrowLeft aria-hidden="true" />
+              Back to transactions
+            </Link>
+          </Button>
+        }
+      />
 
       {saved ? (
         <SavedTransactionPanel transaction={saved} title="Transaction saved">
@@ -128,7 +131,7 @@ export default function AddManuallyPage() {
           </div>
         </SavedTransactionPanel>
       ) : (
-        <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
+        <div className="rounded-md bg-chrome p-4 sm:p-6">
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             {serverError && (
               <div role="alert" className="rounded-md border border-warning/25 bg-warning-soft px-3 py-2.5 text-sm text-warning">

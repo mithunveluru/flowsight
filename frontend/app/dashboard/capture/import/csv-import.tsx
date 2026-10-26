@@ -11,6 +11,8 @@ import { useImportCsv } from "@/features/transactions/hooks";
 import type { BulkImportResult } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
+import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { PREVIEW_ROWS, ROLE_LABEL, previewCsv, validateCsvFile, type ColumnRole, type CsvPreview } from "./csv-preview";
 
 const BOM = "﻿";
@@ -54,10 +56,14 @@ export function CsvImport() {
   const runImport = () => {
     if (!selected) return;
     importCsv.mutate(selected.file, {
-      onSuccess: (result) =>
-        announce(
-          `Import finished. ${result.imported} imported, ${result.skipped} skipped.`
-        ),
+      onSuccess: (result) => {
+        announce(`Import finished. ${result.imported} imported, ${result.skipped} skipped.`);
+        toast({
+          title: `${result.imported.toLocaleString("en-IN")} transactions added`,
+          description: result.skipped ? `${result.skipped} rows were skipped.` : undefined,
+          tone: result.imported > 0 ? "success" : "error",
+        });
+      },
       onError: () => announce("Import failed.", "assertive"),
     });
   };
@@ -85,8 +91,8 @@ export function CsvImport() {
           void choose(e.dataTransfer.files?.[0]);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors focus-within:ring-2 focus-within:ring-ring",
-          dragging ? "border-brand bg-brand-soft" : "border-input hover:bg-muted/50"
+          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors focus-within:ring-2 focus-within:ring-ring",
+          dragging ? "border-primary bg-band-blue" : "border-input hover:bg-chrome"
         )}
       >
         <input
@@ -110,7 +116,7 @@ export function CsvImport() {
       </label>
 
       {fileError && (
-        <p role="alert" className="flex items-start gap-2 rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning">
+        <p role="alert" className="flex items-start gap-2 rounded-md bg-warning-soft px-4 py-3 text-sm text-warning">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {fileError}
         </p>
@@ -129,7 +135,7 @@ export function CsvImport() {
           </div>
 
           {selected.preview.rows.length > 0 && (
-            <Table containerClassName="border-t border-border" className="text-sm">
+            <Table containerClassName="border-t border-border" className={cn("text-sm", TABLE_LOOK)}>
               <TableCaption srOnly>First {PREVIEW_ROWS} rows of {selected.file.name}</TableCaption>
               <TableHeader>
                 <TableRow>
@@ -190,7 +196,7 @@ function DetectedColumns({ preview }: { preview: CsvPreview }) {
       <h3 className="text-overline mb-2">Columns we recognised</h3>
       <ul className="flex flex-wrap gap-2">
         {entries.map(([role, index]) => (
-          <li key={role} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
+          <li key={role} className="rounded-md bg-chrome px-2.5 py-1 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{ROLE_LABEL[role]}</span> · {preview.headers[index]}
           </li>
         ))}
@@ -207,7 +213,7 @@ function ImportSummary({ result, onAnother }: { result: BulkImportResult; onAnot
         <span
           aria-hidden="true"
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-md",
             ok ? "bg-positive-soft text-positive" : "bg-warning-soft text-warning"
           )}
         >
