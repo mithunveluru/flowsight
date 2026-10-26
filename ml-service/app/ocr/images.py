@@ -14,7 +14,10 @@ MIN_SKEW_DEGREES = 1.5
 def decode(data: bytes) -> np.ndarray | None:
     """Grayscale image; cv2.imdecode applies the EXIF orientation tag."""
     arr = np.frombuffer(data, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
+    try:
+        img = cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
+    except cv2.error:
+        return None
     return img if img is not None and img.size else None
 
 

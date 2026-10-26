@@ -56,3 +56,17 @@ def test_pii_boxes_cover_phone_tax_id_and_card():
 
 def test_decode_rejects_garbage():
     assert images.decode(b"not an image") is None
+
+
+def test_decode_refuses_an_image_that_expands_far_beyond_a_phone_photo():
+    # ~1 MB of PNG that would need ~1 GB as pixels; run fresh so the limit is read when cv2 loads
+    code = (
+        "import cv2, numpy as np\n"
+        "ok, png = cv2.imencode('.png', np.zeros((32000, 32000), np.uint8))\n"
+        "import sys; sys.path.insert(0, '.')\n"
+        "from app.ocr import images\n"
+        "print(images.decode(png.tobytes()) is None)\n"
+    )
+    import subprocess, sys
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+    assert out.stdout.strip().endswith("True"), out.stderr[-500:]
