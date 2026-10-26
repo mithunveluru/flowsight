@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme";
+import { Reveal } from "@/components/motion/primitives";
+import { PageTitle, Surface } from "@/components/insight/page-kit";
+import { ProgressBar } from "@/components/insight/progress";
 import { accountApi } from "@/features/account/api";
 import type {
   Account,
@@ -84,13 +87,11 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Your profile, appearance, receipt analysis usage, and recent account activity.
-        </p>
-      </div>
+    <div className="space-y-sp-max">
+      <PageTitle
+        title="Settings"
+        lead="Your profile, appearance, receipt analysis usage, and recent account activity."
+      />
 
       <AppearanceCard />
 
@@ -114,19 +115,19 @@ export default function SettingsPage() {
 function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
   return (
     <Card
-      icon={<UserIcon className="h-4 w-4" strokeWidth={1.75} />}
+      icon={<UserIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Profile"
       description="Your account details."
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Full name" value={account.fullName} icon={<UserIcon className="h-3.5 w-3.5" />} />
-        <Field label="Email"     value={account.email}    icon={<Mail     className="h-3.5 w-3.5" />} />
-        <Field label="Role"      value={account.role}     icon={<Shield   className="h-3.5 w-3.5" />} />
-        <Field label="Member since" value={fmtDate(account.createdAt)} icon={<Activity className="h-3.5 w-3.5" />} />
+      <div className="grid gap-sp-wide sm:grid-cols-2">
+        <Field label="Full name" value={account.fullName} icon={<UserIcon className="h-3.5 w-3.5" aria-hidden="true" />} />
+        <Field label="Email"     value={account.email}    icon={<Mail className="h-3.5 w-3.5" aria-hidden="true" />} />
+        <Field label="Role"      value={account.role}     icon={<Shield className="h-3.5 w-3.5" aria-hidden="true" />} />
+        <Field label="Member since" value={fmtDate(account.createdAt)} icon={<Activity className="h-3.5 w-3.5" aria-hidden="true" />} />
       </div>
-      <div className="mt-6 flex items-center justify-end">
-        <Button variant="outline" size="sm" onClick={onSignOut}>
-          <LogOut className="h-4 w-4" />
+      <div className="mt-sp-giant flex items-center justify-end">
+        <Button variant="outline" size="sm" className="coarse:h-11" onClick={onSignOut}>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
           Sign out
         </Button>
       </div>
@@ -137,7 +138,7 @@ function ProfileCard({ account, onSignOut }: { account: Account; onSignOut: () =
 function AppearanceCard() {
   return (
     <Card
-      icon={<Palette className="h-4 w-4" strokeWidth={1.75} />}
+      icon={<Palette className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Appearance"
       description="Light, dark, or follow your device setting."
     >
@@ -154,45 +155,41 @@ function ReceiptQuotaCard({ account }: { account: Account }) {
 
   return (
     <Card
-      icon={<Receipt className="h-4 w-4" strokeWidth={1.75} />}
+      icon={<Receipt className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Receipt analysis"
       description="Every product feature is available to you. Only receipt analysis is metered."
     >
       {q.unlimited ? (
-        <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-4 py-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft">
-            <InfinityIcon className="h-4 w-4 text-brand" strokeWidth={2} />
-          </div>
+        <div className="flex items-center gap-sp-xl rounded-md bg-canvas px-sp-giant py-sp-wide">
+          <InfinityIcon className="h-5 w-5 shrink-0 text-primary" strokeWidth={2} aria-hidden="true" />
           <div>
-            <p className="text-sm font-semibold text-foreground">Unlimited</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-ty-link font-medium text-ink">Unlimited</p>
+            <p className="text-xs text-ink-meta">
               No cap on receipt analyses, granted by an administrator.
             </p>
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-sp-xl">
           <div className="flex items-baseline justify-between">
-            <p className="text-sm text-foreground">
-              <span className="font-semibold tabular-nums">{q.used}</span>
-              <span className="text-muted-foreground"> of {q.limit} receipts</span>
+            <p className="text-sm text-ink">
+              <span className="font-medium tabular-nums">{q.used}</span>
+              <span className="text-ink-meta"> of {q.limit} receipts</span>
             </p>
             <p className={cn(
               "text-xs tabular-nums",
-              over ? "text-warning" : near ? "text-caution" : "text-muted-foreground"
+              over ? "text-warning" : near ? "text-caution" : "text-ink-meta"
             )}>
               {q.remaining ?? 0} remaining
             </p>
           </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className={cn(
-                "h-full transition-all duration-500",
-                over ? "bg-warning" : near ? "bg-caution" : "bg-positive"
-              )}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          <ProgressBar
+            size="sm"
+            value={pct}
+            tone={over ? "warning" : "primary"}
+            label="Receipt analyses used"
+            valueText={`${q.used} of ${q.limit}`}
+          />
           {over && (
             <p className="text-xs text-warning">
               You have reached your receipt analysis limit. Existing receipts and analytics remain fully available, only new uploads are paused.
@@ -214,21 +211,21 @@ function AuditLogCard({
   if (!log) return null;
   return (
     <Card
-      icon={<Activity className="h-4 w-4" strokeWidth={1.75} />}
+      icon={<Activity className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Recent activity"
       description={`${log.totalElements} action${log.totalElements === 1 ? "" : "s"} on your account`}
     >
       {log.content.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>
+        <p className="py-sp-xl text-center text-sm text-ink-meta">No activity recorded yet.</p>
       ) : (
-        <div className="-mx-6 overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-md bg-canvas">
+          <table>
             <thead>
-              <tr className="border-b" style={{ borderColor: "hsl(var(--border))" }}>
-                <th className="px-6 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Action</th>
-                <th className="px-6 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Resource</th>
-                <th className="px-6 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">IP</th>
-                <th className="px-6 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground">When</th>
+              <tr>
+                <th>Action</th>
+                <th>Resource</th>
+                <th>IP</th>
+                <th>When</th>
               </tr>
             </thead>
             <tbody>
@@ -241,18 +238,20 @@ function AuditLogCard({
       )}
 
       {log.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: "hsl(var(--border))" }}>
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-sp-wide flex items-center justify-between">
+          <p className="text-xs text-ink-meta">
             Page {currentPage + 1} of {log.totalPages}
           </p>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon-sm" disabled={log.first}
+          <div className="flex items-center gap-sp-xs">
+            <Button variant="outline" size="icon-sm" className="coarse:h-11 coarse:w-11" disabled={log.first}
+              aria-label="Previous page"
               onClick={() => onPageChange(Math.max(0, currentPage - 1))}>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
-            <Button variant="outline" size="icon-sm" disabled={log.last}
+            <Button variant="outline" size="icon-sm" className="coarse:h-11 coarse:w-11" disabled={log.last}
+              aria-label="Next page"
               onClick={() => onPageChange(currentPage + 1)}>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -263,26 +262,18 @@ function AuditLogCard({
 
 function AuditRow({ entry }: { entry: AuditLogEntry }) {
   const label = ACTION_LABELS[entry.action] ?? entry.action.replace(/_/g, " ").toLowerCase();
+  const failed = entry.action === "USER_LOGIN_FAILED";
   return (
-    <tr className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-        style={{ borderColor: "hsl(var(--border))" }}>
-      <td className="px-6 py-3">
-        <div className="flex items-center gap-2">
-          {entry.action === "USER_LOGIN_FAILED"
-            ? <span className="h-1.5 w-1.5 rounded-full bg-warning" />
-            : <span className="h-1.5 w-1.5 rounded-full bg-positive" />}
-          <span className="text-sm text-foreground">{label}</span>
+    <tr>
+      <td>
+        <div className="flex items-center gap-sp-sm">
+          <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", failed ? "bg-warning" : "bg-positive")} />
+          <span className="text-ink">{label}</span>
         </div>
       </td>
-      <td className="px-6 py-3 text-xs text-muted-foreground">
-        {entry.resourceType ?? "—"}
-      </td>
-      <td className="px-6 py-3 text-xs text-muted-foreground font-mono">
-        {entry.ipAddress ?? "—"}
-      </td>
-      <td className="px-6 py-3 text-xs text-muted-foreground whitespace-nowrap">
-        {fmtTimestamp(entry.createdAt)}
-      </td>
+      <td className="text-ink-meta">{entry.resourceType ?? "—"}</td>
+      <td className="font-mono text-ink-meta">{entry.ipAddress ?? "—"}</td>
+      <td className="whitespace-nowrap text-ink-meta">{fmtTimestamp(entry.createdAt)}</td>
     </tr>
   );
 }
@@ -296,41 +287,38 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="rounded-xl border bg-card p-6"
-      style={{ borderColor: "hsl(var(--border))" }}
-    >
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
-          {icon}
+    <Reveal>
+      <Surface as="section">
+        <div className="mb-sp-giant flex items-start gap-sp-xl">
+          <span className="mt-1 text-primary">{icon}</span>
+          <div>
+            <h2 className="text-ty-subhead text-ink">{title}</h2>
+            <p className="mt-sp-xs text-sm text-ink-meta">{description}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-        </div>
-      </div>
-      {children}
-    </section>
+        {children}
+      </Surface>
+    </Reveal>
   );
 }
 
 function Field({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div>
-      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
-        <span className="text-muted-foreground/70">{icon}</span>
+      <p className="mb-sp-xs flex items-center gap-sp-sm text-sm text-ink-meta">
+        {icon}
         {label}
       </p>
-      <p className="text-sm text-foreground font-medium">{value}</p>
+      <p className="text-ty-link text-ink">{value}</p>
     </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-sp-wide" aria-busy="true">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="skeleton h-32 rounded-xl" />
+        <div key={i} className="skeleton h-32 rounded-md" />
       ))}
     </div>
   );

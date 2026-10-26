@@ -14,6 +14,12 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HeroBand } from "@/components/ui/band";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Alert, ContentBand, FullBleed, SectionHead, Surface } from "@/components/insight/page-kit";
+import { ProgressBar, type ProgressTone } from "@/components/insight/progress";
+import { CountUp, Reveal } from "@/components/motion/primitives";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import {
   Select,
@@ -33,13 +39,7 @@ import {
   CATEGORY_OPTIONS,
   type TransactionCategory,
 } from "@/features/transactions/types";
-import {
-  AnimatePresence,
-  AnimatedSwitch,
-  FadeIn,
-  motion,
-  PulseDot,
-} from "@/components/motion/primitives";
+import { AnimatedSwitch, PulseDot } from "@/components/motion/primitives";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -67,24 +67,17 @@ function previousMonthRange(): { from: string; to: string } {
 
 export default function ReportsPage() {
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reports</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Generate financial reviews, export your data, and surface tax-eligible deductions.
-        </p>
-      </div>
+    <div className="space-y-sp-hero">
+      <FullBleed flushTop>
+        <HeroBand
+          title="Reports"
+          lead="Generate financial reviews, export your data, and surface tax-eligible deductions."
+        />
+      </FullBleed>
 
-      {/* PDF intelligence reports */}
       <IntelligenceReportsCard />
-
-      {/* CSV export */}
       <CsvExportCard />
-
-      {/* Monthly report links */}
       <MonthlyReportsCard />
-
-      {/* Tax summary preview */}
       <TaxSummaryCard />
     </div>
   );
@@ -114,33 +107,22 @@ function CsvExportCard() {
 
   return (
     <Section
-      icon={<Download className="h-4 w-4" strokeWidth={1.75} />}
+      tone="lavender"
+      icon={<Download className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Export transactions"
       description="Download raw transaction data for spreadsheets, accountants, and tax filing."
     >
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-3">
+      <div className="space-y-sp-wide">
+        <div className="grid gap-sp-wide sm:grid-cols-3">
           <Field label="From">
-            <input
-              type="date"
-              value={from}
-              max={to}
-              onChange={(e) => setFrom(e.target.value)}
-              className="input-base"
-            />
+            <Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
           </Field>
           <Field label="To">
-            <input
-              type="date"
-              value={to}
-              max={isoToday()}
-              onChange={(e) => setTo(e.target.value)}
-              className="input-base"
-            />
+            <Input type="date" value={to} max={isoToday()} onChange={(e) => setTo(e.target.value)} />
           </Field>
           <Field label="Category">
             <Select value={category} onValueChange={(v) => setCategory(v as TransactionCategory | "__all__")}>
-              <SelectTrigger className="h-10">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -155,22 +137,18 @@ function CsvExportCard() {
           </Field>
         </div>
 
-        {error && (
-          <p className="flex items-center gap-1.5 text-sm text-warning">
-            <XCircle className="h-4 w-4 shrink-0" /> {error}
-          </p>
-        )}
+        {error && <Alert>{error}</Alert>}
 
         <div className="flex items-center justify-end">
-          <Button onClick={handleDownload} disabled={busy}>
+          <Button className="coarse:h-11" onClick={handleDownload} disabled={busy}>
             {busy ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 Preparing your file
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
                 Download CSV
               </>
             )}
@@ -190,11 +168,12 @@ function MonthlyReportsCard() {
 
   return (
     <Section
-      icon={<Calendar className="h-4 w-4" strokeWidth={1.75} />}
+      tone="blue"
+      icon={<Calendar className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Monthly summary"
       description="A printable view with totals, category breakdown, and tax-eligible deductions."
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-sp-wide sm:grid-cols-2">
         <ReportLink
           label="This month"
           period={fmtMonth(thisMonth.from)}
@@ -214,22 +193,17 @@ function ReportLink({ label, period, href }: { label: string; period: string; hr
   return (
     <Link
       href={href}
-      className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-4 py-4 transition-colors",
-        "hover:bg-muted/40"
-      )}
-      style={{ borderColor: "hsl(var(--border))" }}
+      className="press group flex min-h-11 items-center gap-sp-xl rounded-md bg-canvas px-sp-giant py-sp-wide transition-colors duration-fast hover:bg-chrome"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
-        <FileText className="h-4 w-4" strokeWidth={1.75} />
-      </div>
+      <FileText className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.75} aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground">{period}</p>
+        <p className="text-ty-link font-medium text-ink">{label}</p>
+        <p className="text-xs text-ink-meta">{period}</p>
       </div>
       <ArrowRight
-        className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+        className="h-4 w-4 shrink-0 text-ink-meta transition-transform duration-fast group-hover:translate-x-0.5"
         strokeWidth={1.75}
+        aria-hidden="true"
       />
     </Link>
   );
@@ -250,50 +224,45 @@ function TaxSummaryCard() {
 
   return (
     <Section
-      icon={<Receipt className="h-4 w-4" strokeWidth={1.75} />}
+      tone="lavender"
+      icon={<Receipt className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Tax-eligible deductions"
       description="Investments and premiums detected from your transactions, mapped to sections 80C, 80D, and 80E."
     >
       {loading ? (
-        <div className="skeleton h-20 rounded-lg" />
+        <div className="skeleton h-20 rounded-md" />
       ) : !summary ? (
-        <p className="text-sm text-muted-foreground">
-          We could not load the tax summary right now.
-        </p>
+        <p className="text-sm text-ink-meta">We could not load the tax summary right now.</p>
       ) : (
-        <div className="space-y-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="space-y-sp-wide">
+          <p className="text-xs text-ink-meta">
             {fyLabel} · April {summary.financialYear} – March {summary.financialYear + 1}
           </p>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-sp-wide sm:grid-cols-3">
             {summary.sections.map((s) => (
-              <div
-                key={s.code}
-                className="rounded-xl border bg-card p-4"
-                style={{ borderColor: "hsl(var(--border))" }}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Section {s.code}
-                </p>
-                <p className="mt-1.5 text-xl font-semibold tabular-nums text-foreground">
-                  {formatINR(s.totalAmount)}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {s.entries.length} transaction{s.entries.length === 1 ? "" : "s"}
-                  {s.limit && s.remainingLimit !== null && (
-                    <> · {formatINR(s.remainingLimit)} of limit remaining</>
-                  )}
-                </p>
-              </div>
+              <Reveal key={s.code}>
+                <div className="rounded-md bg-canvas p-sp-giant">
+                  <p className="text-sm text-ink-meta">Section {s.code}</p>
+                  <p className="mt-sp-xs text-ty-lead tabular-nums text-ink">
+                    <CountUp value={s.totalAmount} format={formatINR} />
+                  </p>
+                  <p className="mt-sp-xs text-xs text-ink-meta">
+                    {s.entries.length} transaction{s.entries.length === 1 ? "" : "s"}
+                    {s.limit && s.remainingLimit !== null && (
+                      <> · {formatINR(s.remainingLimit)} of limit remaining</>
+                    )}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
           {summary.totalEligible > 0 && (
-            <p className="text-sm text-foreground">
+            <p className="text-sm text-ink">
               Total eligible:{" "}
-              <span className="font-semibold tabular-nums">{formatINR(summary.totalEligible)}</span>
+              <span className="font-medium tabular-nums">{formatINR(summary.totalEligible)}</span>
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-ink-meta">
             Detection is heuristic-based on merchant names. Confirm with your tax advisor before filing.
           </p>
         </div>
@@ -303,38 +272,25 @@ function TaxSummaryCard() {
 }
 
 function Section({
-  icon, title, description, children,
+  icon, title, description, tone, children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
+  tone: "blue" | "lavender";
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="rounded-xl border bg-card p-6"
-      style={{ borderColor: "hsl(var(--border))" }}
-    >
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
-          {icon}
-        </div>
+    <ContentBand tone={tone} space="md">
+      <div className="mb-sp-giant flex items-start gap-sp-xl">
+        <span className="mt-1 text-primary">{icon}</span>
         <div>
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+          <h2 className="text-ty-subhead text-ink">{title}</h2>
+          <p className="mt-sp-xs max-w-prose text-sm text-ink-meta">{description}</p>
         </div>
       </div>
       {children}
-    </section>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{label}</label>
-      {children}
-    </div>
+    </ContentBand>
   );
 }
 
@@ -437,16 +393,16 @@ function IntelligenceReportsCard() {
 
   return (
     <Section
-      icon={<Sparkles className="h-4 w-4" strokeWidth={1.75} />}
+      tone="blue"
+      icon={<Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />}
       title="Financial review"
       description="A readable PDF covering your spending, your subscriptions, the money worth recovering, and what to do next."
     >
-      <div className="space-y-5">
-        {/* Generator */}
-        <div className="grid gap-3 sm:grid-cols-3">
+      <div className="space-y-sp-giant">
+        <div className="grid gap-sp-wide sm:grid-cols-3">
           <Field label="Time range">
             <Select value={preset} onValueChange={(v) => setPreset(v as ReportPreset)}>
-              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {PRESET_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -458,50 +414,39 @@ function IntelligenceReportsCard() {
           {preset === "CUSTOM" ? (
             <>
               <Field label="From">
-                <input type="date" value={from} max={to}
-                  onChange={(e) => setFrom(e.target.value)} className="input-base" />
+                <Input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
               </Field>
               <Field label="To">
-                <input type="date" value={to} max={isoToday()}
-                  onChange={(e) => setTo(e.target.value)} className="input-base" />
+                <Input type="date" value={to} max={isoToday()} onChange={(e) => setTo(e.target.value)} />
               </Field>
             </>
           ) : (
             <div className="sm:col-span-2 self-end">
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs leading-relaxed text-ink-meta">
                 Each review covers behavioral patterns, recurring obligations, recoverable spend, category trends, long-term consequences, and prioritized next steps.
               </p>
             </div>
           )}
         </div>
 
-        {error && (
-          <p className="flex items-center gap-1.5 text-sm text-warning">
-            <XCircle className="h-4 w-4 shrink-0" /> {error}
-          </p>
-        )}
+        {error && <Alert>{error}</Alert>}
 
         <div className="flex items-center justify-end">
-          <Button onClick={handleGenerate} disabled={creating || (activeJob != null && activeJob.status !== "READY" && activeJob.status !== "FAILED")}>
+          <Button className="coarse:h-11" onClick={handleGenerate} disabled={creating || (activeJob != null && activeJob.status !== "READY" && activeJob.status !== "FAILED")}>
             {creating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Starting</>
+              <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Starting</>
             ) : (
-              <><Sparkles className="h-4 w-4" /> Generate review</>
+              <><Sparkles className="h-4 w-4" aria-hidden="true" /> Generate review</>
             )}
           </Button>
         </div>
 
-        {/* Active job progress card */}
         {activeJob && <ActiveJobCard job={activeJob} onDownload={handleDownload} />}
 
-        {/* History */}
         {history && history.content.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Previously generated</p>
-            <div
-              className="rounded-xl border bg-card divide-y overflow-hidden"
-              style={{ borderColor: "hsl(var(--border))" }}
-            >
+            <h3 className="mb-sp-sm text-ty-link font-medium text-ink">Previously prepared</h3>
+            <div className="divide-y divide-border overflow-hidden rounded-md bg-canvas">
               {history.content.map((job) => (
                 <HistoryRow
                   key={job.id}
@@ -549,73 +494,62 @@ function ActiveJobCard({
   }, [inProgress]);
 
   const targetPct = isReady ? 100 : isFailed ? 100 : job.status === "PENDING" ? 25 : 70;
-  const progressColor = isReady ? "bg-positive" : isFailed ? "bg-warning" : "bg-brand";
+  const tone: ProgressTone = isFailed ? "warning" : "primary";
 
   return (
-    <motion.div
-      layout
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(
-        "rounded-xl border p-5",
-        isReady ? "border-positive/25 bg-positive-soft/30" : "bg-card"
-      )}
-      style={!isReady ? { borderColor: "hsl(var(--border))" } : undefined}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0 flex items-start gap-2">
-          {inProgress && <PulseDot className="mt-1.5 shrink-0" />}
+    <div className="rounded-md bg-canvas p-sp-giant">
+      <div className="flex items-start justify-between gap-sp-wide">
+        <div className="flex min-w-0 flex-1 items-start gap-sp-sm">
+          {inProgress && <PulseDot className="mt-1.5 shrink-0" color="hsl(var(--primary))" />}
           <div>
-            <p className="text-sm font-semibold text-foreground">{job.periodLabel}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="text-ty-link font-medium text-ink">{job.periodLabel}</p>
+            <p className="mt-sp-xs text-xs text-ink-meta">
               {job.periodStart} → {job.periodEnd}
             </p>
           </div>
         </div>
         {isReady && (
-          <Button size="sm" onClick={() => onDownload(job)}>
-            <Download className="h-4 w-4" /> Download
+          <Button size="sm" className="coarse:h-11" onClick={() => onDownload(job)}>
+            <Download className="h-4 w-4" aria-hidden="true" /> Download
           </Button>
         )}
       </div>
 
-      <div className="mt-4 space-y-1.5">
-        <div className="flex items-center justify-between text-xs h-4">
+      <div className="mt-sp-wide space-y-sp-sm">
+        <div className="flex h-4 items-center justify-between text-xs" aria-live="polite">
           <AnimatedSwitch
             viewKey={isReady ? "ready" : isFailed ? "failed" : `step-${stepIdx}`}
-            className="flex items-center gap-1.5"
+            className="flex items-center gap-sp-sm"
           >
             {isReady ? (
-              <span className="flex items-center gap-1.5 text-positive">
-                <CheckCircle2 className="h-3 w-3" />
+              <span className="flex items-center gap-sp-sm text-positive">
+                <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
                 Ready
               </span>
             ) : isFailed ? (
-              <span className="flex items-center gap-1.5 text-warning">
-                <XCircle className="h-3 w-3" />
-                Generation could not complete
+              <span className="flex items-center gap-sp-sm text-warning">
+                <XCircle className="h-3 w-3" aria-hidden="true" />
+                Preparation could not complete
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="flex items-center gap-sp-sm text-ink-meta">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 {ANALYSIS_STEPS[stepIdx]}
               </span>
             )}
           </AnimatedSwitch>
-          {job.pdfSizeBytes != null && <span className="text-muted-foreground">{fmtBytes(job.pdfSizeBytes)}</span>}
+          {job.pdfSizeBytes != null && <span className="text-ink-meta">{fmtBytes(job.pdfSizeBytes)}</span>}
         </div>
-        <div className="h-1 rounded-full bg-muted overflow-hidden">
-          <motion.div
-            className={cn("h-full", progressColor)}
-            initial={{ width: 0 }}
-            animate={{ width: `${targetPct}%` }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </div>
-        {job.errorMessage && (
-          <p className="mt-2 text-xs text-warning">{job.errorMessage}</p>
-        )}
+        <ProgressBar
+          size="sm"
+          tone={tone}
+          value={targetPct}
+          label={`Report progress, ${job.periodLabel}`}
+          valueText={isReady ? "Ready" : isFailed ? "Failed" : ANALYSIS_STEPS[stepIdx]}
+        />
+        {job.errorMessage && <p className="text-xs text-warning">{job.errorMessage}</p>}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -628,40 +562,40 @@ function HistoryRow({
   onDelete: (j: ReportJob) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground/70">
-        <FileText className="h-4 w-4" strokeWidth={1.75} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">
+    <div className="flex items-center gap-sp-xl px-sp-giant py-sp-xl">
+      <FileText className="h-5 w-5 shrink-0 text-ink-meta" strokeWidth={1.75} aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-ink">
           {job.periodLabel}
-          {isActive && <span className="ml-2 text-[10px] uppercase tracking-wider text-brand">Active</span>}
+          {isActive && <span className="ml-sp-sm text-xs text-primary">Active</span>}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-ink-meta">
           {fmtTimestamp(job.createdAt)}
           {job.status === "READY" && job.pdfSizeBytes != null && <> · {fmtBytes(job.pdfSizeBytes)}</>}
         </p>
       </div>
       <span className={cn(
-        "text-[10px] uppercase tracking-wider font-medium",
-        job.status === "READY"      ? "text-positive"
-        : job.status === "FAILED"   ? "text-warning"
-        : job.status === "GENERATING" ? "text-brand"
-        : "text-muted-foreground"
+        "text-xs font-medium",
+        job.status === "READY"        ? "text-positive"
+        : job.status === "FAILED"     ? "text-warning"
+        : job.status === "GENERATING" ? "text-primary"
+        : "text-ink-meta"
       )}>
-        {job.status === "GENERATING" ? "Generating" : job.status.toLowerCase()}
+        {job.status === "GENERATING" ? "Preparing" : job.status === "READY" ? "Ready" : job.status === "FAILED" ? "Failed" : "Queued"}
       </span>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-sp-xs">
         {job.status === "READY" && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => onDownload(job)}
-            className="rounded p-1.5 text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
-            title="Download"
+            aria-label={`Download ${job.periodLabel} report`}
+            className="coarse:h-11 coarse:w-11"
           >
-            <Download className="h-3.5 w-3.5" />
-          </button>
+            <Download className="h-4 w-4" aria-hidden="true" />
+          </Button>
         )}
-        <ConfirmButton onConfirm={() => onDelete(job)} label="Delete report" className="p-1.5" />
+        <ConfirmButton onConfirm={() => onDelete(job)} label="Delete report" className="p-sp-sm coarse:min-h-11 coarse:min-w-11 coarse:justify-center" />
       </div>
     </div>
   );

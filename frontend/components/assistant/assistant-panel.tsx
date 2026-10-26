@@ -44,7 +44,7 @@ export function AssistantPanel() {
   if (docked) {
     if (!open) return null;
     return (
-      <aside aria-label="Ask FlowSight" className="flex w-[380px] shrink-0 flex-col border-l border-border bg-card">
+      <aside aria-label="Ask FlowSight" className="flex w-[380px] shrink-0 flex-col bg-chrome">
         <AssistantBody onClose={() => setOpen(false)} />
       </aside>
     );
@@ -52,7 +52,7 @@ export function AssistantPanel() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent side="right" hideClose className="flex w-full max-w-md flex-col p-0">
+      <SheetContent side="right" hideClose className="flex w-full max-w-md flex-col bg-chrome p-0">
         <SheetTitle className="sr-only">Ask FlowSight</SheetTitle>
         <SheetDescription className="sr-only">Ask a question about your own spending. Answers are read-only.</SheetDescription>
         <AssistantBody onClose={() => setOpen(false)} />
@@ -79,34 +79,29 @@ function AssistantBody({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+      <header className="flex items-start justify-between gap-sp-xl px-sp-giant py-sp-xl">
         <div>
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-brand" strokeWidth={1.75} aria-hidden="true" /> Ask FlowSight
+          <h2 className="flex items-center gap-sp-sm text-ty-link font-medium text-ink">
+            <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} aria-hidden="true" /> Ask FlowSight
           </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Answers come from your own data. It cannot change anything.</p>
+          <p className="mt-sp-xs text-xs text-ink-meta">Answers come from your own data. It cannot change anything.</p>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close assistant"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
+        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close assistant" className="shrink-0 coarse:h-11 coarse:w-11">
           <X className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 space-y-sp-giant overflow-y-auto px-sp-giant py-sp-xl">
         {exchanges.length === 0 && (
           <div>
-            <p className="text-sm text-muted-foreground">Try one of these, or type your own.</p>
-            <ul className="mt-3 space-y-2">
+            <p className="text-sm text-ink-meta">Try one of these, or type your own.</p>
+            <ul className="mt-sp-xl space-y-sp-sm">
               {EXAMPLES.map((q) => (
                 <li key={q}>
                   <button
                     type="button"
                     onClick={() => submit(q)}
-                    className="w-full rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                    className="press min-h-11 w-full rounded-md bg-canvas px-sp-xl py-sp-sm text-left text-sm text-ink transition-colors duration-fast hover:bg-band"
                   >
                     {q}
                   </button>
@@ -126,12 +121,12 @@ function AssistantBody({ onClose }: { onClose: () => void }) {
           e.preventDefault();
           submit(text);
         }}
-        className="border-t border-border p-3"
+        className="bg-canvas p-sp-xl"
       >
         <label htmlFor="assistant-question" className="sr-only">
           Your question
         </label>
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-sp-sm">
           <textarea
             id="assistant-question"
             ref={inputRef}
@@ -146,7 +141,7 @@ function AssistantBody({ onClose }: { onClose: () => void }) {
             rows={2}
             maxLength={MAX_QUESTION_LENGTH}
             placeholder="Ask about your spending"
-            className="min-h-[44px] flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="min-h-11 flex-1 resize-none rounded-md bg-chrome px-sp-xl py-sp-sm text-sm text-ink placeholder:text-ink-meta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <Button type="submit" size="sm" disabled={busy || !text.trim()} aria-label="Send question" className="h-11">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
@@ -168,15 +163,15 @@ function AssistantBody({ onClose }: { onClose: () => void }) {
 
 function ExchangeView({ exchange: x, onOpenCitation }: { exchange: Exchange; onOpenCitation: (c: AssistantCitation) => void }) {
   return (
-    <div className="space-y-2">
-      <p className="ml-auto max-w-[85%] rounded-xl bg-muted px-3 py-2 text-sm text-foreground">{x.question}</p>
+    <div className="space-y-sp-sm">
+      <p className="ml-auto max-w-[85%] rounded-md bg-band-blue px-sp-xl py-sp-sm text-sm text-ink">{x.question}</p>
       {x.status === "pending" && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <p className="flex items-center gap-sp-sm text-sm text-ink-meta">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Looking at your data
         </p>
       )}
       {x.status === "error" && (
-        <p className="flex items-start gap-2 text-sm text-warning">
+        <p role="alert" className="flex items-start gap-sp-sm text-sm text-warning">
           <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {x.error}
         </p>
       )}
@@ -194,12 +189,16 @@ function AnswerView({ exchange: x, onOpenCitation }: { exchange: Exchange; onOpe
   const uncited = a.citations.filter((c) => !cited.has(c.id));
 
   return (
-    <div className={cn("rounded-xl border px-3 py-3", a.answered ? "border-border bg-background" : "border-caution/25 bg-caution-soft")}>
-      <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-        <span className="rounded-sm border border-border px-1.5 py-0.5">{modeLabel(a.mode)}</span>
-        {!a.answered && <span className="text-caution">Not answered</span>}
+    <div className={cn("rounded-md px-sp-xl py-sp-xl", a.answered ? "bg-canvas" : "bg-caution-soft")}>
+      <p className="mb-sp-sm flex items-center gap-sp-sm text-xs text-ink-meta">
+        <span className="rounded-sm bg-band px-sp-sm py-0.5">{modeLabel(a.mode)}</span>
+        {!a.answered && (
+          <span className="inline-flex items-center gap-sp-xs text-caution">
+            <CircleAlert className="h-3 w-3" aria-hidden="true" /> Not answered
+          </span>
+        )}
       </p>
-      <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+      <p className="whitespace-pre-line text-sm leading-relaxed text-ink-body">
         {segments.map((s, i) =>
           s.kind === "text" ? (
             <React.Fragment key={i}>{s.text}</React.Fragment>
@@ -209,21 +208,21 @@ function AnswerView({ exchange: x, onOpenCitation }: { exchange: Exchange; onOpe
         )}
       </p>
       {uncited.length > 0 && (
-        <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+        <p className="mt-sp-sm flex flex-wrap items-center gap-sp-sm text-xs text-ink-meta">
           Based on:
           {uncited.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => onOpenCitation(c)}
-              className="rounded-md border border-border px-1.5 py-0.5 text-foreground underline-offset-4 hover:bg-muted hover:underline"
+              className="rounded-sm bg-band px-sp-sm py-0.5 text-ink underline-offset-4 hover:underline coarse:min-h-11"
             >
               {c.title}
             </button>
           ))}
         </p>
       )}
-      {note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}
+      {note && <p className="mt-sp-sm text-xs text-ink-meta">{note}</p>}
     </div>
   );
 }
@@ -234,7 +233,7 @@ function CitationButton({ n, citation, onOpen }: { n: number; citation: Assistan
       type="button"
       onClick={() => onOpen(citation)}
       aria-label={`Source ${n}: ${citation.title}`}
-      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border px-1 align-baseline text-2xs font-medium text-primary hover:bg-band-blue"
+      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-sm bg-band-blue px-1 align-baseline text-2xs font-medium text-primary hover:bg-band coarse:h-11 coarse:min-w-11"
     >
       {n}
     </button>
