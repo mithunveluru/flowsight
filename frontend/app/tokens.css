@@ -208,7 +208,8 @@
   /* lightened so links hold 4.5:1 on every dark band; the label on a fill flips to the canvas */
   --primary: 213 100% 70%;
   --primary-foreground: 222 55% 8%;
-  --primary-deep: 218 100% 32%;
+  /* a deep tone that sits on the dark canvas; white text on it is above 12:1 */
+  --primary-deep: 218 80% 24%;
   --primary-hover: 213 100% 78%;
   --primary-pressed: 213 100% 62%;
   --outline-foreground: 213 100% 74%;

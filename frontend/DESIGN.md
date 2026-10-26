@@ -29,7 +29,7 @@ The spec is light only. Dark is derived so the same roles hold:
 
 - Canvas is a near-black navy (222 hue, 8% lightness). `chrome`, `band`, `band-blue`, `band-lavender` step up from it by 3 to 9 points of lightness, keeping the blue and violet tints.
 - The slate ladder is inverted: `ink` is white and `ink-body` to `ink-meta` descend from 84% to 70% lightness with the same slate hue. Every step holds at least 6.9:1 on every dark band.
-- `primary` is lightened to 70% lightness so links hold 4.5:1 or better on every dark band (6.4 to 8.0 measured). Because the fill is now light, `primary-foreground` flips to the canvas colour. `primary-deep` stays a deep blue (it is a band, white text on it is 9.6:1). The outline label uses `outline-foreground`, a lighter blue.
+- `primary` is lightened to 70% lightness so links hold 4.5:1 or better on every dark band (6.4 to 8.0 measured). Because the fill is now light, `primary-foreground` flips to the canvas colour. `primary-deep` is a darker navy-blue (218 hue, 80%, 24% lightness) so a hero band sits on the dark canvas instead of glowing; white text on it is 12.6:1. The outline label uses `outline-foreground`, a lighter blue.
 - Hairlines are low-contrast: `border` is a navy-grey close to white at 14% over the canvas; `input` stays a full-strength rule (4.9:1 against the canvas).
 
 ## States
@@ -83,4 +83,10 @@ Headings are `ink`, set tight; everything under them is slate. Marketing sizes a
 
 ## Motion
 
-Durations 120 / 200 / 320 / 560 ms and 900 to 1200 ms for draws and count-ups. Standard easing `cubic-bezier(0.2, 0, 0, 1)`, exit `cubic-bezier(0.4, 0, 1, 1)`, one critically damped spring for the tab underline. Only transform, opacity, clip-path and stroke-dashoffset are animated. With `prefers-reduced-motion` everything becomes an opacity fade at most 120ms, count-ups and draws jump to their final value. See `components/motion`.
+Durations 120 / 200 / 320 / 560 ms and 900 to 1200 ms for draws and count-ups. Standard easing `cubic-bezier(0.2, 0, 0, 1)`, exit `cubic-bezier(0.4, 0, 1, 1)`, one critically damped spring for the tab underline. Only transform, opacity, clip-path, the individual `scale` property and stroke-dashoffset are animated; the one exception is `height` in `Grow` (disclosures and list inserts), so the content below follows instead of jumping. With `prefers-reduced-motion` everything becomes an opacity fade at most 120ms, count-ups and draws jump to their final value.
+
+Entrances, scroll reveals, stagger, line draws and dialog pops are plain CSS (`app/motion.css`: `fx-rise`, `fx-reveal`, `fx-wipe`, `fx-stagger`, `fx-draw`, `fx-pop`) so they run on server-rendered markup before hydration. framer-motion loads on demand through `MotionRoot` (`domAnimation` only) and is used for presence, `Grow` and the tab spring. Use `components/motion/css-motion` from server pages; it carries no framer-motion.
+
+## Layout helpers
+
+`TitleRow` (`components/layout/title-row`) is the page heading with a lead and actions; `FullBleed` (`components/layout/full-bleed`) runs a band edge to edge inside the page column (the shell scroll area is a size container, so no viewport-width hacks). `tabClass(active, true)` is the dense equal-width tab strip for tool surfaces. `toast` lives in `ui/toast-store` (no Radix) so a route can show one without loading the toaster.
