@@ -40,6 +40,17 @@ function CloseButton() {
   );
 }
 
+/** Radix only restores focus to a Trigger; drawers opened from a plain button hand it back here. */
+function useReturnFocus(onCloseAutoFocus?: (event: Event) => void) {
+  const [opener] = React.useState(() => (typeof document === "undefined" ? null : document.activeElement));
+  return (event: Event) => {
+    onCloseAutoFocus?.(event);
+    if (event.defaultPrevented) return;
+    event.preventDefault();
+    if (opener instanceof HTMLElement && opener !== document.body && opener.isConnected) opener.focus();
+  };
+}
+
 interface ContentExtras {
   hideClose?: boolean;
 }
@@ -47,11 +58,14 @@ interface ContentExtras {
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & ContentExtras
->(({ className, children, hideClose, ...props }, ref) => (
+>(({ className, children, hideClose, onCloseAutoFocus, ...props }, ref) => {
+  const returnFocus = useReturnFocus(onCloseAutoFocus);
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onCloseAutoFocus={returnFocus}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
         "max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground sm:p-sp-max",
@@ -64,7 +78,8 @@ const DialogContent = React.forwardRef<
       {!hideClose && <CloseButton />}
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const sheetVariants = cva(
@@ -98,15 +113,18 @@ const SheetContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
     VariantProps<typeof sheetVariants> &
     ContentExtras
->(({ side, className, children, hideClose, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      {children}
-      {!hideClose && <CloseButton />}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(({ side, className, children, hideClose, onCloseAutoFocus, ...props }, ref) => {
+  const returnFocus = useReturnFocus(onCloseAutoFocus);
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content ref={ref} onCloseAutoFocus={returnFocus} className={cn(sheetVariants({ side }), className)} {...props}>
+        {children}
+        {!hideClose && <CloseButton />}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+});
 SheetContent.displayName = "SheetContent";
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
