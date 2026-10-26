@@ -76,17 +76,17 @@ export default function RegisterPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Create your account.
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
             Free to start. No credit card required.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
+            <div className="rounded-md bg-warning-soft px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
@@ -126,7 +126,7 @@ export default function RegisterPage() {
               />
               <button
                 type="button"
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground/70 transition-colors hover:text-foreground/80"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-ink-meta transition-colors hover:text-ink"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
-                      className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                      className={`h-1 flex-1 rounded-sm transition-colors duration-300 ${
                         passwordStrength.score >= level
                           ? passwordStrength.color
                           : "bg-border"
@@ -148,7 +148,7 @@ export default function RegisterPage() {
                     />
                   ))}
                 </div>
-                <p className="text-[11px] text-muted-foreground">{passwordStrength.label}</p>
+                <p className="text-xs text-ink-meta">{passwordStrength.label}</p>
               </div>
             )}
           </Field>
@@ -169,16 +169,16 @@ export default function RegisterPage() {
         </form>
 
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-ty-link text-ink-meta">
             Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+              className="link underline"
             >
               Sign in
             </Link>
           </p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground/70">
+          <p className="text-xs text-ink-meta">
             By creating an account you agree to our Terms of Service and Privacy Policy.
           </p>
         </div>
@@ -200,7 +200,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-[13px] font-medium text-foreground/80">
+      <Label htmlFor={id}>
         {label}
       </Label>
       {children}

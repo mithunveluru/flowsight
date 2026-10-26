@@ -95,23 +95,23 @@ function ResetPasswordForm() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Choose a new password.
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
             For your security, this link can only be used once and expires after 30 minutes.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
+            <div className="rounded-md bg-warning-soft px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-[13px] font-medium text-foreground/80">
+            <Label htmlFor="password">
               New password
             </Label>
             <div className="relative">
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
               />
               <button
                 type="button"
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground/70 transition-colors hover:text-foreground/80"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-ink-meta transition-colors hover:text-ink"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -140,13 +140,13 @@ function ResetPasswordForm() {
                   {[1, 2, 3, 4].map((level) => (
                     <div
                       key={level}
-                      className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                      className={`h-1 flex-1 rounded-sm transition-colors duration-300 ${
                         strength.score >= level ? strength.color : "bg-border"
                       }`}
                     />
                   ))}
                 </div>
-                <p className="text-[11px] text-muted-foreground">{strength.label}</p>
+                <p className="text-xs text-ink-meta">{strength.label}</p>
               </div>
             )}
             {errors.password && (
@@ -155,7 +155,7 @@ function ResetPasswordForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirm" className="text-[13px] font-medium text-foreground/80">
+            <Label htmlFor="confirm">
               Confirm new password
             </Label>
             <Input
@@ -194,24 +194,23 @@ function DoneState() {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-positive-soft text-positive">
+        <div className="flex h-11 w-11 items-center justify-center rounded-sm bg-positive-soft text-positive">
           <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} />
         </div>
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Password updated.
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
             Your password has been changed. Sign in to continue where you left off.
           </p>
         </header>
-        <Link
-          href="/auth/login"
-          className="group inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-        >
+        <Button asChild>
+          <Link href="/auth/login">
           Sign in
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+          <ArrowRight />
+          </Link>
+        </Button>
       </div>
     </FadeIn>
   );
@@ -221,22 +220,21 @@ function InvalidLinkState({ reason }: { reason: string }) {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-caution-soft text-caution">
+        <div className="flex h-11 w-11 items-center justify-center rounded-sm bg-caution-soft text-caution">
           <ShieldAlert className="h-5 w-5" strokeWidth={1.75} />
         </div>
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             That link will not work.
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">{reason}</p>
+          <p className="mt-sp-sm text-ty-link text-ink-meta">{reason}</p>
         </header>
-        <Link
-          href="/auth/forgot-password"
-          className="group inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-        >
+        <Button asChild>
+          <Link href="/auth/forgot-password">
           Request a new link
-          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+          <ArrowRight />
+          </Link>
+        </Button>
       </div>
     </FadeIn>
   );

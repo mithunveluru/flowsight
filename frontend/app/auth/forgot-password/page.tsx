@@ -51,23 +51,23 @@ export default function ForgotPasswordPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Forgot your password?
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
             Enter the email you signed up with and we will send you a link to set a new password.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
+            <div className="rounded-md bg-warning-soft px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-[13px] font-medium text-foreground/80">
+            <Label htmlFor="email">
               Email
             </Label>
             <Input
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/auth/login"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          className="link inline-flex min-h-11 items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to sign in
@@ -112,22 +112,22 @@ function SuccessState({ email }: { email: string }) {
   return (
     <FadeIn delay={0.05}>
       <div className="space-y-8">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-positive-soft text-positive">
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-positive-soft text-positive">
           <Mail className="h-5 w-5" strokeWidth={1.75} />
         </div>
 
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Check your inbox.
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            If an account exists for <span className="font-medium text-foreground/80">{email}</span>,
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
+            If an account exists for <span className="font-medium text-ink">{email}</span>,
             we have sent a link to reset your password. The link will be valid for 30 minutes and
             can be used once.
           </p>
         </header>
 
-        <div className="rounded-lg border border-border/80 bg-muted/50/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        <div className="rounded-md bg-muted px-4 py-3 text-xs text-ink-meta">
           <p className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-positive" strokeWidth={2} />
             <span>
@@ -139,14 +139,14 @@ function SuccessState({ email }: { email: string }) {
         <div className="flex items-center gap-3 text-sm">
           <Link
             href="/auth/login"
-            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            className="link"
           >
             Back to sign in
           </Link>
-          <span className="text-muted-foreground/50">·</span>
+          <span className="text-ink-meta">·</span>
           <Link
             href="/auth/forgot-password"
-            className="text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            className="link"
           >
             Try a different email
           </Link>

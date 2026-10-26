@@ -55,17 +55,17 @@ export default function LoginPage() {
     <FadeIn delay={0.05}>
       <div className="space-y-8">
         <header>
-          <h1 className="text-[1.625rem] font-semibold tracking-tight text-foreground">
+          <h1 className="text-ty-section-title text-ink">
             Welcome back.
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-sp-sm text-ty-link text-ink-meta">
             Pick up where you left off.
           </p>
         </header>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
           {errors.root && (
-            <div className="rounded-lg border border-warning/25 bg-warning-soft/70 px-3.5 py-2.5 text-sm text-warning">
+            <div className="rounded-md bg-warning-soft px-3.5 py-2.5 text-sm text-warning">
               {errors.root.message}
             </div>
           )}
@@ -92,7 +92,7 @@ export default function LoginPage() {
             rightSlot={
               <Link
                 href="/auth/forgot-password"
-                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm link"
               >
                 Forgot password?
               </Link>
@@ -110,7 +110,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground/70 transition-colors hover:text-foreground/80"
+                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-ink-meta transition-colors hover:text-ink"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
@@ -134,11 +134,11 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-ty-link text-ink-meta">
           New to FlowSight?{" "}
           <Link
             href="/auth/register"
-            className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+            className="link"
           >
             Create an account
           </Link>
@@ -164,7 +164,7 @@ function Field({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label htmlFor={id} className="text-[13px] font-medium text-foreground/80">
+        <Label htmlFor={id}>
           {label}
         </Label>
         {rightSlot}
