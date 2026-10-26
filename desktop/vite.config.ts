@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [react()],
   clearScreen: false,
   resolve: {
+    // frontend/ has its own node_modules; without this its components bundle a second React
+    dedupe: ["react", "react-dom", "framer-motion"],
     alias: {
       "@": path.resolve(__dirname, "../frontend"),
       "~": path.resolve(__dirname, "./src"),
