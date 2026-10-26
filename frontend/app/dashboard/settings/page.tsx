@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme";
-import { Reveal } from "@/components/motion/primitives";
+import { Reveal } from "@/components/motion/css-motion";
 import { Surface } from "@/components/insight/page-kit";
 import { ProgressBar } from "@/components/insight/progress";
 import { accountApi } from "@/features/account/api";

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { DrawLine, DURATION } from "@/components/motion/primitives";
+import { DrawLine, DURATION } from "@/components/motion/css-motion";
 import { EASE_STANDARD } from "@/components/motion/tokens";
 import {
   bandPath,

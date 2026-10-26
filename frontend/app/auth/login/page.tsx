@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { authApi } from "@/features/auth/api";
 import { useAuthStore } from "@/store/auth";
 import { ApiError } from "@/lib/api";
-import { FadeIn } from "@/components/motion/primitives";
+import { FadeIn } from "@/components/motion/css-motion";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email address"),

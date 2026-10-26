@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useReducedMotion } from "framer-motion";
-import { DURATION } from "@/components/motion/primitives";
+import { DURATION } from "@/components/motion/css-motion";
 import { EASE_STANDARD } from "@/components/motion/tokens";
 import { cubicBezier, tween } from "@/components/motion/tween";
 import { useInViewOnce } from "@/components/motion/use-in-view";
