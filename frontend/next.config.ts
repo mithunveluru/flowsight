@@ -28,6 +28,8 @@ export const renamedRoutes: [from: string, to: string][] = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // the ui-kit gallery is app/ui-kit/page.dev.tsx, so it only exists outside production builds
+  pageExtensions: process.env.NODE_ENV === "production" ? ["tsx", "ts"] : ["tsx", "ts", "dev.tsx"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

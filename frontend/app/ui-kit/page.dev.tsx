@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Showcase } from "./showcase";
 
 export const metadata: Metadata = {
@@ -7,8 +6,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Development-only reference for the design system; production builds serve a 404.
+// Development-only reference for the design system; next.config.ts leaves this file out of production builds.
 export default function UiKitPage() {
-  if (process.env.NODE_ENV === "production") notFound();
   return <Showcase />;
 }

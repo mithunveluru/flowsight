@@ -2,7 +2,12 @@
 
 import * as React from "react";
 import { Droplets, Plus, Receipt, Repeat, Sparkles } from "lucide-react";
-import { AnimatedNumber, Collapse, FadeIn } from "@/components/motion/primitives";
+import { AnimatedNumber, Collapse, DrawLine, FadeIn, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
+import { Band, HeroBand } from "@/components/ui/band";
+import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
+import { TabPanel, Tabs } from "@/components/ui/tabs";
+import { TextLink } from "@/components/ui/text-link";
+import { toast } from "@/components/ui/toast";
 import { useAnnounce, LiveRegion } from "@/components/ui/announcer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +64,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ThemeToggle } from "@/components/ui/theme";
 import { SimpleTooltip } from "@/components/ui/tooltip";
 
-const THEME_INDEPENDENT = ["--radius", "--duration-", "--ease-", "--font-"];
+const THEME_INDEPENDENT = ["--radius", "--duration-", "--ease-", "--font-", "--sp-", "--ty-", "--bar-height", "--elev-1", "--elev-2", "--elev-3", "--elev-card"];
 
 function useTokenParity() {
   const [result, setResult] = React.useState<{ checked: number; missing: string[] } | null>(null);
@@ -126,6 +131,100 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
       <h2 className="text-overline">{title}</h2>
       {children}
     </section>
+  );
+}
+
+const BAND_TONES = ["canvas", "chrome", "band", "blue", "lavender", "sky", "deep", "navy"] as const;
+const BUTTON_VARIANTS = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const;
+const TAB_ITEMS = [
+  { value: "month", label: "This month" },
+  { value: "quarter", label: "Quarter" },
+  { value: "year", label: "Year" },
+];
+
+function FoundationBlock() {
+  const [tab, setTab] = React.useState("month");
+  return (
+    <Block title="Bands, tabs, links, buttons, menus, toasts">
+      <div className="overflow-hidden rounded-lg border border-border">
+        {BAND_TONES.map((tone) => (
+          <Band key={tone} tone={tone} space="sm" curved={tone === "lavender"}>
+            <p className="text-ty-subhead">Band tone: {tone}</p>
+          </Band>
+        ))}
+      </div>
+      <div className="overflow-hidden rounded-lg">
+        <HeroBand
+          title="Hero band"
+          lead="Title, lead and actions on a solid deep-blue band."
+          actions={<Button variant="secondary">Primary action</Button>}
+        />
+      </div>
+
+      <Card className="space-y-4">
+        <Tabs items={TAB_ITEMS} value={tab} onValueChange={setTab} label="Range" idPrefix="kit" />
+        {TAB_ITEMS.map((i) => (
+          <TabPanel key={i.value} value={i.value} active={tab === i.value} idPrefix="kit">
+            <p className="text-body">Panel for {i.label.toString().toLowerCase()}.</p>
+          </TabPanel>
+        ))}
+      </Card>
+
+      <Card className="space-y-4">
+        <div className="space-y-3">
+          {BUTTON_VARIANTS.map((v) => (
+            <div key={v} className="flex flex-wrap items-center gap-3">
+              <span className="w-24 text-caption">{v}</span>
+              <Button variant={v}>Rest</Button>
+              <Button variant={v} disabled>Disabled</Button>
+              <Button variant={v} size="sm">Small</Button>
+              <Button variant={v} size="lg">Large</Button>
+            </div>
+          ))}
+        </div>
+        <p className="text-body">
+          Inline <TextLink href="#kit">text link</TextLink> and <TextLink href="#kit" chevron>link with chevron</TextLink>.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Menu>
+            <MenuTrigger asChild>
+              <Button variant="outline">Menu</Button>
+            </MenuTrigger>
+            <MenuContent>
+              <MenuLabel>Account</MenuLabel>
+              <MenuItem>Settings</MenuItem>
+              <MenuSeparator />
+              <MenuItem>Sign out</MenuItem>
+            </MenuContent>
+          </Menu>
+          <Button variant="outline" onClick={() => toast({ title: "Saved", description: "Budget updated", tone: "success" })}>
+            Success toast
+          </Button>
+          <Button variant="outline" onClick={() => toast({ title: "Import failed", tone: "error" })}>
+            Error toast
+          </Button>
+          <Button variant="outline" onClick={() => toast({ title: "Syncing" })}>
+            Info toast
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <Reveal>
+          <p className="text-body">Reveal fades and rises on scroll.</p>
+        </Reveal>
+        <Stagger className="grid gap-2 sm:grid-cols-3">
+          {["One", "Two", "Three"].map((t) => (
+            <StaggerItem key={t}>
+              <div className="rounded-md bg-band-blue p-sp-wide text-body">{t}</div>
+            </StaggerItem>
+          ))}
+        </Stagger>
+        <svg viewBox="0 0 200 40" className="h-10 w-full max-w-sm text-primary" role="img" aria-label="Line drawn on load">
+          <DrawLine d="M2 34 C 40 34, 50 8, 90 14 S 150 36, 198 6" />
+        </svg>
+      </Card>
+    </Block>
   );
 }
 
@@ -545,6 +644,7 @@ export function Showcase() {
         <ThemeToggle />
       </header>
       <TokensBlock />
+      <FoundationBlock />
       <TypeBlock />
       <CardsBlock />
       <SignalsBlock />
