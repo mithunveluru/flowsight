@@ -79,7 +79,6 @@ export function monteCarloEvidence(mc: MonteCarloResult, assumptions?: Simulatio
     { label: "Spread taken from", value: VOLATILITY[e.volatilitySource] },
     { label: "Weight on your own history", value: `${Math.round(e.ownWeight * 100)}%` },
     { label: "Block length", value: `${e.blockLength} months` },
-    { label: "Random seed", value: String(e.seed) },
   ];
   if (e.ownMonthlySd != null) inputs.push({ label: "Your own monthly spread", value: rupees(e.ownMonthlySd) });
   if (assumptions) inputs.push({ label: "Return assumption", value: assumptionText(assumptions) });
