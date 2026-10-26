@@ -6,12 +6,22 @@ export type LeakType =
 
 export type LeakSeverity = "HIGH" | "MEDIUM" | "LOW";
 
+export interface LeakEvidence {
+  source: "RULES" | "MODEL";
+  method: string;
+  windowStart: string | null;
+  windowEnd: string | null;
+  inputs: Record<string, string | number | boolean | null> | null;
+  confidence: number | null;
+}
+
 export interface LeakItem {
   merchant: string;
   amount: number;
   detail: string;
   category: string;
   categoryLabel: string;
+  evidence?: LeakEvidence | null;
 }
 
 export interface LeakInsight {
@@ -24,6 +34,7 @@ export interface LeakInsight {
   annualImpact: number;
   affectedItemsCount: number;
   items: LeakItem[];
+  evidence?: LeakEvidence | null;
 }
 
 export interface LeakDetectionResponse {

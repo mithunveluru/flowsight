@@ -20,4 +20,11 @@ export interface RecurringPattern {
   isUserConfirmed: boolean;
   status: RecurringStatus;
   daysUntilNext: number;
+  scoredBy?: "MODEL" | "RULES";
+  /** Calibrated probability the group recurs; null for rule patterns. */
+  probability?: number | null;
+  nextExpectedLow?: string | null;
+  nextExpectedHigh?: string | null;
+  modelVersion?: string | null;
+  chargesPerPeriod?: number;
 }
