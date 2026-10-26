@@ -16,6 +16,7 @@ photo); FlowSight does the thinking.
 
 - [Why this exists](#why-this-exists)
 - [Key features](#key-features)
+- [Machine learning and feature flags](#machine-learning-and-feature-flags)
 - [Product walkthrough](#product-walkthrough)
 - [Screenshots](#screenshots)
 - [Architecture](#architecture)
@@ -85,56 +86,136 @@ Every item below is implemented in this repository.
   whose amount cannot be resolved is reported as an error rather than silently
   coerced to zero.
 - Manual entry with a live auto-categorization preview.
-- 14 categories plus an explicit uncategorized state, assigned by keyword
-  matching with a confidence score.
-- Merchant normalization that strips UPI/IMPS/NEFT noise, refs, and trailing junk.
+- 14 categories plus an explicit uncategorized state. Each transaction records
+  where its category came from (your edit, a merchant rule you taught it, the
+  model, or keyword rules), a confidence, and the top three alternatives.
+- Edit merchant, category and notes in place, act on many rows at once
+  (recategorize, mark reviewed, delete), and work through a "help categorize"
+  queue that shows the least certain rows first.
 - Full CRUD with per-user row isolation, pagination, and category/date filtering.
+
+### Categorization
+- A text classifier (TF-IDF features, logistic regression, numpy-only at
+  inference) runs in ml-service and returns a calibrated probability per
+  category. Keyword rules remain the fallback.
+- A personal layer blends in the user's own reviewed transactions, so a
+  correction changes later predictions for that user and nobody else. It is
+  skipped when the user turns personalization off.
+- On the 476-row evaluation set the rules score 0.4622 accuracy and the model
+  0.9580. Read that with care: it is a synthetic set with merchants that overlap
+  the training merchants. On the 125 rows with merchants the model had not seen
+  it scores 0.896, and a held-out-merchant check on the training corpus gives
+  0.667. Real statements will land lower than the headline.
+
+### Merchant resolver
+- One cascade turns messy descriptors into a canonical merchant: your own rules,
+  an exact alias match, a trigram fuzzy match (`pg_trgm`), a nearest-alias
+  lookup in ml-service, an optional LLM step, and finally a cleaned descriptor.
+  The original text is kept alongside the resolved name.
+- The alias table ships 383 entries across India, the US, the UAE and Saudi
+  Arabia. UPI, IMPS and NEFT payees are never sent to an LLM, since they are
+  often people.
+- Correcting a merchant or category teaches a per-user rule. You can preview how
+  many rows a rule would change before applying it. On the 352-row merchant set
+  the resolved name matches exactly on 0.9602 of rows, and the old alias lookup
+  went from 0.1392 to 0.9347. The regional aliases were written with that set in
+  view, so this measures coverage rather than generalization.
 
 ### OCR receipt processing
 - Image upload (JPEG / PNG / WebP / TIFF / BMP, 5 MB cap) with a per-user quota.
-- Structured extraction (merchant, amount, date, line items) via a vision LLM.
-- An **amount validator** that catches the classic OCR failure mode: mistaking a
-  subtotal, VAT, or GST line for the grand total. It cross-checks line items,
-  scores candidate labels, and assigns a confidence tier.
+- Several fused passes: image preprocessing (orientation, background removal,
+  deskew, contrast), up to three Tesseract passes, and an arithmetic
+  reconciliation of subtotal, taxes, discounts, tip, round-off and payment
+  lines against the total. The in-process **amount validator** still guards
+  against taking a subtotal, VAT or GST line for the grand total.
+- Per-field confidence and a decision for merchant, amount, date and currency:
+  accept, accept with a highlight, or ask the user. The currency is detected
+  rather than assumed to be INR, and a missing date stays empty instead of
+  defaulting to today.
+- An optional vision-model pass in ml-service reads the image with personal
+  text blacked out, and any amount it returns must also appear in a Tesseract
+  pass.
 - **Review-first workflow**: OCR produces a draft only. No transaction is created
-  until the user confirms an editable, prefilled form. Low-confidence extractions
-  raise an explicit warning.
-- Built-in Tesseract fallback when the external OCR microservice is unavailable
-  or unconfigured.
+  until the user confirms. The review page shows the receipt image beside the
+  fields, candidate totals as choices, line items and taxes as evidence, and
+  records each correction as feedback. Confirming twice returns the same
+  transaction.
+- On the 200-receipt synthetic set the Tesseract path reads the total on 0.805
+  of receipts (0.180 before this work), date 0.885, currency 1.000 and line items
+  at F1 0.848. Arabic-Indic digit totals are 0.000, because the English
+  Tesseract model cannot read them. These receipts are synthetic, not real
+  photos.
+- A compact, metadata-free review copy of the image is kept for 7 days for
+  drafts and 24 hours after confirmation, then deleted.
+- Falls back to the in-image Tesseract engine when ml-service and the external
+  OCR microservice are unavailable or unconfigured.
 
 ### Behavioral insights
-- Weekend overspend, lifestyle inflation, category concentration, ticket size,
-  and frequency signals derived from transaction history.
-- A behavioral profile plus prioritized, plain-language recommendations.
+- Weekend overspend, lifestyle inflation, category drift, ticket size and
+  frequency signals, each judged against the user's own history instead of a
+  fixed threshold. A detector that does not have enough history yet is listed as
+  needing more history rather than guessed.
+- A behavioral profile plus recommendations ranked by saving and by how often
+  you accept that kind of suggestion. Accept or dismiss a recommendation and it
+  is remembered; dismissed ones stay hidden for 30 days.
 - A long-view timeline showing what each recurring choice costs over 1, 5, and
   10 years, including opportunity cost.
+- Optional LLM narratives and an "Ask FlowSight" assistant, off by default. See
+  [Machine learning and feature flags](#machine-learning-and-feature-flags).
 
 ### Financial leak detection
 - Surfaces duplicate subscriptions, price creep, silent drains, and bank fees.
-- Each finding carries a severity tier and a recoverable-amount estimate,
-  ranked by how much money is on the table.
+- Each finding carries a severity tier, a recoverable-amount estimate and an
+  evidence block naming the method, the window it read and the thresholds it
+  applied.
+- Price creep is found with a change-point test on 13 months of payments, and
+  drains are judged against the user's own typical ticket and spend.
 
 ### Recurring detection
 - Detects subscriptions and recurring bills across five cadence tiers
-  (weekly → annual) using interval, amount-variance, occurrence, and category
-  signals.
-- An 80-entry brand-alias map resolves messy merchant strings to one identity
-  (e.g. `NETFLIX`, `Netflix.com`, `UPI/NETFLIX/MONTHLY` → `netflix`).
+  (weekly to annual). A learned scorer in ml-service decides which merchant
+  groups really recur and predicts the next charge with an interval; the older
+  interval and variance rules are the fallback.
+- Merchant names resolve through the merchant resolver, so
+  `NETFLIX`, `Netflix.com` and `UPI/NETFLIX/MONTHLY` group as one merchant.
 - Auto-flags cancellation candidates; users can confirm or dismiss, and
-  confirmations survive future re-scans.
+  confirmations survive future re-scans. Confirming or dismissing is recorded
+  as feedback.
+- On 120 synthetic users, group-level F1 was 0.7802 for the rules and 0.9982 for
+  the model, and the share of irregular merchants wrongly stored as recurring
+  fell from 0.5469 to 0.0018. Both the generator and the training data were
+  written by the same author, so this shows the features separate synthetic
+  processes, not real-world accuracy.
+
+### Forecast
+- Month-by-month projections of income, spend, net and each category, with 80%
+  and 95% intervals and a note on which method produced them and how much
+  history it had. Budgets use the same forecast to project month-end spend and
+  support rollover.
+- Against a flat-mean baseline on 160 synthetic users, weighted absolute
+  percentage error improved from 0.338 to 0.281, and for budget month-end spend
+  from 0.876 to 0.210. The 80% intervals covered 0.808 of outcomes. It was
+  not better everywhere: with 0 to 3 months of history the net-flow error is
+  worse than the flat mean.
+- Falls back to an in-app forecaster with identical numbers when ml-service is
+  off.
 
 ### Consequence simulation
 - Models one-time purchases, recurring expenses, savings adjustments, and loan
   EMIs.
 - Projects monthly, yearly, five-year, and ten-year impact against a real
   baseline (your last three months of transactions and active recurring patterns).
+- A Monte Carlo run resamples your own month-to-month cash-flow swings to return
+  a fan of outcomes (10th, 50th and 90th percentile), the probability of
+  reaching an active goal by its date with and without the decision, and a
+  flexibility range. The same request returns the same result.
 - Returns a financial flexibility score before and after the decision.
-- Ten-year opportunity cost is the future value of an annuity at an 8% assumed
-  annual return.
+- Opportunity cost uses an assumed annual return (8% by default, adjustable,
+  and labelled as default or user-set in the response).
 
 ### Budgets and goals
-- Per-category and overall budgets with spend-vs-limit summaries, pace
-  projection, and over-budget warnings.
+- Per-category and overall budgets with spend-vs-limit summaries, forecast-based
+  pace projection with intervals, rollover, and over-budget warnings.
 - Savings goals with contributions, daily-pace guidance, and lifecycle states
   (active / complete / abandoned).
 
@@ -168,6 +249,66 @@ Every item below is implemented in this repository.
 
 ---
 
+## Machine learning and feature flags
+
+The models live in a separate service, `ml-service` (FastAPI). The backend calls
+it through a small client with a connect timeout, a per-call timeout and a
+circuit breaker. Every model-backed feature sits behind a flag and has a
+rule-based fallback that returns the answer the app gave before: if the flag is
+off, the URL or token is unset, the call times out, the service returns an
+error, or the response is malformed, the user gets the rule-based result. The
+whole app works with ml-service absent.
+
+Each capability has an `ML_<CAP>_ENABLED` flag and an `ML_<CAP>_SHADOW` flag.
+In shadow mode the backend serves the rule-based answer and logs what the model
+would have said, so a model can be compared before it is switched on. Set the
+`ENABLED` and `SHADOW` flags on both the backend and ml-service. A capability
+is served only when ml-service also has an active model version for it.
+
+| Capability | Flag | Used for | Fallback |
+|---|---|---|---|
+| `categorizer` | `ML_CATEGORIZER_ENABLED` | Transaction categories with calibrated probabilities and alternatives | Keyword rules |
+| `merchant-embeddings` | `ML_MERCHANT_EMBEDDINGS_ENABLED` | Nearest known merchant alias by character n-grams | Alias, trigram and cleaning steps |
+| `recurring-scorer` | `ML_RECURRING_SCORER_ENABLED` | Which merchant groups recur, next date and interval | Interval and variance rules |
+| `forecaster` | `ML_FORECASTER_ENABLED` | Forecast intervals for the forecast, budget pace and simulator | In-app forecaster (same numbers) |
+| `ocr` | `ML_OCR_ENABLED` | Receipt reading: preprocessing, Tesseract passes, reconciliation | `receipt-ocr` service, then in-image Tesseract |
+| `narrative` | `ML_NARRATIVE_ENABLED` | Declared, but nothing calls it yet | n/a |
+
+The LLM features are separate from ml-service and from each other. They need a
+model name and a key, because no model name is assumed, and each falls back to
+deterministic text.
+
+| Feature | Flag | Behavior when off or failing |
+|---|---|---|
+| Insight narratives, Ask FlowSight model path | `LLM_ENABLED` | Template text and keyword intents |
+| Merchant naming for names nothing else resolved | `MERCHANT_LLM_ENABLED` | Cleaned descriptor |
+| Vision pass in ml-service OCR | `ML_OCR_LLM_ENABLED` | Tesseract-only reading |
+
+**Ask FlowSight** answers questions about the user's own data with seven
+read-only tools (spending summary, spending by category, top merchants,
+recurring payments, leaks, budget status, goal status). The user id always comes
+from the authenticated session, never from the question or the model. Personal
+identifiers are redacted before any text reaches an external model, and a model
+answer is kept only if every number in it appears in the tool results it cites.
+Write requests are refused. Without a model, keyword intents answer from the
+same tools. The grounding validator and the intent matcher are scored on
+synthetic cases that were written alongside the code, so those scores show no
+regressions on known cases, not quality on real questions. The quality of live
+model answers has not been measured.
+
+**Privacy.** Corrections and recommendation answers are stored as feedback for
+later use. Users can turn personalization off; the personal layer, learned
+merchant rules and personalized ranking then stop using their history. Receipt
+images and the vision pass are the one place an image leaves the backend, and
+that pass is off unless you enable it.
+
+**About the evaluation numbers.** The `eval/` directory holds the scoring
+harness and baselines. The accuracy figures in this README come from those
+runs, and all of them use synthetic data written by the project's author, so
+treat them as upper bounds. No real statements or receipts were scored.
+
+---
+
 ## Product walkthrough
 
 ```
@@ -177,7 +318,7 @@ Create account
 Import transactions   ── CSV (header-detected) or manual entry
       │
       ▼
-Upload receipts       ── image → vision-LLM extraction → amount validation
+Upload receipts       ── image → fused OCR passes → reconciliation → per-field confidence
       │
       ▼
 Review & confirm      ── editable draft; nothing saved until you approve
@@ -302,24 +443,31 @@ flowchart TB
         Repo["Spring Data JPA repositories"]
     end
 
-    DB[("PostgreSQL 16<br/>Flyway V1..V14")]
-    OCR["Receipt OCR microservice<br/>(FastAPI → Groq vision LLM)"]
+    DB[("PostgreSQL 16<br/>Flyway V1..V21")]
+    ML["ml-service (FastAPI)<br/>categorizer · merchant embeddings · recurring scorer<br/>forecaster · OCR"]
+    OCR["Receipt OCR microservice<br/>(optional second opinion)"]
+    LLM["OpenAI-compatible LLM<br/>(optional, off by default)"]
     Mail["Email provider<br/>Gmail SMTP · Brevo · Resend"]
 
     Web -- "HTTPS / JWT" --> Ctrl
     Desktop -- "HTTPS / JWT" --> Ctrl
     Ctrl --> Sec --> Svc --> Repo --> DB
+    Svc -- "bearer token, timeout, circuit breaker<br/>rule-based fallback" --> ML
     Svc -- "multipart upload" --> OCR
+    Svc -- "redacted facts only" --> LLM
     Svc -- "password reset" --> Mail
 ```
+
+ml-service is optional. The backend sends it work only when the matching flag is
+on, and keeps the rule-based path as the fallback for every call.
 
 ### Data flow (ingestion)
 
 ```mermaid
 flowchart LR
     A["CSV / manual / receipt"] --> B["Ingest"]
-    B --> C["Normalize<br/>strip UPI refs, noise"]
-    C --> D["Categorize<br/>keyword + confidence"]
+    B --> C["Resolve merchant<br/>rules · alias · fuzzy · cleaned"]
+    C --> D["Categorize<br/>model + personal layer, rules fallback"]
     D --> E[("Transaction record")]
     E --> F["Analytics"]
     E --> G["Recurring detection"]
@@ -373,16 +521,18 @@ sequenceDiagram
 ```mermaid
 flowchart TB
     U["Upload image"] --> V{"Validate<br/>MIME · magic bytes · size · quota"}
-    V -- "ok" --> ST["Store per-user file"]
-    ST --> P["POST to receipt-ocr service"]
-    P --> LLM["Groq vision LLM<br/>structured extraction"]
-    LLM --> MAP["Map → OcrExtractionResult"]
-    MAP --> AV["Amount validator<br/>line-item cross-check,<br/>label scoring, confidence tier"]
-    AV --> R["Draft returned for review"]
+    V -- "ok" --> ST["Stage original in a temp file"]
+    ST --> X{"ml-service OCR<br/>enabled?"}
+    X -- "yes" --> MLO["Preprocess · Tesseract passes<br/>optional vision pass"]
+    X -- "no / failed" --> TESS["In-image Tesseract<br/>up to 3 passes<br/>(receipt-ocr cross-check if configured)"]
+    MLO --> REC["Reconcile subtotal, taxes, tip,<br/>round-off and payment lines<br/>against the total"]
+    TESS --> REC
+    REC --> AV["Amount validator<br/>per-field confidence and decision"]
+    AV --> KEEP["Keep compact review copy<br/>(no EXIF), delete the original"]
+    KEEP --> R["Draft returned for review"]
     R --> CF{"User confirms?"}
-    CF -- "yes" --> TX[("Transaction saved")]
+    CF -- "yes" --> TX[("Transaction saved<br/>corrections stored as feedback")]
     CF -- "no / edit" --> R
-    P -. "unset or unreachable" .-> TESS["Tesseract fallback (in-image)"] --> MAP
 ```
 
 ### Deployment architecture
@@ -394,12 +544,14 @@ flowchart LR
     end
     subgraph Render
         BE["Spring Boot backend<br/>(Docker · /actuator/health)"]
+        MLS["ml-service (optional)<br/>separate Docker service"]
         PG[("Managed PostgreSQL")]
     end
     Brevo["Brevo email API"]
     GHA["GitHub Actions<br/>keepalive ping"]
     FE -- "HTTPS / JWT" --> BE
     BE --> PG
+    BE -- "private network, bearer token" --> MLS
     BE --> Brevo
     GHA -- "every 10 min" --> BE
 ```
@@ -454,18 +606,29 @@ erDiagram
 | Layer | Choice |
 |---|---|
 | Engine | PostgreSQL 16 |
-| Migrations | Flyway (V1..V14) |
+| Migrations | Flyway (V1..V21); fuzzy merchant matching needs the `pg_trgm` extension |
 | Schema validation | Hibernate `ddl-auto: validate` — migrations are the only schema authority |
 | Isolation | Per-user row ownership enforced in repository queries |
+
+### ML service
+| Layer | Choice |
+|---|---|
+| Framework | FastAPI on Python 3.12, one worker |
+| Models | Categorizer (TF-IDF + logistic regression), merchant n-gram nearest neighbour, recurring scorer (logistic regression), forecaster priors; numpy at inference, no pickle |
+| OCR | OpenCV preprocessing, Tesseract passes, reconciliation, optional vision pass |
+| Model registry | Versioned artifacts on disk under `ML_MODEL_DIR`, with active and shadow status |
+| Training | scikit-learn, kept out of the runtime image (`requirements-train.txt`) |
+| Auth | Bearer token, constant-time compare, fails closed when no token is set |
 
 ### AI / OCR
 | Layer | Choice |
 |---|---|
-| OCR service | FastAPI microservice ([bhimrazy/receipt-ocr](https://github.com/bhimrazy/receipt-ocr), pinned commit) |
+| OCR service (optional) | FastAPI microservice ([bhimrazy/receipt-ocr](https://github.com/bhimrazy/receipt-ocr), pinned commit), now a second opinion that is cross-checked against Tesseract |
 | Model | Vision LLM via Groq (OpenAI-compatible endpoint) |
 | Default model | `meta-llama/llama-4-scout-17b-16e-instruct` |
-| Fallback | In-image Tesseract OCR |
-| Validation | In-process amount validator with line-item cross-check |
+| Fallback | ml-service OCR, then in-image Tesseract OCR |
+| Validation | In-process amount validator and arithmetic reconciliation |
+| Text LLM (optional) | Any OpenAI-compatible endpoint, for narratives, the assistant and rare merchant names; no model name is assumed |
 
 ### Desktop
 | Layer | Choice |
@@ -477,11 +640,11 @@ erDiagram
 ### Infrastructure & deployment
 | Layer | Choice |
 |---|---|
-| Local orchestration | Docker Compose (`postgres`, `backend`, `frontend`, `receipt-ocr`) |
+| Local orchestration | Docker Compose (`postgres`, `backend`, `frontend`, `receipt-ocr`, `ml-service`) |
 | CI | GitHub Actions (backend build/test against Postgres, frontend type-check/lint/build, Docker image builds) |
 | Frontend hosting | Vercel |
-| Backend + DB hosting | Render (Blueprint via `render.yaml`) |
-| Ports (all bound to `127.0.0.1`) | 3007 web · 8080 API · 5433 db · 8001 OCR · 1420 desktop dev |
+| Backend + DB hosting | Render (Blueprint via `render.yaml`); ml-service as its own Docker service |
+| Ports (all bound to `127.0.0.1`) | 3007 web · 8080 API · 5433 db · 8001 OCR · 8002 ml-service · 1420 desktop dev |
 
 ---
 
@@ -500,15 +663,29 @@ flowsight/
 │       │   ├── dto/                 # Request/response shapes
 │       │   ├── analytics/           # Analytics, CSV ingestion, recurring, leaks
 │       │   │   └── simulation/      # Decision simulator engine
-│       │   ├── ocr/                 # OCR client, mapper, amount validator, Tesseract
+│       │   ├── ocr/                 # OCR pipeline, parsers, reconciler, amount validator
+│       │   ├── merchant/            # Merchant resolver cascade and per-user rules
+│       │   ├── ml/                  # ml-service client, feedback, prediction log, forecasting
+│       │   ├── llm/                 # Optional LLM client, grounding validator, redaction
+│       │   ├── assistant/           # Ask FlowSight tools and intents
+│       │   ├── insights/            # Recommendation ranking and feedback
+│       │   ├── storage/             # Receipt review-image store and cleanup
 │       │   ├── reports/             # PDF + intelligence report assembly
 │       │   ├── email/               # Gmail / Brevo / Resend delivery
 │       │   ├── security/            # JWT filter & service, rate limiter, IP resolver
 │       │   ├── config/              # Security, CORS, async, startup env validation
 │       │   ├── exception/           # Domain exceptions + global handler
-│       │   └── util/                # File storage
-│       ├── main/resources/db/migration/   # Flyway V1..V14
+│       │   └── util/                # Shared helpers
+│       ├── main/resources/db/migration/   # Flyway V1..V21
 │       └── test/java/com/flowsight/       # JUnit + Mockito suites
+│
+├── ml-service/                      # FastAPI model service (optional)
+│   ├── Dockerfile                   # Python 3.12 + Tesseract
+│   ├── app/                         # categorizer, merchant_embeddings, recurring_scorer,
+│   │                                #   forecaster, ocr, model registry, auth
+│   └── tests/
+│
+├── eval/                            # Scoring harness, synthetic generators, baselines
 │
 ├── frontend/                        # Next.js 15 web app
 │   ├── Dockerfile                   # standalone output on node:20-alpine
@@ -528,7 +705,7 @@ flowsight/
 │   └── src-tauri/                   # Rust shell: window modes, tray, shortcut
 │
 ├── screenshots/                     # Images used by this README
-├── docker-compose.yml               # Local 4-service stack
+├── docker-compose.yml               # Local 5-service stack
 ├── render.yaml                      # Render Blueprint (backend + Postgres)
 ├── DEPLOYMENT.md                    # Vercel + Render deployment guide
 └── .github/workflows/
@@ -562,7 +739,10 @@ cp .env.example .env
 `POSTGRES_PASSWORD` and `JWT_SECRET` are mandatory — Compose refuses to start
 without the first, and the backend fails fast at startup without the second.
 Generate the secret with `openssl rand -base64 64`. Add `GROQ_API_KEY` if you
-want LLM OCR. See [Environment variables](#environment-variables).
+want LLM OCR. The local stack starts ml-service with its bundled baseline models
+and turns the model features on; `ML_SERVICE_TOKEN` defaults to a local-only
+value. See [Environment variables](#environment-variables) and
+[Machine learning and feature flags](#machine-learning-and-feature-flags).
 
 ### 3. Start the stack
 
@@ -579,6 +759,7 @@ Flyway runs the database migrations automatically on backend startup.
 | Health | http://localhost:8080/actuator/health |
 | Database | localhost:5433 (Postgres) |
 | OCR | http://localhost:8001 |
+| ml-service | http://localhost:8002 (`/health` is open; everything else needs the token) |
 
 ### Running components individually
 
@@ -646,6 +827,31 @@ Backend variables are read by `docker-compose.yml`; the frontend reads only
 | `PASSWORD_RESET_EXPIRATION_MINUTES` | No | Reset-token lifetime | `30` |
 | `PASSWORD_RESET_DEV_EXPOSE_LINK` | No | Dev only: returns the reset link in the API response | `false` |
 | `PORT` | No | Backend listen port (set by the host on Render) | `8080` |
+
+Machine learning, LLM and receipt-image variables (all optional; the backend
+defaults leave every model feature off, while Compose turns the ml-service ones
+on for local development):
+
+| Variable | Where | Purpose | Default |
+|---|---|---|---|
+| `ML_SERVICE_URL` | backend | ml-service address; empty means never call it | empty (Compose: `http://ml-service:8000`) |
+| `ML_SERVICE_TOKEN` | backend, ml-service | Shared bearer token; ml-service rejects everything but `/health` without it | empty (Compose: `local-dev-ml-token`) |
+| `ML_<CAP>_ENABLED` | backend, ml-service | Serve a capability: `CATEGORIZER`, `MERCHANT_EMBEDDINGS`, `RECURRING_SCORER`, `FORECASTER`, `OCR`, `NARRATIVE` | `false` |
+| `ML_<CAP>_SHADOW` | backend, ml-service | Serve rules, log the model's answer | `false` |
+| `ML_<CAP>_TIMEOUT` | backend | Wait before falling back to rules | `400ms` (`60s` for OCR) |
+| `ML_CONNECT_TIMEOUT` / `ML_CIRCUIT_FAILURE_THRESHOLD` / `ML_CIRCUIT_OPEN_DURATION` | backend | ml-service client limits | `250ms` / `5` / `30s` |
+| `ML_MODEL_DIR` | ml-service | Model artifact directory | `/models` in the image |
+| `ML_BOOTSTRAP` | ml-service | Register bundled baseline models for capabilities the registry has not seen | `true` |
+| `ML_OCR_LLM_ENABLED` / `ML_OCR_LLM_MODEL` / `ML_OCR_LLM_URL` / `ML_OCR_LLM_API_KEY` / `ML_OCR_LLM_TIMEOUT` | ml-service | Optional vision pass for OCR; no model name is assumed | off / empty / Groq URL / `GROQ_API_KEY` / `20` s |
+| `LLM_ENABLED` / `LLM_MODEL` / `LLM_BASE_URL` / `LLM_API_KEY` | backend | Narratives and the Ask FlowSight model path | `false` / empty / Groq URL / `GROQ_API_KEY` |
+| `LLM_CONNECT_TIMEOUT_MS` / `LLM_TIMEOUT_MS` | backend | LLM request bounds | `2000` / `8000` |
+| `ASSISTANT_RATE_LIMIT_PER_HOUR` | backend | Questions per user per hour | `30` |
+| `MERCHANT_LLM_ENABLED` / `MERCHANT_LLM_MODEL` / `MERCHANT_LLM_URL` / `MERCHANT_LLM_TIMEOUT_MS` | backend | LLM step of the merchant resolver | `false` / empty / Groq URL / `3000` |
+| `MERCHANT_EMBEDDING_MIN_SIMILARITY` | backend | Floor for an ml-service merchant neighbour | `0.75` |
+| `GROQ_MERCHANT_MODEL` | backend | Preferred text models for ambiguous receipt merchants | `openai/gpt-oss-20b,llama-3.1-8b-instant` |
+| `OCR_TESSERACT_LANGUAGES` | backend | Tesseract language packs in the backend image | `eng` |
+| `RECEIPT_IMAGE_STORE` / `RECEIPT_IMAGE_MAX_LONG_SIDE` / `RECEIPT_IMAGE_JPEG_QUALITY` | backend | Review-image store, size and quality | `local` / `2000` / `0.8` |
+| `RECEIPT_IMAGE_DRAFT_RETENTION` / `RECEIPT_IMAGE_REVIEWED_RETENTION` / `RECEIPT_IMAGE_CLEANUP_INTERVAL` | backend | How long review images are kept | `P7D` / `PT24H` / `PT1H` |
 
 \* Provided automatically by Docker Compose in local development.
 \*\* Without it, the OCR microservice cannot reach Groq and the backend falls back
@@ -724,13 +930,16 @@ the `ADMIN` role.
 | Group | Base path | Highlights |
 |---|---|---|
 | Auth | `/auth` | `register`, `login`, `refresh`, `logout`, `forgot-password`, `reset-password` (public); `me` |
-| Transactions | `/transactions` | CRUD, `POST /import/csv` bulk import |
-| Receipts | `/receipts` | `POST /upload`, list, `POST /{id}/confirm`, delete |
+| Transactions | `/transactions` | CRUD, `POST /import/csv` bulk import, `GET /review-queue` |
+| Merchant rules | `/merchant-rules` | List, delete, `POST /{id}/preview`, `POST /{id}/apply` |
+| Receipts | `/receipts` | `POST /upload`, list, `GET /{id}/image`, `POST /{id}/confirm`, delete |
 | Analytics | `/analytics` | `overview`, `trend`, `activity-bounds` |
-| Insights | `/insights` | Behavioral profile, patterns, recommendations, consequences |
-| Leaks | `/leaks` | Ranked leak findings with recoverable amounts |
+| Forecast | `/forecast` | `GET ?months=1..6` with intervals per series |
+| Insights | `/insights` | Behavioral profile, patterns, recommendations, consequences; `POST /recommendations/{id}/accept` and `/dismiss` |
+| Assistant | `/assistant` | `POST /ask`, grounded answers with citations (rate limited) |
+| Leaks | `/leaks` | Ranked leak findings with recoverable amounts and evidence |
 | Recurring | `/recurring` | List, `POST /detect`, `confirm`, `unconfirm`, dismiss, `restore` |
-| Simulation | `/simulate` | `POST` scenario projection, `GET /flexibility` |
+| Simulation | `/simulate` | `POST` scenario projection with Monte Carlo fan, `GET /flexibility` |
 | Budgets | `/budgets` | Per-category and overall budgets with summaries |
 | Goals | `/goals` | Savings goals, `contribute`, `complete`, `abandon` |
 | Reports | `/reports` | `transactions.csv`, `monthly`, `tax-summary` |
@@ -766,7 +975,15 @@ the `ADMIN` role.
   are neutralized so exports cannot execute as spreadsheet formulas (CWE-1236).
 - **Rate limiting** — fixed-window counters in Postgres, shared across instances
   and surviving restarts: auth 5/min/IP, uploads 30/hour/user, password-reset
-  requests 5/hour/IP, reset confirmations 10/hour/IP.
+  requests 5/hour/IP, reset confirmations 10/hour/IP, assistant questions
+  30/hour/user, review images 60/min/user, simulations 120/min/user.
+- **ml-service**: bearer token with constant-time comparison that fails closed
+  when unset, model files loaded without pickle, an image-size cap before
+  decoding uploads, and no public route other than `/health`. Production must
+  set a real `ML_SERVICE_TOKEN` and keep the port private.
+- **Privacy**: personal identifiers are redacted before text goes to an
+  external LLM, LLM answers must cite tool results and contain only numbers from
+  them, and receipt images are re-encoded without EXIF and deleted on a schedule.
 - **HTTP hardening** — `Content-Security-Policy: default-src 'none'`,
   `frame-ancestors 'none'`, HSTS over HTTPS, `X-Frame-Options: DENY`,
   `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
@@ -788,12 +1005,16 @@ The frontend deploys to Vercel and the backend plus database to Render via the
 environment variables to set in each dashboard, and post-deploy verification
 steps.
 
-Two deployment notes worth knowing up front:
+Deployment notes worth knowing up front:
 
 - Render blocks outbound SMTP on entry tiers, so production email uses the Brevo
   HTTPS API (`EMAIL_PROVIDER=brevo`). Gmail SMTP works locally.
-- Uploaded receipt images live on the container filesystem, which is ephemeral on
-  Render. They are lost on every deploy or restart until object storage lands.
+- ml-service deploys as its own Docker service and is optional. The backend
+  works without it, and every model feature is off until its flag is set.
+- Migrations V15 to V21 are additive, and V16 needs the `pg_trgm` extension.
+- Receipt images are a short-lived review copy on the container filesystem,
+  which is ephemeral on Render. A redeploy can remove them early; the review
+  page then says the image is no longer available.
 
 ---
 
@@ -803,9 +1024,16 @@ Two deployment notes worth knowing up front:
 - Authentication, refresh-token rotation and revocation, password reset
 - CSV + manual transaction ingestion with header-driven column mapping and
   balance reconstruction
-- Receipt OCR with amount validation and review-first confirmation
-- Analytics, behavioral insights, recurring detection, leak detection
-- Decision simulator, budgets, and goals
+- Receipt OCR with fused passes, reconciliation, per-field confidence and
+  review-first confirmation
+- Model-backed categorization with a personal layer, merchant resolver with
+  per-user rules, and a learned recurring-payment scorer, all behind flags with
+  rule-based fallbacks
+- Forecast with intervals, forecast-based budget pace, Monte Carlo decision
+  simulator
+- Analytics, behavioral insights, leak detection with evidence
+- Optional grounded narratives and the Ask FlowSight assistant
+- Budgets and goals
 - Narrative PDF reports, tax-deduction surfacing (80C/80D/80E), CSV export
 - Receipt quota, audit log, shared Postgres-backed rate limiting
 - Security hardening: HTTP headers, startup env validation, upload sniffing,
@@ -816,10 +1044,16 @@ Two deployment notes worth knowing up front:
 **In progress**
 - Broader bank statement header coverage
 - Rolling the AI-signals design language across the remaining dashboard surfaces
+- Measuring the models on real statements and receipts; every figure so far is
+  synthetic
+- A simulator fan chart and a screen to manage merchant rules in the web app
+  (the API and types exist; the fan chart is not rendered yet)
 
 **Planned**
 - Move tokens from `localStorage` to httpOnly cookies with CSRF handling
-- Cloud receipt storage with signed URLs (uploads are currently ephemeral)
+- Cloud receipt storage with signed URLs (review images are on local disk, which
+  is ephemeral on Render)
+- Retraining from stored user feedback (it is recorded, but no job uses it yet)
 - Bank SMS ingestion (the `SMS` transaction source exists; parsing is not built)
 - Operational monitoring (metrics, traces, structured logs)
 - Multi-account households
