@@ -1,4 +1,5 @@
 @import "../../frontend/app/tokens.css";
+@import "../../frontend/app/motion.css";
 
 @tailwind base;
 @tailwind components;

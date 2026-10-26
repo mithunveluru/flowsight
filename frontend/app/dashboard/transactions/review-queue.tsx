@@ -5,7 +5,7 @@ import { Loader2, PartyPopper } from "lucide-react";
 import { useAnnounce } from "@/components/ui/announcer";
 import { formatProbability } from "@/components/ui/confidence";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
-import { ListItem, ListMotion } from "@/features/shell-pages/list-motion";
+import { ListItem, ListMotion } from "@/components/motion/list";
 import { RuleSuggestionCard } from "@/features/merchants/rule-suggestion";
 import { CategoryDot, CategorySignalChip } from "@/features/transactions/category-ui";
 import { formatMoney } from "@/features/transactions/currency";

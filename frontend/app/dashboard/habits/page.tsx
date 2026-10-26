@@ -212,7 +212,7 @@ function RecommendationsSection({ recommendations }: { recommendations: Recommen
   return (
     <section>
       <SectionHead title="Recommendations" lead="Actionable steps ranked by impact" />
-      <Stagger className="space-y-sp-wide" stagger={0.05}>
+      <Stagger className="space-y-sp-wide">
         {recommendations.map((r, i) => (
           <StaggerItem key={r.id ?? i}>
             <RecommendationCard recommendation={r} />
@@ -312,7 +312,7 @@ function ConsequencesSection({ consequences }: { consequences: ConsequenceProjec
   return (
     <ContentBand tone="blue">
       <SectionHead title="The long view" lead="What your recurring choices actually cost over time" />
-      <Stagger className="space-y-sp-wide" stagger={0.05}>
+      <Stagger className="space-y-sp-wide">
         {consequences.map((c, i) => (
           <StaggerItem key={i}>
             <ConsequenceCard projection={c} />

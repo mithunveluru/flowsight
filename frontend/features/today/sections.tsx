@@ -23,7 +23,7 @@ import { useRecentReceipts } from "@/features/receipts/hooks";
 import { useRecurring } from "@/features/recurring/hooks";
 import { useTransactions, useUncategorizedCount } from "@/features/transactions/hooks";
 import { monthToDate } from "@/features/query-core";
-import { ListItem, ListMotion } from "@/features/shell-pages/list-motion";
+import { ListItem, ListMotion } from "@/components/motion/list";
 import { TABLE_LOOK } from "@/features/shell-pages/table-look";
 import { cn } from "@/lib/utils";
 import {

@@ -1,0 +1,70 @@
+/* Entrance motion in plain CSS so it runs on server-rendered markup, before hydration.
+   Fill is "backwards": a finished transform animation must not stay attached and trap fixed descendants. */
+.fx-rise {
+  animation: fx-rise var(--fx-dur, var(--duration-base)) var(--ease-standard) var(--fx-delay, 0ms) backwards;
+}
+@keyframes fx-rise {
+  from { opacity: 0; transform: translate3d(0, var(--fx-y, 8px), 0); }
+}
+@keyframes fx-fade {
+  from { opacity: 0; }
+}
+
+.fx-reveal {
+  opacity: 0;
+  transform: translate3d(0, var(--fx-y, 8px), 0);
+  transition:
+    opacity var(--fx-dur, var(--duration-reveal)) var(--ease-standard) var(--fx-delay, 0ms),
+    transform var(--fx-dur, var(--duration-reveal)) var(--ease-standard) var(--fx-delay, 0ms);
+}
+.fx-reveal[data-in] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Wipe: the wrapper is observed, its single child is clipped, so the observer still sees the wrapper. */
+.fx-wipe > * {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--fx-dur, var(--duration-reveal)) var(--ease-standard) var(--fx-delay, 0ms);
+}
+.fx-wipe[data-in] > * { clip-path: inset(0 0 0 0); }
+
+.fx-stagger > .fx-rise { --fx-delay: 40ms; }
+.fx-stagger > .fx-rise:nth-child(2) { --fx-delay: 100ms; }
+.fx-stagger > .fx-rise:nth-child(3) { --fx-delay: 160ms; }
+.fx-stagger > .fx-rise:nth-child(4) { --fx-delay: 220ms; }
+.fx-stagger > .fx-rise:nth-child(5) { --fx-delay: 280ms; }
+.fx-stagger > .fx-rise:nth-child(6) { --fx-delay: 340ms; }
+.fx-stagger > .fx-rise:nth-child(7) { --fx-delay: 400ms; }
+.fx-stagger > .fx-rise:nth-child(8) { --fx-delay: 460ms; }
+.fx-stagger > .fx-rise:nth-child(9) { --fx-delay: 520ms; }
+.fx-stagger > .fx-rise:nth-child(10) { --fx-delay: 580ms; }
+.fx-stagger > .fx-rise:nth-child(11) { --fx-delay: 640ms; }
+.fx-stagger > .fx-rise:nth-child(12) { --fx-delay: 700ms; }
+
+/* Scale comes from the individual property, so it never replaces the transform that centres a dialog. */
+.fx-pop[data-state="open"] { animation: fx-pop-in var(--duration-base) var(--ease-standard); }
+.fx-pop[data-state="closed"] { animation: fx-pop-out var(--duration-fast) var(--ease-exit) forwards; }
+@keyframes fx-pop-in {
+  from { opacity: 0; scale: 0.98; }
+}
+@keyframes fx-pop-out {
+  to { opacity: 0; scale: 0.98; }
+}
+
+/* Needs pathLength="1" on the path. */
+.fx-draw {
+  stroke-dasharray: 1;
+  animation: fx-draw var(--fx-dur, var(--duration-draw)) var(--ease-standard) var(--fx-delay, 0ms) backwards;
+}
+@keyframes fx-draw {
+  from { stroke-dashoffset: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rise { animation-name: fx-fade; animation-delay: 0ms; }
+  .fx-reveal { transform: none; transition-delay: 0ms; }
+  .fx-wipe > * { clip-path: none; transition: none; }
+  .fx-draw { animation: none; }
+  .fx-pop[data-state] { animation: none; }
+}

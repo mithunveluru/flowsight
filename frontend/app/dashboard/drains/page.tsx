@@ -77,7 +77,7 @@ export default function LeaksPage() {
                 What we found
                 <span className="ml-sp-sm text-ty-link font-normal text-ink-meta">{data.totalLeaksFound}</span>
               </h2>
-              <Stagger className="space-y-sp-wide" stagger={0.05}>
+              <Stagger className="space-y-sp-wide">
                 {data.leaks.map((leak, i) => (
                   <StaggerItem key={`${leak.type}-${i}`}>
                     <LeakCard leak={leak} />

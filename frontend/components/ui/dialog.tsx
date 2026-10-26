@@ -55,9 +55,7 @@ const DialogContent = React.forwardRef<
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
         "max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground sm:p-sp-max",
-        "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[.98] data-[state=open]:duration-base",
-        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[.98] data-[state=closed]:duration-fast",
-        "motion-reduce:animate-none",
+        "fx-pop",
         className
       )}
       {...props}

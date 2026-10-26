@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { animate, useInView, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import { DURATION } from "@/components/motion/primitives";
 import { EASE_STANDARD } from "@/components/motion/tokens";
+import { cubicBezier, tween } from "@/components/motion/tween";
+import { useInViewOnce } from "@/components/motion/use-in-view";
 import { ChartSkeleton } from "@/components/ui/chart-frame";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
 import { blend, type MarkerShape } from "./chart-core";
+
+const standard = cubicBezier(...EASE_STANDARD);
 
 export function useWidth<T extends HTMLElement>() {
   const ref = React.useRef<T>(null);
@@ -26,7 +30,7 @@ export function useWidth<T extends HTMLElement>() {
 /** True once the element has been on screen; charts draw in from that moment. */
 export function useSeen<T extends Element>() {
   const ref = React.useRef<T>(null);
-  const seen = useInView(ref, { once: true, amount: 0.25 });
+  const seen = useInViewOnce(ref);
   return [ref, seen] as const;
 }
 
@@ -48,16 +52,11 @@ export function useMorph(target: number[]): number[] {
       setShown(target);
       return;
     }
-    const controls = animate(0, 1, {
-      duration: DURATION.slow,
-      ease: EASE_STANDARD,
-      onUpdate: (t) => {
-        const next = blend(from, target, t);
-        current.current = next;
-        setShown(next);
-      },
+    return tween(DURATION.slow, standard, (t) => {
+      const next = blend(from, target, t);
+      current.current = next;
+      setShown(next);
     });
-    return () => controls.stop();
   }, [target, reduced]);
 
   return shown;

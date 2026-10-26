@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { m, useInView, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 import { DURATION } from "@/components/motion/primitives";
 import { EASE_STANDARD } from "@/components/motion/tokens";
+import { useInViewOnce } from "@/components/motion/use-in-view";
 import { cn } from "@/lib/utils";
 
 export type ProgressTone = "primary" | "navy" | "warning";
@@ -38,7 +39,7 @@ export function ProgressBar({
   children?: React.ReactNode;
 }) {
   const ref = React.useRef<HTMLDivElement>(null);
-  const seen = useInView(ref, { once: true, amount: 0.5 });
+  const seen = useInViewOnce(ref);
   const reduced = useReducedMotion();
   const pct = Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
   const target = seen ? pct / 100 : reduced ? pct / 100 : 0;

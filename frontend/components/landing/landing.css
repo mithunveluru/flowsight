@@ -89,32 +89,6 @@
   to { stroke-dashoffset: 0; }
 }
 
-/* below the fold: hidden only once the script that reveals them is running */
-[data-reveal-ready] [data-reveal] {
-  opacity: 0;
-  transform: translate3d(0, 16px, 0);
-  transition:
-    opacity var(--duration-reveal) var(--ease-standard),
-    transform var(--duration-reveal) var(--ease-standard),
-    clip-path var(--duration-reveal) var(--ease-standard);
-  transition-delay: calc(var(--i, 0) * 60ms);
-}
-/* the wrapper stays unclipped so the observer can see it; its children wipe in */
-[data-reveal-ready] [data-reveal="wipe"] {
-  opacity: 1;
-  transform: none;
-}
-[data-reveal-ready] [data-reveal="wipe"] > * {
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path var(--duration-reveal) var(--ease-standard);
-}
-[data-reveal-ready] [data-reveal="wipe"].is-in > * { clip-path: inset(0 0 0 0); }
-[data-reveal-ready] [data-reveal].is-in {
-  opacity: 1;
-  transform: none;
-  clip-path: inset(0 0 0 0);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lp-hero::before,
   .lp-hero::after,
@@ -126,6 +100,4 @@
   .lp-draw,
   .lp-gauge { animation: none; opacity: 1; transform: none; clip-path: none; stroke-dashoffset: 0; }
   .lp-par { transform: none; will-change: auto; }
-  [data-reveal-ready] [data-reveal],
-  [data-reveal-ready] [data-reveal="wipe"] > * { opacity: 1; transform: none; clip-path: none; transition: none; }
 }

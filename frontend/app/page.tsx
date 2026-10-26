@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { TextLink } from "@/components/ui/text-link";
 import { Logo } from "@/components/layout/logo";
 import { HeroArt } from "@/components/landing/hero-art";
-import { LazyEffects } from "@/components/landing/lazy-effects";
+import { Reveal } from "@/components/motion/css-motion";
 import "@/components/landing/landing.css";
 
 const navLinks = [
@@ -104,66 +104,66 @@ export default function Home() {
       </Band>
 
       <Band tone="canvas" id="features" space="xl">
-        <div data-reveal="wipe" className="max-w-2xl">
+        <Reveal wipe className="max-w-2xl">
           <h2 className="text-ty-section-title text-ink">A clearer layer on top of your finances</h2>
           <p className="mt-sp-wide text-ty-body-lg text-ink-lead">
             From everyday spending to a picture you can act on, in one place.
           </p>
-        </div>
+        </Reveal>
         <ul className="mt-sp-hero grid gap-x-sp-hero gap-y-sp-hero sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
-            <li key={feature.title} data-reveal style={{ "--i": i % 3 } as React.CSSProperties}>
+            <Reveal as="li" key={feature.title} delay={(i % 3) * 0.06}>
               <feature.icon className="h-7 w-7 text-primary" strokeWidth={1.5} aria-hidden="true" />
               <h3 className="mt-sp-wide text-ty-subhead text-ink">{feature.title}</h3>
               <p className="mt-sp-sm text-ty-body text-ink-list">{feature.description}</p>
-            </li>
+            </Reveal>
           ))}
         </ul>
       </Band>
 
       <Band tone="lavender" curved id="how-it-works" space="xl">
-        <div data-reveal="wipe" className="max-w-2xl">
+        <Reveal wipe className="max-w-2xl">
           <h2 className="text-ty-section-title text-ink">From data to decisions in minutes</h2>
           <p className="mt-sp-wide text-ty-body-lg text-ink-lead">Three steps to a clearer view of your finances.</p>
-        </div>
+        </Reveal>
         <ol className="mt-sp-hero grid gap-sp-hero md:grid-cols-3">
           {steps.map((step, i) => (
-            <li key={step.title} data-reveal style={{ "--i": i } as React.CSSProperties}>
+            <Reveal as="li" key={step.title} delay={i * 0.06}>
               <span className="text-ty-section-title text-primary" aria-hidden="true">
                 {i + 1}
               </span>
               <h3 className="mt-sp-sm text-ty-subhead text-ink">{step.title}</h3>
               <p className="mt-sp-sm text-ty-body text-ink-list">{step.description}</p>
-            </li>
+            </Reveal>
           ))}
         </ol>
       </Band>
 
       <Band tone="canvas" id="security" space="xl">
         <div className="grid gap-sp-hero lg:grid-cols-2 lg:gap-sp-page">
-          <div data-reveal="wipe">
+          <Reveal wipe>
             <h2 className="text-ty-section-title text-ink">Built around your privacy</h2>
             <p className="mt-sp-wide text-ty-body-lg text-ink-lead">
               FlowSight is private by design. We never ask for your banking login, never connect directly to your bank,
               and never share or sell your data.
             </p>
-          </div>
+          </Reveal>
           <ul className="grid gap-sp-wide sm:grid-cols-2">
             {trustPoints.map((point, i) => (
-              <li
+              <Reveal
+                as="li"
                 key={point}
-                data-reveal
-                style={{ "--i": i % 2 } as React.CSSProperties}
+                delay={(i % 2) * 0.06}
                 className="flex items-start gap-sp-lg text-ty-body text-ink-list"
               >
                 <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-positive" strokeWidth={1.75} aria-hidden="true" />
                 {point}
-              </li>
+              </Reveal>
             ))}
           </ul>
         </div>
 
-        <div data-reveal className="mt-sp-page flex flex-wrap items-center justify-between gap-sp-giant">
+        <Reveal className="mt-sp-page flex flex-wrap items-center justify-between gap-sp-giant">
           <div className="max-w-xl">
             <h2 className="text-ty-section-title text-ink">Ready to see your finances clearly?</h2>
             <p className="mt-sp-sm text-ty-body-lg text-ink-lead">Start free. No credit card needed.</p>
@@ -174,7 +174,7 @@ export default function Home() {
               <ArrowRight />
             </Link>
           </Button>
-        </div>
+        </Reveal>
       </Band>
 
       <Band as="footer" tone="band" space="md">
@@ -191,7 +191,6 @@ export default function Home() {
         </div>
       </Band>
 
-      <LazyEffects />
     </div>
   );
 }

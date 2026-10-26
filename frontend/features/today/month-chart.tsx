@@ -1,8 +1,9 @@
 "use client";
 
-import { m, useInView, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 import { useRef } from "react";
 import { DURATION, EASE_STANDARD } from "@/components/motion/primitives";
+import { useInViewOnce } from "@/components/motion/use-in-view";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatRupees } from "./logic";
 
@@ -18,7 +19,7 @@ const compact = (v: number) => (v >= 1000 ? `₹${Math.round(v / 1000)}k` : `₹
 // Loaded with next/dynamic so recharts stays out of the Today bundle.
 export default function MonthChart({ data, typical }: { data: MonthBar[]; typical?: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.3 });
+  const inView = useInViewOnce(ref);
   const reduced = useReducedMotion();
   const hidden = "inset(100% 0 0 0)";
   // clip-path wipe from the baseline up: the bars rise without animating any SVG geometry; the observer sits on

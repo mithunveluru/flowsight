@@ -167,7 +167,7 @@ export default function SimulatePage() {
             )}
 
             {result ? (
-              <Stagger className="space-y-sp-max" stagger={0.06}>
+              <Stagger className="space-y-sp-max">
                 <StaggerItem><ImpactSummary result={result} /></StaggerItem>
                 {result.monteCarlo && (
                   <StaggerItem><FanCard mc={result.monteCarlo} assumptions={result.assumptions} /></StaggerItem>
