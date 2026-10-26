@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CornerDownLeft, Monitor, Moon, Search, Settings, Sun } from "lucide-react";
+import { CornerDownLeft, Monitor, Moon, Search, Settings, Sparkles, Sun } from "lucide-react";
+import { useAssistant } from "@/components/assistant/assistant-context";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useTheme } from "@/components/ui/theme";
 import type { ThemePreference } from "@/components/ui/theme-core";
@@ -17,6 +18,7 @@ interface Command {
   section: string;
   href?: string;
   theme?: ThemePreference;
+  assistant?: boolean;
 }
 
 const THEMES: { value: ThemePreference; label: string; icon: React.ElementType }[] = [
@@ -27,6 +29,7 @@ const THEMES: { value: ThemePreference; label: string; icon: React.ElementType }
 
 // capture first, then every destination, then appearance
 const allCommands: Command[] = [
+  { id: "assistant", label: "Ask FlowSight", hint: "Questions about your spending", icon: Sparkles, assistant: true, section: "Assistant" },
   ...captureActions.map((a) => ({ id: `capture:${a.href}`, label: a.label, hint: a.hint, icon: a.icon, href: a.href, section: "Capture" })),
   ...navSections.flatMap((s) =>
     s.items
@@ -49,6 +52,7 @@ function filterCommands<T extends { label: string; hint?: string; section: strin
 export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const { preference, setPreference } = useTheme();
+  const assistant = useAssistant();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -70,7 +74,8 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
 
   const run = (cmd: Command) => {
     onClose();
-    if (cmd.theme) setPreference(cmd.theme);
+    if (cmd.assistant) assistant.setOpen(true);
+    else if (cmd.theme) setPreference(cmd.theme);
     else if (cmd.href) router.push(cmd.href);
   };
 

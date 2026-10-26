@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, Search } from "lucide-react";
+import { ChevronRight, Menu, Search, Sparkles } from "lucide-react";
 import { CaptureMenu } from "./capture-menu";
 import { locate } from "./nav";
 
@@ -10,10 +10,12 @@ interface HeaderProps {
   showCapture?: boolean;
   onOpenNav?: () => void;
   onOpenSearch?: () => void;
+  onOpenAssistant?: () => void;
+  assistantOpen?: boolean;
 }
 
 // The page's own h1 names it; the header only shows where it sits.
-export function Header({ showCapture = true, onOpenNav, onOpenSearch }: HeaderProps) {
+export function Header({ showCapture = true, onOpenNav, onOpenSearch, onOpenAssistant, assistantOpen }: HeaderProps) {
   const place = locate(usePathname());
 
   return (
@@ -54,6 +56,18 @@ export function Header({ showCapture = true, onOpenNav, onOpenSearch }: HeaderPr
           <Search className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} aria-hidden="true" />
           <span className="hidden md:inline">Search</span>
           <kbd className="kbd-hint ml-1 hidden md:inline-flex">⌘K</kbd>
+        </button>
+        <button
+          type="button"
+          onClick={onOpenAssistant}
+          aria-label="Ask FlowSight"
+          aria-expanded={!!assistantOpen}
+          aria-keyshortcuts="Control+J Meta+J"
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+        >
+          <Sparkles className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} aria-hidden="true" />
+          <span className="hidden md:inline">Ask</span>
+          <kbd className="kbd-hint ml-1 hidden md:inline-flex">⌘J</kbd>
         </button>
         {showCapture && (
           <>

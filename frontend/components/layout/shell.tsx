@@ -7,8 +7,19 @@ import { Header } from "./header";
 import { CommandMenu } from "./command-menu";
 import { SampleDataBanner } from "./sample-data-banner";
 import { accentForPath } from "./nav";
+import { AssistantProvider, useAssistant } from "@/components/assistant/assistant-context";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 
 export function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <AssistantProvider>
+      <ShellFrame>{children}</ShellFrame>
+    </AssistantProvider>
+  );
+}
+
+function ShellFrame({ children }: { children: React.ReactNode }) {
+  const assistant = useAssistant();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -18,11 +29,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setCommandOpen((v) => !v);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        assistant.toggle();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [assistant]);
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
@@ -40,6 +54,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           showCapture={pathname !== "/dashboard"}
           onOpenNav={() => setNavOpen(true)}
           onOpenSearch={() => setCommandOpen(true)}
+          onOpenAssistant={assistant.toggle}
+          assistantOpen={assistant.open}
         />
         <main
           id="main-content"
@@ -51,6 +67,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-12">{children}</div>
         </main>
       </div>
+      <AssistantPanel />
     </div>
   );
 }
