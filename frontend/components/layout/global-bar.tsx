@@ -65,12 +65,12 @@ export function GlobalBar({ onOpenNav, onOpenSearch, onOpenAssistant, assistantO
         <button
           type="button"
           onClick={onOpenSearch}
-          aria-label="Search and commands"
           aria-keyshortcuts="Control+K Meta+K"
           className="press inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10 md:w-64 md:justify-start md:border md:border-input md:bg-canvas md:text-muted-foreground md:hover:bg-canvas md:hover:border-ink"
         >
           <Search className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-          <span className="hidden flex-1 text-left md:inline">Search</span>
+          <span className="sr-only">Search and commands</span>
+          <span aria-hidden="true" className="hidden flex-1 text-left md:inline">Search</span>
           <kbd className="kbd-hint hidden md:inline-flex" aria-hidden="true">
             {searchKeys}
           </kbd>
@@ -79,13 +79,12 @@ export function GlobalBar({ onOpenNav, onOpenSearch, onOpenAssistant, assistantO
         <button
           type="button"
           onClick={onOpenAssistant}
-          aria-label="Ask FlowSight"
           aria-expanded={assistantOpen}
           aria-keyshortcuts="Control+J Meta+J"
           className="press inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10"
         >
           <Sparkles className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
-          <span className="hidden md:inline">Ask</span>
+          <span className="sr-only lg:not-sr-only">Ask FlowSight</span>
           <kbd className="kbd-hint hidden lg:inline-flex" aria-hidden="true">
             {askKeys}
           </kbd>
@@ -147,7 +146,6 @@ function AccountMenu() {
       <MenuTrigger asChild>
         <button
           type="button"
-          aria-label="Account menu"
           className="press inline-flex h-11 w-11 items-center justify-center rounded-md hover:bg-band-blue"
         >
           <span
@@ -156,6 +154,7 @@ function AccountMenu() {
           >
             {initials}
           </span>
+          <span className="sr-only">Account menu</span>
         </button>
       </MenuTrigger>
       <MenuContent>
