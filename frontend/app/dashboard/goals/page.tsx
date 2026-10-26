@@ -73,6 +73,8 @@ export default function GoalsPage() {
   const [editing,  setEditing]  = useState<Goal | null>(null);
   const [formKey,  setFormKey]  = useState(0);
   const [contributingId, setContributingId] = useState<string | null>(null);
+  // remount when opening so the form resets, never on close, so the drawer can animate out
+  const [contributeKey, setContributeKey] = useState(0);
 
   const load = async () => {
     await query.refetch();
@@ -165,7 +167,7 @@ export default function GoalsPage() {
                     net={forecast.data?.net}
                     onEdit={() => openForm(g)}
                     onDelete={() => handleDelete(g.id)}
-                    onContribute={() => setContributingId(g.id)}
+                    onContribute={() => { setContributeKey((k) => k + 1); setContributingId(g.id); }}
                   />
                 ))}
               </ul>
@@ -199,7 +201,7 @@ export default function GoalsPage() {
       />
 
       <ContributeDrawer
-        key={`contrib-${contributingId ?? "none"}`}
+        key={`contrib-${contributeKey}`}
         goalId={contributingId}
         onClose={() => setContributingId(null)}
         onSaved={async () => { setContributingId(null); await load(); }}
