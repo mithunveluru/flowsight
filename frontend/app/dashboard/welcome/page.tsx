@@ -133,7 +133,7 @@ function PathCard({
           {icon}
         </span>
         {badge && (
-          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">{badge}</span>
+          <span className="rounded-sm bg-brand-soft px-2 py-0.5 text-2xs font-medium text-brand">{badge}</span>
         )}
       </div>
       <h2 className="mt-4 text-title">{title}</h2>
