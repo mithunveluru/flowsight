@@ -7,7 +7,7 @@ import { Band, HeroBand } from "@/components/ui/band";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { TabPanel, Tabs } from "@/components/ui/tabs";
 import { TextLink } from "@/components/ui/text-link";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast-store";
 import { useAnnounce, LiveRegion } from "@/components/ui/announcer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

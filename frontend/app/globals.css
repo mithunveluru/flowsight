@@ -57,7 +57,7 @@
   /* Dense table tier: the subhead role scaled to 14px over caption cells. */
   table { @apply w-full text-sm; }
   thead tr {
-    @apply border-b border-border;
+    @apply border-b border-hairline;
     background-color: transparent;
   }
   thead th {

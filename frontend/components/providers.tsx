@@ -1,14 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionRoot } from "@/components/motion/primitives";
 import { AnnouncerProvider } from "@/components/ui/announcer";
-import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/ui/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { STALE_TIME_MS, shouldRetryQuery } from "@/features/query-core";
 import { useAuthStore } from "@/store/auth";
+
+// Radix toast is only needed once something has been shown, so it stays out of the first load.
+const Toaster = dynamic(() => import("@/components/ui/toast").then((mod) => mod.Toaster), { ssr: false });
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(

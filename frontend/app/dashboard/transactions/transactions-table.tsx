@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAnnounce } from "@/components/ui/announcer";
 import { RuleSuggestionCard } from "@/features/merchants/rule-suggestion";
 import { takeNewTransaction } from "@/features/transactions/new-row";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast-store";
 import { transactionApi } from "@/features/transactions/api";
 import { CategoryPicker, CategorySignalChip } from "@/features/transactions/category-ui";
 import { formatMoney } from "@/features/transactions/currency";

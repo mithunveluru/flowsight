@@ -66,7 +66,7 @@ export function ConfidenceBadge({
   );
 }
 
-// StatusMarker: calm alternative to a status pill (dot + uppercase label).
+// StatusMarker: calm alternative to a status pill (dot + label).
 export function StatusMarker({
   label,
   color,
@@ -90,7 +90,7 @@ export function StatusMarker({
   );
 }
 
-// SignalCard: container for a single inferred finding, with a left severity rail.
+// SignalCard: container for a single inferred finding; severity shows as the dot and a spoken label.
 export function SignalCard({
   severity = "LOW",
   icon,
@@ -114,17 +114,11 @@ export function SignalCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md pl-5 pr-5 py-5",
+        "rounded-md p-5",
         interactive ? "card-tactile" : "card-refined",
         className
       )}
     >
-      {/* Severity rail */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ background: `hsl(${fg})`, opacity: 0.9 }}
-      />
       <div className="flex items-start gap-3.5">
         {icon && (
           <span
@@ -137,8 +131,9 @@ export function SignalCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <p className="text-sm font-semibold text-foreground leading-snug">{title}</p>
+              <p className="text-sm font-medium text-foreground leading-snug">{title}</p>
               <SignalDot severity={severity} className="mt-px" />
+              <span className="sr-only">{SEVERITY_TOKEN[severity].label}</span>
             </div>
             {metric && <div className="shrink-0 text-right">{metric}</div>}
           </div>
@@ -234,7 +229,7 @@ export function ForecastCell({
     <div className="px-5 py-3.5" style={{ borderColor: "hsl(var(--border))" }}>
       <p className="text-2xs font-medium text-muted-foreground">{label}</p>
       <p
-        className="mt-1 text-base font-semibold tabular-nums"
+        className="mt-1 text-base font-medium tabular-nums"
         style={accent ? { color: "hsl(var(--signal))" } : { color: "hsl(var(--foreground))" }}
       >
         {value}
@@ -262,7 +257,7 @@ export function SignalSectionHeader({
     <div className={cn("section-header items-center", className)}>
       <div className="flex items-center gap-2 min-w-0">
         {icon && <span style={{ color: "hsl(var(--signal))" }}>{icon}</span>}
-        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
         {subtitle && <span className="truncate text-xs text-muted-foreground">· {subtitle}</span>}
       </div>
       {action}
@@ -374,7 +369,7 @@ export function ImpactFigure({
     <div className={cn("text-right tabular-nums", className)}>
       <p
         className={cn(
-          "font-semibold text-foreground",
+          "font-medium text-foreground",
           size === "lg" ? "text-2xl" : size === "md" ? "text-base" : "text-sm"
         )}
       >

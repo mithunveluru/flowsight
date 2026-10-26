@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AnimatedSwitch } from "@/components/motion/primitives";
 import { TabUnderline, useTabUnderline } from "@/components/motion/tab-underline";
+import { tabClass } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Field, FieldControl } from "@/components/ui/field";
 import { ConfidenceBadge } from "@/components/ui/signals";
@@ -75,10 +76,7 @@ function SubTab({
       aria-selected={active}
       data-active={active}
       onClick={onClick}
-      className={cn(
-        "no-drag flex h-10 flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-fast ease-standard",
-        active ? "font-medium text-primary" : "text-ink-meta hover:text-primary"
-      )}
+      className={cn(tabClass(active, true), "no-drag")}
     >
       {icon}
       {children}

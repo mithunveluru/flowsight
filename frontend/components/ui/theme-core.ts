@@ -20,3 +20,15 @@ export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem(${J
 )});if(p!=="light"&&p!=="dark"&&p!=="system")p=${JSON.stringify(
   DEFAULT_THEME
 )};var d=p==="dark"||(p==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var e=document.documentElement;e.classList.toggle("dark",d);e.style.colorScheme=d?"dark":"light";}catch(_){}})();`;
+
+/** For apps with no theme switch (the desktop widget): mirrors the OS setting now and on change. Returns a stop function. */
+export function followSystemTheme(): () => void {
+  const query = window.matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => {
+    document.documentElement.classList.toggle("dark", query.matches);
+    document.documentElement.style.colorScheme = query.matches ? "dark" : "light";
+  };
+  apply();
+  query.addEventListener("change", apply);
+  return () => query.removeEventListener("change", apply);
+}

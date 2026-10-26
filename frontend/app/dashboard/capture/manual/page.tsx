@@ -32,7 +32,7 @@ import {
 import { ApiError } from "@/lib/api";
 import { TitleRow } from "@/components/layout/title-row";
 import { markNewTransaction } from "@/features/transactions/new-row";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast-store";
 
 const schema = z.object({
   transactionDate: z.string().min(1, "Enter the date.").refine((d) => d <= isoDate(new Date()), "The date cannot be in the future."),

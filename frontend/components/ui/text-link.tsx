@@ -7,11 +7,13 @@ export interface TextLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElem
   href: string;
   // trailing chevron, the spec's marker for a link that goes somewhere
   chevron?: boolean;
+  // set inside running text: underlined at rest
+  inline?: boolean;
 }
 
-/** Inline link: primary colour, underline on hover. Internal paths use next/link. */
-export function TextLink({ href, chevron, className, children, ...props }: TextLinkProps) {
-  const classes = cn("link inline-flex items-center gap-0.5 text-ty-link", className);
+/** Link: primary colour, underline on hover (always, when `inline`). Internal paths use next/link. */
+export function TextLink({ href, chevron, inline, className, children, ...props }: TextLinkProps) {
+  const classes = cn("link inline-flex items-center gap-0.5 text-ty-link", inline && "link-inline", className);
   const content = (
     <>
       {children}

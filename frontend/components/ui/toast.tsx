@@ -4,44 +4,16 @@ import * as React from "react";
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { AlertCircle, Check, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { dismissToast, getToasts, subscribeToasts, type ToastTone } from "./toast-store";
 
-type Tone = "info" | "success" | "error";
-
-interface ToastItem {
-  id: number;
-  title: string;
-  description?: string;
-  tone: Tone;
-}
-
-let items: ToastItem[] = [];
-let nextId = 0;
-const listeners = new Set<() => void>();
-
-function emit(next: ToastItem[]) {
-  items = next;
-  listeners.forEach((l) => l());
-}
-
-/** Show a toast from anywhere; <Toaster /> must be mounted once. */
-export function toast(input: { title: string; description?: string; tone?: Tone }) {
-  emit([...items, { id: ++nextId, tone: "info", ...input }]);
-}
-
-const TONE: Record<Tone, { icon: typeof Info; className: string }> = {
+const TONE: Record<ToastTone, { icon: typeof Info; className: string }> = {
   info: { icon: Info, className: "text-primary" },
   success: { icon: Check, className: "text-positive" },
   error: { icon: AlertCircle, className: "text-warning" },
 };
 
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => listeners.delete(l);
-};
-
 export function Toaster() {
-  const current = React.useSyncExternalStore(subscribe, () => items, () => items);
-  const remove = (id: number) => emit(items.filter((t) => t.id !== id));
+  const current = React.useSyncExternalStore(subscribeToasts, getToasts, getToasts);
 
   return (
     <ToastPrimitive.Provider swipeDirection="right" duration={5000}>
@@ -51,7 +23,7 @@ export function Toaster() {
           <ToastPrimitive.Root
             key={t.id}
             type={t.tone === "error" ? "foreground" : "background"}
-            onOpenChange={(open) => !open && remove(t.id)}
+            onOpenChange={(open) => !open && dismissToast(t.id)}
             className={cn(
               "flex items-start gap-3 rounded-md border border-border bg-popover px-sp-wide py-sp-xl text-popover-foreground",
               "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-right-8 data-[state=open]:slide-in-from-bottom-4 data-[state=open]:duration-slow",

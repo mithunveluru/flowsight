@@ -10,7 +10,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAnnounce } from "@/components/ui/announcer";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast-store";
 import { markNewTransaction } from "@/features/transactions/new-row";
 import { useConfirmReceipt } from "@/features/receipts/hooks";
 import {

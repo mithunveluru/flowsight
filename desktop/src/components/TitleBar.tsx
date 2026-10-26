@@ -11,6 +11,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import { TabUnderline, useTabUnderline } from "@/components/motion/tab-underline";
+import { tabClass } from "@/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { hideWindow, openWorkspace } from "~/lib/tauri";
 import { useWindowMode, minimizeWindow, toggleMaximize } from "~/lib/window-mode";
@@ -121,10 +122,7 @@ export function TitleBar({
               aria-label={label}
               aria-current={active ? "page" : undefined}
               data-active={active}
-              className={cn(
-                "no-drag flex h-10 flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-fast ease-standard",
-                active ? "font-medium text-primary" : "text-ink-nav hover:text-primary"
-              )}
+              className={cn(tabClass(active, true), "no-drag")}
             >
               <Icon className="h-3.5 w-3.5" strokeWidth={2} />
               {showLabels && label}

@@ -173,7 +173,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="link underline"
+              className="link link-inline"
             >
               Sign in
             </Link>

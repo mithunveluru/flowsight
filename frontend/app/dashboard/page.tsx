@@ -113,13 +113,13 @@ function PartialHistoryNote({ earliest, count }: { earliest: string | null | und
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
       <p className="text-foreground">
         Trends, habits and money drains need about a month of history; you have {days} {days === 1 ? "day" : "days"}.{" "}
-        <Link href="/dashboard/capture/import" className="font-medium text-primary underline underline-offset-4">
+        <Link href="/dashboard/capture/import" className="link link-inline font-medium">
           Import a statement
         </Link>
         {offerSample && (
           <>
             {" "}or{" "}
-            <Link href="/dashboard/welcome" className="font-medium text-primary underline underline-offset-4">
+            <Link href="/dashboard/welcome" className="link link-inline font-medium">
               explore with sample data
             </Link>
           </>

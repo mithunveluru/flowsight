@@ -11,7 +11,7 @@ import { useImportCsv } from "@/features/transactions/hooks";
 import type { BulkImportResult } from "@/features/transactions/types";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { toast } from "@/components/ui/toast";
+import { toast } from "@/components/ui/toast-store";
 import { PREVIEW_ROWS, ROLE_LABEL, previewCsv, validateCsvFile, type ColumnRole, type CsvPreview } from "./csv-preview";
 
 const BOM = "﻿";

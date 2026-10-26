@@ -4,8 +4,17 @@ import * as React from "react";
 import { TabUnderline, useTabUnderline } from "@/components/motion/tab-underline";
 import { cn } from "@/lib/utils";
 
-/** Shared look of a tab label; the tab rail uses the same classes. Inactive tabs grow to 44px on touch. */
-export function tabClass(active: boolean) {
+/**
+ * Shared look of a tab label; the tab rail uses the same classes. Inactive tabs grow to 44px on touch.
+ * `dense` is the equal-width strip of tool surfaces such as the desktop widget: one size, no growth.
+ */
+export function tabClass(active: boolean, dense?: boolean) {
+  if (dense) {
+    return cn(
+      "relative inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap text-sm transition-colors duration-fast ease-standard",
+      active ? "font-medium text-primary" : "text-ink-nav hover:text-primary"
+    );
+  }
   return cn(
     "relative inline-flex shrink-0 items-center whitespace-nowrap px-sp-xl transition-colors duration-fast ease-standard",
     active
