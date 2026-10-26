@@ -2,23 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import {
-  CalendarClock,
-  CheckCircle2,
-  HelpCircle,
-  RefreshCw,
-  Repeat,
-  Sparkles,
-  Trash2,
-  TrendingDown,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, HelpCircle, RefreshCw, Repeat, Sparkles, Trash2, TrendingDown } from "lucide-react";
 import { useRecurring, useRecurringAction, useRescanRecurring } from "@/features/recurring/hooks";
 import { recurringEvidence } from "@/features/insights/evidence";
 import { useAnnounce } from "@/components/ui/announcer";
 import { ConfidenceChip } from "@/components/ui/confidence-chip";
 import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
-import { ErrorState, LoadingState } from "@/components/ui/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import type {
   ConfidenceTier,
   RecurringPattern,
@@ -26,6 +16,8 @@ import type {
 } from "@/features/recurring/types";
 import { Button } from "@/components/ui/button";
 import { StatusMarker } from "@/components/ui/signals";
+import { CountUp, Reveal } from "@/components/motion/primitives";
+import { Alert, PageTitle, Stat, Surface } from "@/components/insight/page-kit";
 import { cn } from "@/lib/utils";
 
 const fmtShort = (iso: string) =>
@@ -37,15 +29,15 @@ function formatINR(v: number) {
 
 const STATUS_STYLES: Record<RecurringStatus, { label: string; cls: string }> = {
   ACTIVE:   { label: "Active",    cls: "text-positive" },
-  DUE_SOON: { label: "Due soon",  cls: "text-brand"    },
+  DUE_SOON: { label: "Due soon",  cls: "text-primary"  },
   OVERDUE:  { label: "Overdue",   cls: "text-caution"   },
   MISSED:   { label: "Missed",    cls: "text-warning"     },
 };
 
 const TIER_STYLES: Record<ConfidenceTier, { label: string; cls: string }> = {
   HIGH:     { label: "High",     cls: "text-positive" },
-  MEDIUM:   { label: "Medium",   cls: "text-brand"    },
-  POSSIBLE: { label: "Possible", cls: "text-muted-foreground"   },
+  MEDIUM:   { label: "Medium",   cls: "text-primary"  },
+  POSSIBLE: { label: "Possible", cls: "text-ink-meta"   },
 };
 
 export default function RecurringPage() {
@@ -86,50 +78,59 @@ export default function RecurringPage() {
   const totalAnnual  = patterns.reduce((s, p) => s + Number(p.annualCost), 0);
   const cancellable  = patterns.filter((p) => p.isCancellationCandidate).length;
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Subscriptions</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right.
-          </p>
-        </div>
-        <Button size="sm" variant="outline" onClick={scan} disabled={scanning || loading}>
-          <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
-          {scanning ? "Scanning" : "Scan again"}
-        </Button>
-      </div>
+  const rupee = (v: number) => `₹${Math.round(v).toLocaleString("en-IN")}`;
 
-      {error && (
-        <p role="alert" className="text-sm text-warning flex items-center gap-1.5">
-          <XCircle className="h-4 w-4 shrink-0" /> {error}
-        </p>
-      )}
+  return (
+    <div className="space-y-sp-hero">
+      <PageTitle
+        title="Subscriptions"
+        lead="The recurring charges we spotted in your history. Confirm the real ones and dismiss the rest so we get it right."
+        actions={
+          <Button variant="outline" className="coarse:h-11" onClick={scan} disabled={scanning || loading}>
+            <RefreshCw className={cn(scanning && "animate-spin")} aria-hidden="true" />
+            {scanning ? "Scanning" : "Scan again"}
+          </Button>
+        }
+      />
+
+      {error && <Alert>{error}</Alert>}
 
       {query.isError && !query.data ? (
         <ErrorState title="Subscriptions did not load" error={query.error} onRetry={() => query.refetch()} />
       ) : loading ? (
         <LoadingState variant="table" rows={3} label="Loading subscriptions" />
       ) : patterns.length === 0 ? (
-        <EmptyState onScan={scan} scanning={scanning} />
+        <EmptyState
+          icon={<Repeat />}
+          title="No subscriptions found yet"
+          description="Once we see the same charge a couple of times, it will show up here automatically."
+          action={
+            <Button onClick={scan} disabled={scanning}>
+              <RefreshCw className={cn(scanning && "animate-spin")} aria-hidden="true" />
+              {scanning ? "Scanning" : "Scan now"}
+            </Button>
+          }
+          secondaryAction={
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/transactions">Add transactions</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
-          {/* Summary cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Per month"                value={formatINR(totalMonthly)} icon={Repeat}        cls="text-caution"  bg="bg-caution-soft border-caution/20" />
-            <StatCard label="Per year"                 value={formatINR(totalAnnual)}  icon={CalendarClock} cls="text-brand"    bg="bg-brand-soft border-brand/20"     />
-            <StatCard label="Active subscriptions"     value={String(patterns.length)} icon={CheckCircle2}  cls="text-positive" bg="bg-positive-soft border-positive/20" />
-            <StatCard label="Worth cancelling"         value={String(cancellable)}     icon={TrendingDown}  cls="text-brand"  bg="bg-brand-soft border-brand/20"   />
-          </div>
+          <Surface tone="blue" className="grid gap-sp-giant p-sp-max sm:grid-cols-2 lg:grid-cols-4">
+            <Stat label="Per month"><CountUp value={Math.round(totalMonthly)} format={rupee} /></Stat>
+            <Stat label="Per year"><CountUp value={Math.round(totalAnnual)} format={rupee} /></Stat>
+            <Stat label="Recurring charges"><CountUp value={patterns.length} format={String} /></Stat>
+            <Stat label="Worth cancelling"><CountUp value={cancellable} format={String} /></Stat>
+          </Surface>
 
           {/* Confirmed section */}
           {confirmed.length > 0 && (
             <Section
               title="Confirmed by you"
               count={confirmed.length}
-              icon={<CheckCircle2 className="h-3.5 w-3.5 text-positive" />}
+              icon={<CheckCircle2 className="h-4 w-4 text-positive" />}
               hint="We'll keep these and refresh them every time you re-scan."
             >
               <PatternsTable
@@ -147,7 +148,7 @@ export default function RecurringPage() {
             <Section
               title="Looks recurring"
               count={detected.length}
-              icon={<Sparkles className="h-3.5 w-3.5 text-brand" />}
+              icon={<Sparkles className="h-4 w-4 text-primary" />}
               hint="We're fairly confident these repeat. Confirm the ones that do."
             >
               <PatternsTable
@@ -165,7 +166,7 @@ export default function RecurringPage() {
             <Section
               title="Maybe recurring"
               count={possible.length}
-              icon={<HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+              icon={<HelpCircle className="h-4 w-4 text-ink-meta" />}
               hint="We're not sure about these. Confirm the ones that repeat, dismiss the rest."
             >
               <PatternsTable
@@ -193,36 +194,17 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        {icon}
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <span className="text-xs text-muted-foreground/70">({count})</span>
-      </div>
-      <p className="text-xs text-muted-foreground">{hint}</p>
-      <div className="rounded-lg border border-border bg-card overflow-x-auto">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function StatCard({
-  label, value, icon: Icon, cls, bg,
-}: {
-  label: string; value: string;
-  icon: React.ElementType; cls: string; bg: string;
-}) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-5">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={cn("flex h-7 w-7 items-center justify-center rounded-md border", bg)}>
-          <Icon className={cn("h-3.5 w-3.5", cls)} />
-        </div>
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-2xl font-semibold tabular-nums text-foreground">{value}</p>
-    </div>
+    <Reveal>
+      <section>
+        <h2 className="flex items-center gap-sp-sm text-ty-subhead text-ink">
+          {icon}
+          {title}
+          <span className="text-ty-link font-normal text-ink-meta">{count}</span>
+        </h2>
+        <p className="mb-sp-wide mt-sp-xs text-sm text-ink-meta">{hint}</p>
+        <div className="relative overflow-x-auto">{children}</div>
+      </section>
+    </Reveal>
   );
 }
 
@@ -236,14 +218,13 @@ function PatternsTable({
   busyId:      string | null;
 }) {
   return (
-    <table className="w-full text-sm">
+    <table>
       <thead>
-        <tr className="border-b border-border bg-muted/50">
-          {["Merchant","Period","Confidence","Amount","Next expected","Status",""].map((h) => (
-            <th key={h} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide whitespace-nowrap">
-              {h}
-            </th>
+        <tr>
+          {["Merchant", "Period", "Confidence", "Amount", "Next expected", "Status"].map((h) => (
+            <th key={h} className="whitespace-nowrap">{h}</th>
           ))}
+          <th><span className="sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
@@ -275,121 +256,109 @@ function PatternRow({
   const tier   = TIER_STYLES[pattern.confidenceTier];
 
   return (
-    <tr className="border-b border-border/60 last:border-0 hover:bg-muted/50 transition-colors">
-      <td className="px-4 py-3">
+    <tr>
+      <td>
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-foreground">{pattern.merchant}</span>
+          <span className="font-medium text-ink">{pattern.merchant}</span>
           {pattern.isCancellationCandidate && (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-brand">
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
               <TrendingDown className="h-3 w-3" strokeWidth={2} /> Optional
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground/70">
+        <p className="mt-0.5 text-xs text-ink-meta">
           Seen {pattern.occurrenceCount} times so far
         </p>
         <EvidenceDrawer
           title={`${pattern.merchant} repeats ${pattern.periodLabel.toLowerCase()}`}
           value={pattern.probability != null ? `${Math.round(Number(pattern.probability) * 100)}% likely recurring` : undefined}
           evidence={recurringEvidence(pattern)}
-          trigger={<EvidenceTrigger label={`${pattern.merchant} is recurring`} className="-ml-1.5 mt-0.5" />}
+          trigger={<EvidenceTrigger label={`${pattern.merchant} is recurring`} className="-ml-1.5 mt-0.5 coarse:h-11 coarse:min-w-11" />}
         />
       </td>
-      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+      <td className="whitespace-nowrap text-xs text-ink-meta">
         {pattern.periodLabel}
       </td>
-      <td className="px-4 py-3">
+      <td>
         {pattern.scoredBy === "MODEL" && pattern.probability != null ? (
           <ConfidenceChip value={pattern.probability} showValue />
         ) : (
           <>
             <StatusMarker label={tier.label} className={tier.cls} />
-            <p className="mt-0.5 text-xs text-muted-foreground/70">
+            <p className="mt-0.5 text-xs text-ink-meta">
               {(Number(pattern.confidence) * 100).toFixed(0)}%
             </p>
           </>
         )}
       </td>
-      <td className="px-4 py-3 tabular-nums">
-        <span className="font-medium text-foreground">{formatINR(pattern.estimatedAmount)}</span>
-        <p className="mt-0.5 text-xs text-muted-foreground/70">
+      <td className="tabular-nums">
+        <span className="font-medium text-ink">{formatINR(pattern.estimatedAmount)}</span>
+        <p className="mt-0.5 text-xs text-ink-meta">
           {formatINR(pattern.monthlyEquivalent)}/mo equivalent
         </p>
       </td>
-      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+      <td className="whitespace-nowrap text-xs text-ink-meta">
         {pattern.nextExpectedDate
           ? new Date(pattern.nextExpectedDate).toLocaleDateString("en-IN", {
               day: "numeric", month: "short", year: "numeric",
             })
           : "—"}
         {pattern.nextExpectedLow && pattern.nextExpectedHigh && (
-          <span className="block text-muted-foreground/70">
+          <span className="block text-ink-meta">
             likely {fmtShort(pattern.nextExpectedLow)} to {fmtShort(pattern.nextExpectedHigh)}
           </span>
         )}
         {pattern.daysUntilNext !== 0 && (
-          <span className={cn("ml-1 block", pattern.daysUntilNext < 0 ? "text-caution" : "text-muted-foreground/70")}>
+          <span className={cn("ml-1 block", pattern.daysUntilNext < 0 ? "text-caution" : "text-ink-meta")}>
             ({pattern.daysUntilNext < 0
               ? `${Math.abs(pattern.daysUntilNext)}d ago`
               : `in ${pattern.daysUntilNext}d`})
           </span>
         )}
       </td>
-      <td className="px-4 py-3">
+      <td>
         <StatusMarker label={status.label} className={status.cls} />
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1">
+      <td>
+        <div className="flex items-center gap-sp-xs">
           {pattern.isUserConfirmed ? (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-positive coarse:h-11 coarse:w-11"
               onClick={() => onUnconfirm(pattern.id)}
               disabled={busy}
-              className="rounded p-1.5 text-positive hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
-              title="Remove confirmation" aria-label={`Remove confirmation for ${pattern.merchant}`}
+              title="Remove confirmation"
+              aria-label={`Remove confirmation for ${pattern.merchant}`}
             >
-              <CheckCircle2 className="h-4 w-4" />
-            </button>
+              <CheckCircle2 aria-hidden="true" />
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="coarse:h-11 coarse:w-11"
               onClick={() => onConfirm(pattern.id)}
               disabled={busy}
-              className="rounded p-1.5 text-muted-foreground/70 hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
-              title="Confirm as recurring" aria-label={`Confirm ${pattern.merchant} as recurring`}
+              title="Confirm as recurring"
+              aria-label={`Confirm ${pattern.merchant} as recurring`}
             >
-              <CheckCircle2 className="h-4 w-4" />
-            </button>
+              <CheckCircle2 aria-hidden="true" />
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="coarse:h-11 coarse:w-11"
             onClick={() => onDismiss(pattern.id)}
             disabled={busy}
-            className="rounded p-1.5 text-muted-foreground/50 hover:text-warning hover:bg-warning-soft transition-colors disabled:opacity-50"
-            title="Not recurring — dismiss" aria-label={`Dismiss ${pattern.merchant}, not recurring`}
+            title="Not recurring, dismiss"
+            aria-label={`Dismiss ${pattern.merchant}, not recurring`}
           >
-            <Trash2 className="h-4 w-4" />
-          </button>
+            <Trash2 aria-hidden="true" />
+          </Button>
         </div>
       </td>
     </tr>
-  );
-}
-
-function EmptyState({ onScan, scanning }: { onScan: () => void; scanning: boolean }) {
-  return (
-    <div className="rounded-lg border border-border bg-card px-6 py-16 text-center">
-      <Repeat className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
-      <p className="text-sm font-medium text-foreground">No subscriptions found yet</p>
-      <p className="mt-1 text-xs text-muted-foreground/70 max-w-xs mx-auto">
-        Once we see the same charge a couple of times, it&apos;ll show up here automatically.
-      </p>
-      <div className="mt-5 flex justify-center gap-3">
-        <Button size="sm" onClick={onScan} disabled={scanning}>
-          <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
-          {scanning ? "Scanning" : "Scan now"}
-        </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link href="/dashboard/transactions">Add transactions</Link>
-        </Button>
-      </div>
-    </div>
   );
 }

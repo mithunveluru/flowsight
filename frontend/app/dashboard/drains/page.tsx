@@ -2,59 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  AlertOctagon,
-  ChevronDown,
-  ChevronRight,
-  CreditCard,
-  Droplets,
-  Layers,
-  Sparkles,
-  RefreshCw,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronDown, CreditCard, Droplets, Layers, RefreshCw, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfidenceChip } from "@/components/ui/confidence-chip";
 import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
-import { ErrorState, LoadingState } from "@/components/ui/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { leakEvidence } from "@/features/insights/evidence";
-import {
-  InsightCallout,
-  StatusMarker,
-  type Severity,
-} from "@/components/ui/signals";
-import {
-  AmbientGlow,
-  AnimatedNumber,
-  FadeIn,
-  StaggerContainer,
-  StaggerItem,
-} from "@/components/motion/primitives";
+import type { Severity } from "@/components/ui/signals";
+import { Collapse, CountUp, Reveal, Stagger, StaggerItem } from "@/components/motion/primitives";
+import { PageTitle, Stat, Surface } from "@/components/insight/page-kit";
 import { useLeaks } from "@/features/leaks/hooks";
-import type {
-  LeakDetectionResponse,
-  LeakInsight,
-  LeakType,
-} from "@/features/leaks/types";
+import type { LeakDetectionResponse, LeakInsight, LeakType } from "@/features/leaks/types";
 import { cn } from "@/lib/utils";
 
 const LEAK_TYPE_ICON: Record<LeakType, React.ElementType> = {
-  DUPLICATE_SUBSCRIPTIONS:    Layers,
-  SUBSCRIPTION_CREEP:         TrendingUp,
+  DUPLICATE_SUBSCRIPTIONS: Layers,
+  SUBSCRIPTION_CREEP: TrendingUp,
   HIGH_FREQUENCY_SMALL_SPEND: Droplets,
-  BANK_FEES:                  CreditCard,
+  BANK_FEES: CreditCard,
 };
 
-const SEVERITY_TOKEN: Record<Severity, string> = {
-  HIGH:   "var(--severity-high)",
-  MEDIUM: "var(--severity-medium)",
-  LOW:    "var(--severity-low)",
-};
-
-const SEVERITY_LABEL: Record<Severity, string> = {
-  HIGH:   "High impact",
-  MEDIUM: "Medium impact",
-  LOW:    "Low impact",
+const IMPACT: Record<Severity, { label: string; variant: "red" | "amber" | "blue" }> = {
+  HIGH: { label: "High impact", variant: "red" },
+  MEDIUM: { label: "Medium impact", variant: "amber" },
+  LOW: { label: "Low impact", variant: "blue" },
 };
 
 function formatINR(v: number) {
@@ -66,203 +38,155 @@ export default function LeaksPage() {
   const data = query.data;
   const loading = query.isPending;
   const scanning = query.isFetching && !loading;
-  const rescan = () => query.refetch();
 
   return (
-    <div className="space-y-8">
-      <FadeIn>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Money drains
-            </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Forgotten subscriptions, creeping prices, small daily habits, and fees quietly adding up, with what you&apos;d save by fixing them.
-            </p>
-          </div>
-          <Button size="sm" variant="outline" onClick={rescan} disabled={scanning || loading}>
-            <RefreshCw className={cn("h-4 w-4", scanning && "animate-spin")} />
+    <div className="space-y-sp-hero">
+      <PageTitle
+        title="Money drains"
+        lead="Forgotten subscriptions, creeping prices, small daily habits, and fees quietly adding up, with what you would save by fixing them."
+        actions={
+          <Button variant="outline" className="coarse:h-11" onClick={() => query.refetch()} disabled={scanning || loading}>
+            <RefreshCw className={cn(scanning && "animate-spin")} aria-hidden="true" />
             {scanning ? "Scanning" : "Scan again"}
           </Button>
-        </div>
-      </FadeIn>
+        }
+      />
 
       {loading ? (
         <LoadingState variant="card" rows={3} label="Looking for money drains" />
       ) : query.isError && !data ? (
         <ErrorState title="Money drains did not load" error={query.error} onRetry={() => query.refetch()} />
       ) : !data || data.totalLeaksFound === 0 ? (
-        <EmptyState />
+        <EmptyState
+          icon={<Droplets />}
+          title="Nothing to recover"
+          description="No duplicate subscriptions, price hikes, or fee patterns showed up in your last three months."
+          action={
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/transactions">View transactions</Link>
+            </Button>
+          }
+        />
       ) : (
         <>
-          <FadeIn delay={0.08}>
-            <SavingsHero data={data} />
-          </FadeIn>
+          <SavingsFigure data={data} />
 
-          <section>
-            <div className="section-header items-center">
-              <p className="text-sm font-semibold text-foreground">
+          <Reveal>
+            <section>
+              <h2 className="mb-sp-giant text-ty-subhead text-ink">
                 What we found
-                <span className="ml-1.5 font-normal text-muted-foreground">({data.totalLeaksFound})</span>
-              </p>
-            </div>
-            <StaggerContainer className="space-y-3" stagger={0.05}>
-              {data.leaks.map((leak, i) => (
-                <StaggerItem key={`${leak.type}-${i}`}>
-                  <LeakCard leak={leak} />
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          </section>
+                <span className="ml-sp-sm text-ty-link font-normal text-ink-meta">{data.totalLeaksFound}</span>
+              </h2>
+              <Stagger className="space-y-sp-wide" stagger={0.05}>
+                {data.leaks.map((leak, i) => (
+                  <StaggerItem key={`${leak.type}-${i}`}>
+                    <LeakCard leak={leak} />
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            </section>
+          </Reveal>
         </>
       )}
     </div>
   );
 }
 
-function SavingsHero({ data }: { data: LeakDetectionResponse }) {
+function SavingsFigure({ data }: { data: LeakDetectionResponse }) {
+  const rupee = (v: number) => `₹${v.toLocaleString("en-IN")}`;
   return (
-    <section className="surface-gradient-emerald relative overflow-hidden rounded-xl card-refined p-6 sm:p-8">
-      <AmbientGlow />
-      <div className="relative flex items-start gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-positive/25 bg-card">
-          <Sparkles className="h-5 w-5 text-positive" strokeWidth={1.75} />
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-positive">
-            Potential monthly savings
-          </p>
-          <p className="mt-1.5 stat-value text-4xl">
-            <AnimatedNumber value={data.totalMonthlyImpact} format={(v) => `₹${v.toLocaleString("en-IN")}`} />
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            That&apos;s{" "}
-            <span className="font-medium text-foreground tabular-nums">
-              <AnimatedNumber value={data.totalAnnualImpact} format={(v) => `₹${v.toLocaleString("en-IN")}`} />
-            </span>{" "}
-            a year if all recovered.
-          </p>
-          <div className="mt-2">
-            <EvidenceDrawer
-              title="Potential monthly savings"
-              value={`${formatINR(data.totalMonthlyImpact)}/mo`}
-              evidence={{
-                method: "The sum of the monthly impact of each drain found below.",
-                inputs: data.leaks.map((l) => ({ label: l.title, value: `${formatINR(l.monthlyImpact)}/mo` })),
-              }}
-              trigger={<EvidenceTrigger label="the potential monthly savings" className="-ml-1.5" />}
-            />
-          </div>
-        </div>
-      </div>
-    </section>
+    <Surface tone="blue" className="grid gap-sp-giant p-sp-max sm:grid-cols-[1fr_auto] sm:items-end">
+      <Stat label="Potential monthly savings" large>
+        <CountUp value={data.totalMonthlyImpact} format={rupee} />
+      </Stat>
+      <p className="max-w-sm text-sm text-ink-body">
+        That is <span className="font-medium tabular-nums text-ink"><CountUp value={data.totalAnnualImpact} format={rupee} /></span> a year if all recovered.
+        <EvidenceDrawer
+          title="Potential monthly savings"
+          value={`${formatINR(data.totalMonthlyImpact)}/mo`}
+          evidence={{
+            method: "The sum of the monthly impact of each drain found below.",
+            inputs: data.leaks.map((l) => ({ label: l.title, value: `${formatINR(l.monthlyImpact)}/mo` })),
+          }}
+          trigger={<EvidenceTrigger label="the potential monthly savings" className="ml-sp-xs align-middle coarse:h-11 coarse:min-w-11" />}
+        />
+      </p>
+    </Surface>
   );
 }
 
 function LeakCard({ leak }: { leak: LeakInsight }) {
   const [open, setOpen] = useState(false);
-  const severity = leak.severity as Severity;
   const Icon = LEAK_TYPE_ICON[leak.type];
-  const sevColor = SEVERITY_TOKEN[severity];
+  const impact = IMPACT[leak.severity as Severity];
+  const panelId = `leak-${leak.type}-${leak.title}`.replace(/\W+/g, "-");
 
   return (
-    <div className="relative overflow-hidden card-refined">
-      {/* Severity rail — the intelligence-layer identity marker */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ background: `hsl(${sevColor})`, opacity: 0.9 }}
-      />
+    <Surface className="p-0">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-start gap-3.5 p-5 text-left transition-colors hover:bg-muted/40"
+        aria-controls={panelId}
+        className="flex w-full items-start gap-sp-wide rounded-md p-sp-giant text-left"
       >
-        <span
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `hsl(${sevColor} / 0.12)`, color: `hsl(${sevColor})` }}
-        >
-          <Icon className="h-4 w-4" strokeWidth={1.75} />
-        </span>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{leak.title}</p>
-            <StatusMarker label={SEVERITY_LABEL[severity]} color={`hsl(${sevColor})`} />
+        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-ink-meta" strokeWidth={1.75} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-sp-sm">
+            <h3 className="text-ty-link font-medium text-ink">{leak.title}</h3>
+            <Badge variant={impact.variant}>{impact.label}</Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{leak.description}</p>
+          <p className="mt-sp-xs text-sm text-ink-body">{leak.description}</p>
         </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-0.5">
-          <p className="text-base font-semibold tabular-nums text-foreground">
+        <div className="shrink-0 text-right tabular-nums">
+          <p className="text-ty-subhead text-ink">
             {formatINR(leak.monthlyImpact)}
-            <span className="text-xs font-normal text-muted-foreground">/mo</span>
+            <span className="text-sm font-normal text-ink-meta">/mo</span>
           </p>
-          <p className="text-xs text-muted-foreground">{formatINR(leak.annualImpact)}/yr</p>
+          <p className="text-xs text-ink-meta">{formatINR(leak.annualImpact)}/yr</p>
         </div>
-
-        {open
-          ? <ChevronDown  className="ml-1 mt-1 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
-          : <ChevronRight className="ml-1 mt-1 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />}
+        <ChevronDown
+          className={cn("mt-1 h-4 w-4 shrink-0 text-ink-meta transition-transform duration-base", open && "rotate-180")}
+          aria-hidden="true"
+        />
       </button>
 
-      <div className="flex flex-wrap items-center gap-2 px-5 pb-3 pl-[4.5rem]">
+      <div className="flex flex-wrap items-center gap-sp-sm px-sp-giant pb-sp-wide pl-sp-giant sm:pl-[3.25rem]">
         <EvidenceDrawer
           title={leak.title}
           value={`${formatINR(leak.monthlyImpact)}/mo`}
           evidence={leakEvidence(leak)}
-          trigger={<EvidenceTrigger label={`${leak.title} costs ${formatINR(leak.monthlyImpact)} a month`} className="-ml-1.5" />}
+          trigger={
+            <EvidenceTrigger
+              label={`${leak.title} costs ${formatINR(leak.monthlyImpact)} a month`}
+              className="-ml-sp-sm coarse:h-11 coarse:min-w-11"
+            />
+          }
         />
-        {leak.evidence?.confidence != null && (
-          <ConfidenceChip value={leak.evidence.confidence} showValue />
-        )}
+        {leak.evidence?.confidence != null && <ConfidenceChip value={leak.evidence.confidence} showValue />}
       </div>
 
-      {open && (
-        <div className="border-t px-5 pb-5 pt-4 animate-fade-in" style={{ borderColor: "hsl(var(--border))" }}>
+      <Collapse open={open} id={panelId}>
+        <div className="px-sp-giant pb-sp-giant sm:pl-[3.25rem]">
           {leak.recommendation && (
-            <InsightCallout tone="signal">{leak.recommendation}</InsightCallout>
+            <p className="rounded-md bg-band-blue p-sp-xl text-sm text-ink-body">{leak.recommendation}</p>
           )}
-
-          <div className="mt-4 rounded-lg border bg-card" style={{ borderColor: "hsl(var(--border))" }}>
-            <div className="border-b px-4 py-2.5" style={{ borderColor: "hsl(var(--border))" }}>
-              <p className="text-xs font-medium text-muted-foreground">
-                Affected items ({leak.affectedItemsCount})
-              </p>
-            </div>
-            <div className="divide-y" style={{ borderColor: "hsl(var(--border))" }}>
+          <div className="mt-sp-wide rounded-md bg-canvas">
+            <p className="px-sp-wide py-sp-xl text-sm font-medium text-ink">Affected items ({leak.affectedItemsCount})</p>
+            <ul className="divide-y divide-border">
               {leak.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2.5">
+                <li key={i} className="flex items-center justify-between gap-sp-wide px-sp-wide py-sp-xl">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{item.merchant}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground truncate">{item.detail}</p>
+                    <p className="truncate text-sm font-medium text-ink">{item.merchant}</p>
+                    <p className="truncate text-xs text-ink-meta">{item.detail}</p>
                   </div>
-                  <p className="ml-3 shrink-0 text-sm font-medium tabular-nums text-foreground">
-                    {formatINR(item.amount)}
-                  </p>
-                </div>
+                  <p className="shrink-0 text-sm tabular-nums text-ink">{formatINR(item.amount)}</p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="card-refined px-6 py-16 text-center">
-      <AlertOctagon className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" strokeWidth={1.5} />
-      <p className="text-sm font-medium text-foreground">Nothing to recover</p>
-      <p className="mt-1 text-xs text-muted-foreground max-w-xs mx-auto">
-        No duplicate subscriptions, price hikes, or fee patterns showed up in your last three months.
-      </p>
-      <div className="mt-5">
-        <Button size="sm" variant="outline" asChild>
-          <Link href="/dashboard/transactions">View transactions</Link>
-        </Button>
-      </div>
-    </div>
+      </Collapse>
+    </Surface>
   );
 }
