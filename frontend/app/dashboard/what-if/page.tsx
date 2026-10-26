@@ -452,7 +452,7 @@ function CategorySelect({
       value={value ?? "__none__"}
       onValueChange={(v) => onChange(v === "__none__" ? undefined : (v as TransactionCategory))}
     >
-      <SelectTrigger className="h-10"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+      <SelectTrigger aria-label="Category" className="h-10"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">No category</SelectItem>
         {CATEGORY_OPTIONS.map((opt) => (

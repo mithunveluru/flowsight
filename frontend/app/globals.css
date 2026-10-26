@@ -157,7 +157,7 @@
      SIDEBAR NAV — refined active state with subtle indigo accent
      ============================================================ */
   .nav-section-label {
-    @apply mb-1.5 px-3 text-[10px] font-semibold uppercase text-muted-foreground/75;
+    @apply mb-1.5 px-3 text-[10px] font-semibold uppercase text-muted-foreground;
     letter-spacing: 0.085em;
   }
 

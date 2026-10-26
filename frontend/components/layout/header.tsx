@@ -55,7 +55,7 @@ export function Header({ showCapture = true, onOpenNav, onOpenSearch, onOpenAssi
         >
           <Search className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} aria-hidden="true" />
           <span className="hidden md:inline">Search</span>
-          <kbd className="kbd-hint ml-1 hidden md:inline-flex">⌘K</kbd>
+          <kbd className="kbd-hint ml-1 hidden before:content-[attr(data-key)] md:inline-flex" data-key="⌘K" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -67,7 +67,7 @@ export function Header({ showCapture = true, onOpenNav, onOpenSearch, onOpenAssi
         >
           <Sparkles className="h-4 w-4 md:h-3.5 md:w-3.5" strokeWidth={1.75} aria-hidden="true" />
           <span className="hidden md:inline">Ask</span>
-          <kbd className="kbd-hint ml-1 hidden md:inline-flex">⌘J</kbd>
+          <kbd className="kbd-hint ml-1 hidden before:content-[attr(data-key)] md:inline-flex" data-key="⌘J" aria-hidden="true" />
         </button>
         {showCapture && (
           <>
