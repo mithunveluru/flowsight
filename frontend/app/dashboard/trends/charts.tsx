@@ -15,7 +15,9 @@ const INK = "hsl(var(--chart-axis))";
 export function SpendTrendChart({ trend, loading }: { trend: AnalyticsTrend | null; loading: boolean }) {
   const view = useMemo(() => {
     if (!trend) return null;
-    const pts = trend.points;
+    // drop the empty months before the first activity, keeping one as the baseline
+    const lead = trend.points.findIndex((p) => p.projected || p.spend > 0 || p.income > 0);
+    const pts = trend.points.slice(Math.max(0, lead - 1));
     const firstProjected = pts.findIndex((p) => p.projected);
     const band = (pick: "spend" | "income", edge: "lower80" | "upper80") =>
       pts.map((p, i) =>
