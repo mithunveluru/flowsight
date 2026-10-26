@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CheckCheck, Loader2, Plus, ReceiptText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAnnounce } from "@/components/ui/announcer";
 import { RuleSuggestionCard } from "@/features/merchants/rule-suggestion";
+import { TABLE_LOOK } from "@/features/shell-pages/table-look";
+import { takeNewTransaction } from "@/features/transactions/new-row";
+import { toast } from "@/components/ui/toast";
 import { transactionApi } from "@/features/transactions/api";
 import { CategoryPicker, CategorySignalChip } from "@/features/transactions/category-ui";
 import { formatMoney } from "@/features/transactions/currency";
@@ -47,6 +51,7 @@ import {
 } from "@/features/transactions/types";
 import { cn } from "@/lib/utils";
 import { InlineText } from "./inline-edit";
+const NewRowFlash = dynamic(() => import("./new-row-flash").then((m) => m.NewRowFlash), { ssr: false });
 
 const ROW_HEIGHT = 68;
 const ALL = "__all__";
@@ -110,6 +115,7 @@ export function TransactionsTable() {
         await transactionApi.delete(id);
         cache.removed([id]);
         announce("Transaction deleted.");
+        toast({ title: "Transaction removed", tone: "success" });
       } catch (e) {
         announce(e instanceof Error ? e.message : "Could not delete the transaction.", "assertive");
       }
@@ -143,6 +149,11 @@ export function TransactionsTable() {
       `${action.type === "delete" ? "Deleted" : "Updated"} ${done} transaction${done === 1 ? "" : "s"}${failed ? `, ${failed} failed` : ""}.`,
       failed ? "assertive" : "polite"
     );
+    toast({
+      title: `${done} transaction${done === 1 ? "" : "s"} ${action.type === "delete" ? "removed" : "updated"}`,
+      description: failed ? `${failed} could not be changed.` : undefined,
+      tone: failed ? "error" : "success",
+    });
   };
 
   const visible = rows.slice(range.start, range.end);
@@ -194,7 +205,7 @@ export function TransactionsTable() {
             type="checkbox"
             checked={client.needsReview}
             onChange={(e) => setClient((c) => ({ ...c, needsReview: e.target.checked }))}
-            className="h-4 w-4 accent-[hsl(var(--brand))]"
+            className="h-4 w-4 accent-primary"
           />
           Not reviewed yet
         </label>
@@ -247,18 +258,18 @@ export function TransactionsTable() {
           />
         )
       ) : (
-        <div className="card-refined overflow-hidden">
+        <div className="isolate overflow-hidden rounded-md bg-canvas">
           <ScrollBinder target={scrollRef} onScroll={setScrollTop} />
           <Table
             containerRef={scrollRef}
             containerClassName="max-h-[68dvh] min-h-48"
             stickyHeader
-            className="min-w-[980px] table-fixed"
+            className={cn("min-w-[980px] table-fixed", TABLE_LOOK)}
             aria-rowcount={rows.length + 1}
           >
             <caption className="sr-only">Transactions, newest first. Merchant, category and notes can be edited in place.</caption>
             <TableHeader>
-              <TableRow className="border-b border-border text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <TableRow>
                 <TableHead className="w-10 px-3 py-3">
                   <SelectionCheckbox aria-label="Select all loaded transactions" {...selection.headerCheckboxProps} />
                 </TableHead>
@@ -298,7 +309,7 @@ export function TransactionsTable() {
                 <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> Loading more
               </span>
             ) : hasNextPage ? (
-              <button type="button" className="font-medium text-brand hover:underline" onClick={() => void fetchNextPage()}>
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => void fetchNextPage()}>
                 Load the next {TABLE_PAGE_SIZE}
               </button>
             ) : null}
@@ -342,7 +353,7 @@ const BulkBar = ({
   <div
     role="region"
     aria-label="Actions for selected transactions"
-    className="flex flex-wrap items-center gap-2 rounded-lg border border-brand/25 bg-brand-soft px-3 py-2"
+    className="flex flex-wrap items-center gap-2 rounded-md bg-band-blue px-3 py-2"
   >
     <span className="text-sm font-medium tabular-nums">{count} selected</span>
     <Select value="" onValueChange={(v) => onAction({ type: "recategorize", category: v as TransactionCategory })} disabled={busy}>
@@ -393,6 +404,7 @@ const Row = memo(function Row({
   const debit = tx.type === "DEBIT";
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fresh] = useState(() => takeNewTransaction(tx.id));
 
   const changeCategory = async (c: TransactionCategory) => {
     setSaving(true);
@@ -411,9 +423,10 @@ const Row = memo(function Row({
       selected={selected}
       aria-rowindex={index + 2}
       style={{ height: ROW_HEIGHT }}
-      className="border-b border-border/60 text-sm hover:bg-muted/50"
+      className="relative text-sm"
     >
       <TableCell className="px-3">
+        {fresh && <NewRowFlash />}
         <SelectionCheckbox aria-label={`Select ${name}`} checked={selected} onChange={() => onToggle(tx.id)} />
       </TableCell>
       <TableCell className="whitespace-nowrap px-3 tabular-nums text-muted-foreground">{dateText(tx.transactionDate)}</TableCell>

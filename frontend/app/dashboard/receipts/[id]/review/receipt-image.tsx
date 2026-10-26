@@ -49,7 +49,7 @@ export function ReceiptImagePanel({ receipt }: { receipt: Receipt }) {
   } else {
     body = (
       <Dialog>
-        <div className="relative flex justify-center bg-muted/40">
+        <div className="relative flex justify-center bg-chrome">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image.url} alt="Photo of the receipt" className="max-h-[70vh] w-auto max-w-full object-contain" />
           <DialogTrigger asChild>
@@ -72,7 +72,7 @@ export function ReceiptImagePanel({ receipt }: { receipt: Receipt }) {
   }
 
   return (
-    <figure className="overflow-hidden rounded-lg border border-border bg-card">
+    <figure className="overflow-hidden rounded-lg bg-chrome">
       {body}
       <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
         <span className="min-w-0 truncate">{receipt.fileName}</span>

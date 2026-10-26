@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,10 @@ import {
 } from "@/features/receipts/capture-logic";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { TitleRow } from "@/features/shell-pages/title-row";
+
+
+const ScanLine = dynamic(() => import("@/features/receipts/scan-line").then((m) => m.ScanLine), { ssr: false });
 
 type Phase =
   | { kind: "idle" }
@@ -132,19 +137,15 @@ export default function ScanReceiptPage() {
   const blocked = quota != null && !quota.canProcess;
 
   return (
-    <div className="max-w-2xl animate-fade-in">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Scan receipt</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We read the merchant, total and date into a draft. Nothing is saved until you confirm it.
-          </p>
-        </div>
-        {quota && <QuotaPill quota={quota} />}
-      </div>
+    <div className="max-w-2xl space-y-sp-giant">
+      <TitleRow
+        title="Scan receipt"
+        description="We read the merchant, total and date into a draft. Nothing is saved until you confirm it."
+        actions={quota ? <QuotaPill quota={quota} /> : undefined}
+      />
 
       {blocked && (
-        <div role="alert" className="mb-4 rounded-lg border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
+        <div role="alert" className="rounded-md border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
           <p className="font-medium">Receipt scan limit reached</p>
           <p className="mt-0.5 text-xs">
             You have used all {quota!.limit} receipt scans. Your receipts and transactions stay available, and you can{" "}
@@ -193,10 +194,10 @@ export default function ScanReceiptPage() {
           }}
           className={cn(
             "flex flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-10 text-center transition-colors sm:p-12",
-            dragging ? "border-brand/50 bg-brand-soft" : "border-border bg-card"
+            dragging ? "border-primary bg-band-blue" : "border-input bg-canvas"
           )}
         >
-          <Upload className={cn("mb-3 h-8 w-8", dragging ? "text-brand" : "text-muted-foreground/60")} aria-hidden="true" />
+          <Upload className={cn("mb-3 h-8 w-8", dragging ? "text-primary" : "text-muted-foreground/60")} aria-hidden="true" />
           <p className="text-sm font-medium text-foreground">Drop a receipt image here</p>
           <p className="mt-1 text-xs text-muted-foreground">JPEG, PNG, WebP, TIFF or BMP, up to 5 MB</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -217,11 +218,12 @@ export default function ScanReceiptPage() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-lg bg-chrome">
           {preview && (
-            <div className="flex max-h-72 justify-center bg-muted/50">
+            <div className="relative flex max-h-72 justify-center overflow-hidden bg-chrome">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={preview} alt="The receipt you chose" className="max-h-72 w-auto object-contain" />
+              {phase.kind === "reading" && <ScanLine />}
             </div>
           )}
           <div className="border-t border-border p-4">
@@ -280,7 +282,7 @@ export default function ScanReceiptPage() {
       )}
 
       {phase.kind === "idle" && (
-        <div className="mt-4 rounded-md border border-border bg-muted/50 p-4">
+        <div className="rounded-md bg-chrome p-4">
           <p className="mb-2 text-xs font-medium text-foreground/80">For the best read</p>
           <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
             <li>Lay the receipt flat in good light, without shadows or glare.</li>
@@ -306,9 +308,9 @@ function SendingStatus({ percent, name }: { percent: number | null; name?: strin
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent ?? undefined}
-        className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+        className="mt-2 h-1.5 overflow-hidden rounded-sm bg-band"
       >
-        <div className="h-full rounded-full bg-brand transition-[width] duration-fast" style={{ width: `${percent ?? 5}%` }} />
+        <div className="h-full origin-left bg-primary transition-transform duration-fast" style={{ width: "100%", transform: `scaleX(${(percent ?? 5) / 100})` }} />
       </div>
       {name && <p className="mt-2 truncate text-xs text-muted-foreground">{name}</p>}
     </div>
@@ -341,7 +343,7 @@ function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
     return (
       <Link
         href="/dashboard/settings"
-        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-brand/25 bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand"
+        className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-band-blue px-2.5 py-1 text-xs font-medium text-primary"
       >
         <InfinityIcon className="h-3 w-3" aria-hidden="true" />
         Unlimited receipt scans
@@ -352,7 +354,7 @@ function QuotaPill({ quota }: { quota: ReceiptQuotaInfo }) {
   const tone =
     pct >= 100 ? "border-warning/25 bg-warning-soft text-warning"
     : pct >= 80 ? "border-caution/25 bg-caution-soft text-caution"
-    : "border-border bg-muted/50 text-muted-foreground";
+    : "border-border bg-chrome text-muted-foreground";
   return (
     <Link
       href="/dashboard/settings"

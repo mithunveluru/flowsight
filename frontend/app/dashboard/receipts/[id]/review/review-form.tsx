@@ -10,6 +10,8 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAnnounce } from "@/components/ui/announcer";
+import { toast } from "@/components/ui/toast";
+import { markNewTransaction } from "@/features/transactions/new-row";
 import { useConfirmReceipt } from "@/features/receipts/hooks";
 import {
   RECEIPT_THRESHOLDS,
@@ -28,6 +30,8 @@ import { CurrencySelect } from "@/features/transactions/currency-select";
 import { currencySymbol, formatMoney, normalizeCurrency, parseAmount } from "@/features/transactions/currency";
 import { CATEGORY_OPTIONS, type TransactionCategory } from "@/features/transactions/types";
 import { cn } from "@/lib/utils";
+import { TitleRow } from "@/features/shell-pages/title-row";
+import { ChipSettle, FillIn } from "@/features/receipts/review-motion";
 import { ReceiptImagePanel } from "./receipt-image";
 
 const CHIP_LABELS = { high: "Looks right", medium: "Check this", low: "Please check" };
@@ -41,9 +45,17 @@ const localToday = () => {
 /** What the field's chip says: a confidence level, or that a person has to fill it in. */
 function FieldSignal({ plan }: { plan: FieldPlan }) {
   if (plan.mode === "ask") {
-    return <span className="text-xs font-medium text-warning">Needs your input</span>;
+    return (
+      <ChipSettle>
+        <span className="text-xs font-medium text-warning">Needs your input</span>
+      </ChipSettle>
+    );
   }
-  return <ConfidenceChip value={plan.confidence} thresholds={RECEIPT_THRESHOLDS} labels={CHIP_LABELS} showValue />;
+  return (
+    <ChipSettle>
+      <ConfidenceChip value={plan.confidence} thresholds={RECEIPT_THRESHOLDS} labels={CHIP_LABELS} showValue />
+    </ChipSettle>
+  );
 }
 
 const flag = (plan: FieldPlan) =>
@@ -82,7 +94,7 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
       return;
     }
     try {
-      await confirm.mutateAsync({
+      const saved = await confirm.mutateAsync({
         merchant: values.merchant.trim(),
         amount: parsedAmount!,
         date: values.date,
@@ -90,6 +102,8 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
         category: (values.category || undefined) as TransactionCategory | undefined,
         notes: values.notes.trim() || undefined,
       });
+      if (saved.transaction) markNewTransaction(saved.transaction.id);
+      toast({ title: "Receipt saved", description: "It is now in your transactions.", tone: "success" });
       announce("Receipt saved as a transaction.");
     } catch (err) {
       const msg = err instanceof Error && err.message ? err.message : "Could not save the transaction. Try again.";
@@ -101,20 +115,19 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
   const asked = (["merchant", "amount", "date", "currency"] as const).filter((f) => plan[f].mode === "ask");
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <div className="space-y-3">
-        <Link
-          href="/dashboard/receipts"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Back to receipt inbox
-        </Link>
-        <div>
-          <h1 className="text-headline">Review receipt</h1>
-          <p className="mt-1 text-supporting">Nothing is saved until you confirm. Check the values against the image.</p>
-        </div>
-      </div>
+    <div className="space-y-sp-giant">
+      <TitleRow
+        title="Review receipt"
+        description="Nothing is saved until you confirm. Check the values against the image."
+        actions={
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/dashboard/receipts">
+              <ArrowLeft aria-hidden="true" />
+              Back to receipt inbox
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
         <div className="lg:sticky lg:top-4">
@@ -123,7 +136,7 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
 
         <form onSubmit={submit} noValidate className="space-y-4">
           {asked.length > 0 && (
-            <div className="rounded-lg border border-caution/25 bg-caution-soft p-3 text-sm text-caution" role="note">
+            <div className="rounded-md border border-caution/25 bg-caution-soft p-3 text-sm text-caution" role="note">
               {asked.length === 1 ? "One detail" : `${asked.length} details`} could not be read with enough certainty. Fill in{" "}
               {askedSummary(asked)}.
             </div>
@@ -137,13 +150,15 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
             labelAction={<FieldSignal plan={plan.merchant} />}
             hint={x?.merchantRaw && x.merchantRaw !== values.merchant ? `Printed as "${x.merchantRaw}"` : undefined}
           >
-            <Input
-              value={values.merchant}
-              onChange={(e) => set({ merchant: e.target.value })}
-              placeholder="e.g. Walmart, Starbucks"
-              maxLength={255}
-              className={flag(plan.merchant)}
-            />
+            <FillIn index={0} pulse={plan.merchant.mode === "highlight"}>
+              <Input
+                value={values.merchant}
+                onChange={(e) => set({ merchant: e.target.value })}
+                placeholder="e.g. Walmart, Starbucks"
+                maxLength={255}
+                className={flag(plan.merchant)}
+              />
+            </FillIn>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
@@ -154,22 +169,24 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
               error={errors.amount}
               labelAction={<FieldSignal plan={plan.amount} />}
             >
-              <div className="relative">
-                {symbol && (
-                  <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    {symbol}
-                  </span>
-                )}
-                <Input
-                  value={values.amount}
-                  onChange={(e) => set({ amount: e.target.value })}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  placeholder="0.00"
-                  style={symbol ? { paddingLeft: `${1.1 + symbol.length * 0.55}rem` } : undefined}
-                  className={cn("tabular-nums", flag(plan.amount))}
-                />
-              </div>
+              <FillIn index={1} pulse={plan.amount.mode === "highlight"}>
+                <div className="relative">
+                  {symbol && (
+                    <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      {symbol}
+                    </span>
+                  )}
+                  <Input
+                    value={values.amount}
+                    onChange={(e) => set({ amount: e.target.value })}
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0.00"
+                    style={symbol ? { paddingLeft: `${1.1 + symbol.length * 0.55}rem` } : undefined}
+                    className={cn("tabular-nums", flag(plan.amount))}
+                  />
+                </div>
+              </FillIn>
             </Field>
             <Field
               label="Currency"
@@ -178,12 +195,14 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
               error={errors.currency}
               labelAction={<FieldSignal plan={plan.currency} />}
             >
-              <CurrencySelect
-                value={values.currency}
-                onChange={(code) => set({ currency: code })}
-                detected={x?.currency}
-                className={flag(plan.currency)}
-              />
+              <FillIn index={2} pulse={plan.currency.mode === "highlight"}>
+                <CurrencySelect
+                  value={values.currency}
+                  onChange={(code) => set({ currency: code })}
+                  detected={x?.currency}
+                  className={flag(plan.currency)}
+                />
+              </FillIn>
             </Field>
           </div>
 
@@ -202,8 +221,8 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
                       aria-pressed={chosen}
                       onClick={() => set({ amount: String(c.amount) })}
                       className={cn(
-                        "flex min-h-11 items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                        chosen ? "border-brand bg-brand-soft" : "border-border bg-card hover:bg-muted"
+                        "flex min-h-11 items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+                        chosen ? "border-primary bg-band-blue" : "border-input bg-card hover:bg-band-blue"
                       )}
                     >
                       <span className="min-w-0">
@@ -213,7 +232,7 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
                           {c.description}
                         </span>
                       </span>
-                      {chosen && <CheckCircle2 className="h-4 w-4 shrink-0 text-brand" aria-label="Selected" />}
+                      {chosen && <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-label="Selected" />}
                     </button>
                   );
                 })}
@@ -230,13 +249,15 @@ export function ReviewForm({ receipt }: { receipt: Receipt }) {
             hint={dateNote ?? undefined}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <Input
-                type="date"
-                value={values.date}
-                max={localToday()}
-                onChange={(e) => set({ date: e.target.value })}
-                className={cn("w-auto min-w-44", flag(plan.date))}
-              />
+              <FillIn index={3} pulse={plan.date.mode === "highlight"}>
+                <Input
+                  type="date"
+                  value={values.date}
+                  max={localToday()}
+                  onChange={(e) => set({ date: e.target.value })}
+                  className={cn("w-auto min-w-44", flag(plan.date))}
+                />
+              </FillIn>
               {swapped && (
                 <Button type="button" size="sm" variant="outline" onClick={() => set({ date: swapped })}>
                   Swap day and month

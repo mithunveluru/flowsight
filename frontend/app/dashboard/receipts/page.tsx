@@ -13,11 +13,13 @@ import { receiptStage, sortInbox, type ReceiptStage } from "@/features/receipts/
 import type { Receipt } from "@/features/receipts/types";
 import { formatMoney } from "@/features/transactions/currency";
 import { cn } from "@/lib/utils";
+import { TABLE_LOOK } from "@/features/shell-pages/table-look";
+import { TitleRow } from "@/features/shell-pages/title-row";
 
 const STAGE: Record<ReceiptStage, { label: string; icon: typeof Clock; tone: string }> = {
   draft: { label: "Needs review", icon: Clock, tone: "border-caution/25 bg-caution-soft text-caution" },
   failed: { label: "Could not read", icon: XCircle, tone: "border-warning/25 bg-warning-soft text-warning" },
-  processing: { label: "Reading", icon: Loader2, tone: "border-brand/25 bg-brand-soft text-brand" },
+  processing: { label: "Reading", icon: Loader2, tone: "border-primary/25 bg-band-blue text-primary" },
   confirmed: { label: "Confirmed", icon: CheckCircle2, tone: "border-positive/25 bg-positive-soft text-positive" },
 };
 
@@ -44,21 +46,19 @@ export default function ReceiptInboxPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-headline">Receipt inbox</h1>
-          <p className="mt-0.5 text-supporting">
-            {data ? `${data.totalElements} total${drafts ? ` · ${drafts} waiting for your review` : ""}` : " "}
-          </p>
-        </div>
-        <Button size="sm" asChild>
-          <Link href="/dashboard/capture/receipt">
-            <Plus aria-hidden="true" />
-            Scan receipt
-          </Link>
-        </Button>
-      </div>
+    <div className="space-y-sp-wide">
+      <TitleRow
+        title="Receipt inbox"
+        description={data ? `${data.totalElements} total${drafts ? ` · ${drafts} waiting for your review` : ""}` : " "}
+        actions={
+          <Button size="sm" asChild>
+            <Link href="/dashboard/capture/receipt">
+              <Plus aria-hidden="true" />
+              Scan receipt
+            </Link>
+          </Button>
+        }
+      />
 
       {isPending ? (
         <LoadingState variant="table" rows={6} label="Loading receipts" />
@@ -76,17 +76,18 @@ export default function ReceiptInboxPage() {
           }
         />
       ) : (
-        <div className="card-refined overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <div className="overflow-hidden rounded-md">
+          {/* relative keeps the sr-only header cell inside the scroller, where it would otherwise widen the page */}
+          <div className="relative overflow-x-auto">
+            <table className={cn("w-full text-sm", TABLE_LOOK)}>
               <caption className="sr-only">Receipts, those waiting for review first</caption>
               <thead>
-                <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  <th scope="col" className="px-4 py-3">Receipt</th>
-                  <th scope="col" className="px-4 py-3">Status</th>
-                  <th scope="col" className="px-4 py-3">Details</th>
-                  <th scope="col" className="px-4 py-3">Scanned</th>
-                  <th scope="col" className="w-10 px-4 py-3"><span className="sr-only">Delete</span></th>
+                <tr>
+                  <th scope="col">Receipt</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Details</th>
+                  <th scope="col" className="hidden sm:table-cell">Scanned</th>
+                  <th scope="col" className="w-10"><span className="sr-only">Delete</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -127,21 +128,21 @@ function ReceiptRow({ receipt, onDelete, deleting }: { receipt: Receipt; onDelet
   const currency = tx?.currency ?? receipt.currency ?? x?.currency;
 
   return (
-    <tr className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
-      <td className="px-4 py-3">
-        <Link href={review} className="flex items-center gap-2.5 font-medium text-foreground hover:text-brand">
+    <tr className={cn("transition-opacity duration-fast ease-exit", deleting && "opacity-0")}>
+      <td>
+        <Link href={review} className="flex items-center gap-2.5 font-medium text-ink hover:text-primary">
           <FileImage className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span className="max-w-[14rem] truncate">{receipt.fileName}</span>
         </Link>
         <p className="ml-[1.625rem] text-xs text-muted-foreground">{Math.max(1, Math.round(receipt.fileSize / 1024))} KB</p>
       </td>
-      <td className="px-4 py-3">
+      <td>
         <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium", tone)}>
           <Icon className={cn("h-3 w-3", stage === "processing" && "animate-spin")} aria-hidden="true" />
           {label}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td>
         {tx ? (
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -157,22 +158,22 @@ function ReceiptRow({ receipt, onDelete, deleting }: { receipt: Receipt; onDelet
                 {[x?.merchant, x?.amount != null ? formatMoney(x.amount, currency) : null].filter(Boolean).join(" · ")}
               </span>
             )}
-            <Link href={review} className="text-xs font-medium text-brand hover:underline">
+            <Link href={review} className="text-xs font-medium text-primary hover:underline">
               Review and confirm
             </Link>
           </div>
         ) : stage === "failed" ? (
-          <Link href={review} className="text-xs font-medium text-brand hover:underline">
+          <Link href={review} className="text-xs font-medium text-primary hover:underline">
             Open and enter by hand
           </Link>
         ) : (
           <span className="text-xs text-muted-foreground">Reading the receipt</span>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
+      <td className="hidden whitespace-nowrap text-xs sm:table-cell">
         {new Date(receipt.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
       </td>
-      <td className="px-4 py-3">
+      <td>
         <ConfirmButton onConfirm={() => onDelete(receipt.id)} busy={deleting} label={`Delete ${receipt.fileName}`} />
       </td>
     </tr>

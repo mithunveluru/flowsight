@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 import { Field } from "@/components/ui/field";
 import { useAnnounce } from "@/components/ui/announcer";
 import { formatProbability } from "@/components/ui/confidence";
@@ -11,6 +12,12 @@ import { formatMoney } from "./currency";
 import { useUpdateTransaction } from "./hooks";
 import { otherAlternatives } from "./table-logic";
 import { CATEGORY_META, type MerchantRuleSuggestion, type Transaction, type TransactionCategory } from "./types";
+
+// The tick animates after the save, so its motion code stays off the first load of the pages that show this panel.
+const DrawnCheck = dynamic(() => import("@/features/receipts/review-motion").then((m) => m.DrawnCheck), {
+  ssr: false,
+  loading: () => <span className="inline-block h-5 w-5 shrink-0" aria-hidden="true" />,
+});
 
 /**
  * Confirmation after a transaction is saved: what it was filed under and how sure we
@@ -52,9 +59,9 @@ export function SavedTransactionPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-positive/25 bg-positive-soft p-4">
+      <div className="rounded-md border border-positive/25 bg-positive-soft p-4">
         <p className="flex items-center gap-2 text-sm font-medium text-positive">
-          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <DrawnCheck className="h-5 w-5 shrink-0" />
           {title}
         </p>
         <p className="mt-1 text-sm text-foreground">
@@ -66,7 +73,7 @@ export function SavedTransactionPanel({
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="rounded-md bg-chrome p-4">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-muted-foreground">Filed under</span>
           {category ? (
@@ -91,7 +98,7 @@ export function SavedTransactionPanel({
                   type="button"
                   disabled={update.isPending}
                   onClick={() => setCategory(a.category)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-band-blue disabled:opacity-50 coarse:min-h-11"
                 >
                   <CategoryDot category={a.category} />
                   {CATEGORY_META[a.category].label}

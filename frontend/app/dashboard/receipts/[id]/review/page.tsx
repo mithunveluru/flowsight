@@ -7,19 +7,19 @@ import { Button } from "@/components/ui/button";
 import { ErrorState, LoadingState } from "@/components/ui/states";
 import { useReceipt } from "@/features/receipts/hooks";
 import { receiptStage } from "@/features/receipts/review-logic";
+import { TitleRow } from "@/features/shell-pages/title-row";
 import { SavedTransactionPanel } from "@/features/transactions/saved-transaction";
 import { ApiError } from "@/lib/api";
 import { ReceiptImagePanel } from "./receipt-image";
 import { ReviewForm } from "./review-form";
 
 const BackLink = () => (
-  <Link
-    href="/dashboard/receipts"
-    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-  >
-    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-    Back to receipt inbox
-  </Link>
+  <Button variant="ghost" size="sm" asChild>
+    <Link href="/dashboard/receipts">
+      <ArrowLeft aria-hidden="true" />
+      Back to receipt inbox
+    </Link>
+  </Button>
 );
 
 export default function ReceiptReviewPage() {
@@ -57,9 +57,8 @@ export default function ReceiptReviewPage() {
 
   if (stage === "confirmed") {
     return (
-      <div className="max-w-xl animate-fade-in space-y-5">
-        <BackLink />
-        <h1 className="text-headline">Receipt confirmed</h1>
+      <div className="max-w-xl space-y-sp-giant">
+        <TitleRow title="Receipt confirmed" actions={<BackLink />} />
         <SavedTransactionPanel transaction={receipt.transaction!} title="Saved to your transactions">
           <Button asChild variant="outline">
             <Link href="/dashboard/transactions">
@@ -74,13 +73,12 @@ export default function ReceiptReviewPage() {
 
   if (stage === "failed") {
     return (
-      <div className="animate-fade-in space-y-5">
-        <BackLink />
-        <h1 className="text-headline">Review receipt</h1>
+      <div className="space-y-sp-giant">
+        <TitleRow title="Review receipt" actions={<BackLink />} />
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <ReceiptImagePanel receipt={receipt} />
           <div className="space-y-4">
-            <div role="alert" className="flex items-start gap-3 rounded-lg border border-warning/25 bg-warning-soft p-4">
+            <div role="alert" className="flex items-start gap-3 rounded-md border border-warning/25 bg-warning-soft p-4">
               <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-warning">We could not read this receipt</p>

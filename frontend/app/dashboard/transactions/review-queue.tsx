@@ -5,6 +5,7 @@ import { Loader2, PartyPopper } from "lucide-react";
 import { useAnnounce } from "@/components/ui/announcer";
 import { formatProbability } from "@/components/ui/confidence";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
+import { ListItem, ListMotion } from "@/features/shell-pages/list-motion";
 import { RuleSuggestionCard } from "@/features/merchants/rule-suggestion";
 import { CategoryDot, CategorySignalChip } from "@/features/transactions/category-ui";
 import { formatMoney } from "@/features/transactions/currency";
@@ -70,19 +71,20 @@ export function ReviewQueue() {
           }
           action={
             answered.size > 0 ? (
-              <button type="button" className="text-sm font-medium text-brand hover:underline" onClick={() => { setAnswered(new Set()); void queue.refetch(); }}>
+              <button type="button" className="text-sm font-medium text-primary hover:underline" onClick={() => { setAnswered(new Set()); void queue.refetch(); }}>
                 Check for more
               </button>
             ) : undefined
           }
         />
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="relative grid gap-3 md:grid-cols-2">
+          <ListMotion>
           {open.map((tx) => (
-            <li key={tx.id} className="card-refined space-y-3 p-4">
+            <ListItem key={tx.id} className="space-y-3 rounded-md bg-chrome p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{tx.merchant ?? tx.description}</p>
+                  <p className="truncate font-medium text-ink">{tx.merchant ?? tx.description}</p>
                   <p className="truncate text-xs text-muted-foreground" title={tx.description}>
                     {new Date(tx.transactionDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     {tx.merchant && tx.description !== tx.merchant ? ` · ${tx.description}` : ""}
@@ -106,7 +108,7 @@ export function ReviewQueue() {
                     type="button"
                     disabled={pending === tx.id}
                     onClick={() => answer(tx, c.category)}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-band-blue disabled:opacity-50 coarse:min-h-11"
                   >
                     {pending === tx.id ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : <CategoryDot category={c.category} />}
                     {CATEGORY_META[c.category].label}
@@ -127,8 +129,9 @@ export function ReviewQueue() {
               {errors[tx.id] && (
                 <p role="alert" className="text-xs font-medium text-warning">{errors[tx.id]}</p>
               )}
-            </li>
+            </ListItem>
           ))}
+          </ListMotion>
         </ul>
       )}
     </div>
