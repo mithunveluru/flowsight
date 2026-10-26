@@ -167,11 +167,11 @@ export function TransactionsTable() {
             placeholder="Search merchant, description, notes"
             value={client.query}
             onChange={(e) => setClient((c) => ({ ...c, query: e.target.value }))}
-            className="h-8 pl-9 text-xs"
+            className="h-8 coarse:h-11 pl-9 text-xs"
           />
         </div>
         <Select value={category ?? ALL} onValueChange={(v) => setCategory(v === ALL ? undefined : (v as TransactionCategory))}>
-          <SelectTrigger aria-label="Category" className="h-8 w-44 text-xs">
+          <SelectTrigger aria-label="Category" className="h-8 coarse:h-11 w-44 text-xs">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
@@ -187,7 +187,7 @@ export function TransactionsTable() {
           value={client.source ?? ALL}
           onValueChange={(v) => setClient((c) => ({ ...c, source: v === ALL ? null : (v as TransactionSource) }))}
         >
-          <SelectTrigger aria-label="Source" className="h-8 w-36 text-xs">
+          <SelectTrigger aria-label="Source" className="h-8 coarse:h-11 w-36 text-xs">
             <SelectValue placeholder="All sources" />
           </SelectTrigger>
           <SelectContent>
@@ -199,7 +199,7 @@ export function TransactionsTable() {
             ))}
           </SelectContent>
         </Select>
-        <label className="flex min-h-8 items-center gap-2 text-xs text-foreground">
+        <label className="flex min-h-8 coarse:min-h-11 items-center gap-2 text-xs text-foreground">
           <input
             type="checkbox"
             checked={client.needsReview}
@@ -356,7 +356,7 @@ const BulkBar = ({
   >
     <span className="text-sm font-medium tabular-nums">{count} selected</span>
     <Select value="" onValueChange={(v) => onAction({ type: "recategorize", category: v as TransactionCategory })} disabled={busy}>
-      <SelectTrigger aria-label="Move selected to a category" className="h-8 w-48 bg-card text-xs">
+      <SelectTrigger aria-label="Move selected to a category" className="h-8 coarse:h-11 w-48 bg-card text-xs">
         <SelectValue placeholder="Move to category" />
       </SelectTrigger>
       <SelectContent>
@@ -455,7 +455,7 @@ const Row = memo(function Row({
           aria-label={`Category for ${name}`}
           disabled={saving}
           onChange={changeCategory}
-          triggerClassName="h-8 w-full text-xs"
+          triggerClassName="h-8 coarse:h-11 w-full text-xs"
         />
         {categoryError ? (
           <p role="alert" className="truncate text-xs font-medium text-warning">{categoryError}</p>

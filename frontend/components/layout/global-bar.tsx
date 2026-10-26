@@ -56,7 +56,7 @@ export function GlobalBar({ onOpenNav, onOpenSearch, onOpenAssistant, assistantO
         <MenuIcon className="!size-5" strokeWidth={1.75} aria-hidden="true" />
       </Button>
 
-      <Link href="/dashboard" aria-label="FlowSight home" className="flex shrink-0 items-center gap-2.5 rounded-sm">
+      <Link href="/dashboard" aria-label="FlowSight home" className="flex shrink-0 items-center gap-2.5 rounded-sm coarse:-m-2.5 coarse:p-2.5">
         <Logo />
         <span className="hidden text-ty-link font-medium text-ink sm:inline">FlowSight</span>
       </Link>
@@ -66,7 +66,7 @@ export function GlobalBar({ onOpenNav, onOpenSearch, onOpenAssistant, assistantO
           type="button"
           onClick={onOpenSearch}
           aria-keyshortcuts="Control+K Meta+K"
-          className="press inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10 md:w-64 md:justify-start md:border md:border-input md:bg-canvas md:text-muted-foreground md:hover:bg-canvas md:hover:border-ink"
+          className="press inline-flex h-11 min-w-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10 md:w-64 md:justify-start md:border md:border-input md:bg-canvas md:text-muted-foreground md:hover:bg-canvas md:hover:border-ink"
         >
           <Search className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span className="sr-only">Search and commands</span>
@@ -81,7 +81,7 @@ export function GlobalBar({ onOpenNav, onOpenSearch, onOpenAssistant, assistantO
           onClick={onOpenAssistant}
           aria-expanded={assistantOpen}
           aria-keyshortcuts="Control+J Meta+J"
-          className="press inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10"
+          className="press inline-flex h-11 min-w-11 items-center gap-2 rounded-md px-3 text-sm text-ink-nav hover:bg-band-blue md:h-10"
         >
           <Sparkles className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span className="sr-only lg:not-sr-only">Ask FlowSight</span>

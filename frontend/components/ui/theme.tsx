@@ -125,7 +125,7 @@ export function ThemeToggle({ compact, className }: { compact?: boolean; classNa
             aria-pressed={active}
             onClick={() => setPreference(value)}
             className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-sm px-2 text-xs font-medium transition-colors duration-fast",
+              "inline-flex h-7 coarse:h-11 items-center gap-1.5 rounded-sm px-2 text-xs font-medium transition-colors duration-fast",
               active
                 ? "bg-card text-primary"
                 : "text-muted-foreground hover:text-ink"

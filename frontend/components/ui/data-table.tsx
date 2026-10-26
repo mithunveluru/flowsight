@@ -161,7 +161,7 @@ const SelectionCheckbox = React.forwardRef<
     <input
       ref={innerRef}
       type="checkbox"
-      className={cn("h-4 w-4 cursor-pointer rounded-sm border-input accent-[hsl(var(--primary))] disabled:cursor-not-allowed disabled:opacity-40", className)}
+      className={cn("h-4 w-4 coarse:h-6 coarse:w-6 cursor-pointer rounded-sm border-input accent-[hsl(var(--primary))] disabled:cursor-not-allowed disabled:opacity-40", className)}
       {...props}
     />
   );

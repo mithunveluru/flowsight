@@ -15,7 +15,7 @@ const [primary] = captureActions;
  */
 export function CaptureMenu({ compact, className }: { compact?: boolean; className?: string }) {
   const segment =
-    "press inline-flex h-9 items-center gap-1.5 bg-primary text-sm font-medium text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed";
+    "press inline-flex h-9 coarse:h-11 items-center gap-1.5 bg-primary text-sm font-medium text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed";
 
   return (
     <div className={cn("inline-flex shrink-0 items-stretch", className)}>
@@ -30,7 +30,7 @@ export function CaptureMenu({ compact, className }: { compact?: boolean; classNa
           aria-label={compact ? "Capture" : "More ways to capture"}
           className={cn(
             segment,
-            compact ? "rounded-md px-2.5" : "rounded-r-md border-l border-primary-foreground/30 px-2"
+            compact ? "rounded-md px-2.5 coarse:min-w-11 justify-center" : "rounded-r-md border-l border-primary-foreground/30 px-2 coarse:min-w-11 justify-center"
           )}
         >
           {compact ? (

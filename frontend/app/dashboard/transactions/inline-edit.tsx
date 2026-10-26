@@ -69,7 +69,7 @@ export function InlineText({
         onClick={open}
         aria-label={children ? `Edit ${label}` : `Edit ${label}, ${value || placeholder}`}
         className={cn(
-          "group/edit -mx-1.5 flex max-w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "group/edit -mx-1.5 flex coarse:min-h-11 max-w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           className
         )}
       >

@@ -26,11 +26,11 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-11 px-3.5 text-ty-button",
-        sm: "h-8 px-3 text-sm",
+        sm: "h-8 px-3 text-sm coarse:h-11",
         lg: "h-14 px-6 text-ty-button",
         floating: "h-14 px-5 text-ty-caption",
         icon: "h-11 w-11",
-        "icon-sm": "h-8 w-8",
+        "icon-sm": "h-8 w-8 coarse:h-11 coarse:w-11",
       },
     },
     defaultVariants: {
