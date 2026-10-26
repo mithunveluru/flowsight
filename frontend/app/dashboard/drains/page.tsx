@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertOctagon,
@@ -14,6 +14,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfidenceChip } from "@/components/ui/confidence-chip";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState, LoadingState } from "@/components/ui/states";
+import { leakEvidence } from "@/features/insights/evidence";
 import {
   InsightCallout,
   StatusMarker,
@@ -26,7 +30,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/motion/primitives";
-import { leaksApi } from "@/features/leaks/api";
+import { useLeaks } from "@/features/leaks/hooks";
 import type {
   LeakDetectionResponse,
   LeakInsight,
@@ -58,27 +62,11 @@ function formatINR(v: number) {
 }
 
 export default function LeaksPage() {
-  const [data, setData]         = useState<LeakDetectionResponse | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [scanning, setScanning] = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      setData(await leaksApi.detect());
-    } catch {
-      setData(null);
-    } finally {
-      setLoading(false);
-      setScanning(false);
-    }
-  }, []);
-
-  const rescan = async () => {
-    setScanning(true);
-    await load();
-  };
-
-  useEffect(() => { load(); }, [load]);
+  const query = useLeaks();
+  const data = query.data;
+  const loading = query.isPending;
+  const scanning = query.isFetching && !loading;
+  const rescan = () => query.refetch();
 
   return (
     <div className="space-y-8">
@@ -100,7 +88,9 @@ export default function LeaksPage() {
       </FadeIn>
 
       {loading ? (
-        <LoadingSkeleton />
+        <LoadingState variant="card" rows={3} label="Looking for money drains" />
+      ) : query.isError && !data ? (
+        <ErrorState title="Money drains did not load" error={query.error} onRetry={() => query.refetch()} />
       ) : !data || data.totalLeaksFound === 0 ? (
         <EmptyState />
       ) : (
@@ -117,8 +107,8 @@ export default function LeaksPage() {
               </p>
             </div>
             <StaggerContainer className="space-y-3" stagger={0.05}>
-              {data.leaks.map((leak) => (
-                <StaggerItem key={leak.type}>
+              {data.leaks.map((leak, i) => (
+                <StaggerItem key={`${leak.type}-${i}`}>
                   <LeakCard leak={leak} />
                 </StaggerItem>
               ))}
@@ -152,6 +142,17 @@ function SavingsHero({ data }: { data: LeakDetectionResponse }) {
             </span>{" "}
             a year if all recovered.
           </p>
+          <div className="mt-2">
+            <EvidenceDrawer
+              title="Potential monthly savings"
+              value={`${formatINR(data.totalMonthlyImpact)}/mo`}
+              evidence={{
+                method: "The sum of the monthly impact of each drain found below.",
+                inputs: data.leaks.map((l) => ({ label: l.title, value: `${formatINR(l.monthlyImpact)}/mo` })),
+              }}
+              trigger={<EvidenceTrigger label="the potential monthly savings" className="-ml-1.5" />}
+            />
+          </div>
         </div>
       </div>
     </section>
@@ -205,6 +206,18 @@ function LeakCard({ leak }: { leak: LeakInsight }) {
           : <ChevronRight className="ml-1 mt-1 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />}
       </button>
 
+      <div className="flex flex-wrap items-center gap-2 px-5 pb-3 pl-[4.5rem]">
+        <EvidenceDrawer
+          title={leak.title}
+          value={`${formatINR(leak.monthlyImpact)}/mo`}
+          evidence={leakEvidence(leak)}
+          trigger={<EvidenceTrigger label={`${leak.title} costs ${formatINR(leak.monthlyImpact)} a month`} className="-ml-1.5" />}
+        />
+        {leak.evidence?.confidence != null && (
+          <ConfidenceChip value={leak.evidence.confidence} showValue />
+        )}
+      </div>
+
       {open && (
         <div className="border-t px-5 pb-5 pt-4 animate-fade-in" style={{ borderColor: "hsl(var(--border))" }}>
           {leak.recommendation && (
@@ -233,17 +246,6 @@ function LeakCard({ leak }: { leak: LeakInsight }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      <div className="h-28 rounded-xl skeleton" />
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-20 rounded-xl skeleton" />
-      ))}
     </div>
   );
 }

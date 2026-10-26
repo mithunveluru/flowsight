@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
+  Check,
   Compass,
   Lightbulb,
   Sparkles,
   Telescope,
+  X,
 } from "lucide-react";
-import { insightsApi } from "@/features/insights/api";
+import { useInsights, useRecommendationFeedback } from "@/features/insights/hooks";
+import { canAnswer } from "@/features/insights/feedback";
+import { recommendationEvidence } from "@/features/insights/evidence";
 import type {
   BehavioralPattern,
+  CategoryDrift,
   ConsequenceProjection,
-  InsightsResponse,
   Recommendation,
 } from "@/features/insights/types";
+import { Button } from "@/components/ui/button";
+import { useAnnounce } from "@/components/ui/announcer";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState, LoadingState } from "@/components/ui/states";
 import {
   AmbientGlow,
   AnimatedNumber,
@@ -45,41 +52,36 @@ function formatINRCompact(v: number) {
 }
 
 export default function InsightsPage() {
-  const [data,    setData]    = useState<InsightsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const query = useInsights();
 
-  useEffect(() => {
-    insightsApi.get()
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
+  if (query.isPending) {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8">
         <Header />
-        <LoadingSkeleton />
+        <LoadingState variant="card" rows={3} label="Reading your spending habits" />
       </div>
     );
   }
 
-  if (!data) {
+  if (query.isError) {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8">
         <Header />
-        <EmptyState />
+        <ErrorState title="Habits did not load" error={query.error} onRetry={() => query.refetch()} />
       </div>
     );
   }
 
+  const data = query.data;
   const hasPatterns         = data.profile.patterns.length > 0;
   const hasRecommendations  = data.recommendations.length > 0;
   const hasConsequences     = data.topConsequences.length > 0;
+  const drifts              = data.profile.drifts ?? [];
+  const waiting             = data.profile.needsMoreHistory ?? [];
 
   return (
     <div className="space-y-12">
-      <FadeIn><Header summary={data.profile.summary} /></FadeIn>
+      <FadeIn><Header summary={data.narrative?.text ?? data.profile.summary} narrative={!!data.narrative} /></FadeIn>
 
       {/* Hero — total potential savings, with ambient glow + animated counters */}
       {data.totalPotentialMonthlySaving > 0 && (
@@ -87,6 +89,7 @@ export default function InsightsPage() {
           <SavingsHero
             monthly={data.totalPotentialMonthlySaving}
             annual={data.totalPotentialAnnualSaving}
+            recommendations={data.recommendations}
           />
         </FadeIn>
       )}
@@ -94,8 +97,14 @@ export default function InsightsPage() {
       {/* Behavioral patterns — scroll-reveal */}
       {hasPatterns && (
         <RevealOnScroll delay={0.04}>
-          <PatternsSection patterns={data.profile.patterns} />
+          <PatternsSection patterns={data.profile.patterns} drifts={drifts} />
         </RevealOnScroll>
+      )}
+
+      {waiting.length > 0 && (
+        <p role="note" className="text-caption">
+          Not checked yet because your history is too short: {waiting.map(humanize).join(", ")}.
+        </p>
       )}
 
       {/* Recommendations */}
@@ -119,7 +128,12 @@ export default function InsightsPage() {
   );
 }
 
-function Header({ summary }: { summary?: string }) {
+function humanize(code: string) {
+  const t = code.replace(/_/g, " ").toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function Header({ summary, narrative }: { summary?: string; narrative?: boolean }) {
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -127,17 +141,26 @@ function Header({ summary }: { summary?: string }) {
       </h1>
       <p className="mt-1.5 text-sm text-muted-foreground">
         {summary
-          ? `In short: ${summary}.`
+          ? narrative ? summary : `In short: ${summary}.`
           : "The patterns in how you spend, what you could do about them, and what your regular choices add up to over time."}
       </p>
     </div>
   );
 }
 
-function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
+function SavingsHero({
+  monthly,
+  annual,
+  recommendations,
+}: {
+  monthly: number;
+  annual: number;
+  recommendations: Recommendation[];
+}) {
+  const counted = recommendations.filter((r) => r.source === "LEAK" && r.potentialMonthlySaving);
   return (
     <section
-      className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-positive-soft via-white to-white p-8 lg:p-10"
+      className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-positive-soft via-card to-card p-8 lg:p-10"
       style={{ borderColor: "hsl(var(--border))" }}
     >
       <AmbientGlow />
@@ -158,6 +181,19 @@ function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
               <AnimatedNumber value={annual} format={(v) => `₹${v.toLocaleString("en-IN")}`} />
             </span>{" "}
             a year if you act on every suggestion below.
+            <EvidenceDrawer
+              title="Potential monthly savings"
+              value={`${formatINR(monthly)}/mo`}
+              evidence={{
+                method:
+                  "The sum of the savings from the money-drain recommendations below. Habit estimates overlap with them, so they are not added in.",
+                inputs: counted.map((r) => ({
+                  label: r.title,
+                  value: `${formatINR(r.potentialMonthlySaving as number)}/mo`,
+                })),
+              }}
+              trigger={<EvidenceTrigger label="the potential monthly savings" className="ml-1 align-middle" />}
+            />
           </p>
         </div>
       </div>
@@ -165,7 +201,7 @@ function SavingsHero({ monthly, annual }: { monthly: number; annual: number }) {
   );
 }
 
-function PatternsSection({ patterns }: { patterns: BehavioralPattern[] }) {
+function PatternsSection({ patterns, drifts }: { patterns: BehavioralPattern[]; drifts: CategoryDrift[] }) {
   return (
     <section>
       <SignalSectionHeader
@@ -181,10 +217,27 @@ function PatternsSection({ patterns }: { patterns: BehavioralPattern[] }) {
                 {p.description}
               </p>
               <p className="mt-3 text-[11px] text-muted-foreground/80">{p.context}</p>
+              {p.threshold != null && (
+                <p className="mt-1 text-[11px] text-muted-foreground/80">
+                  Flagged above {p.threshold.toLocaleString("en-IN", { maximumFractionDigits: 2 })} {p.unit} for you.
+                </p>
+              )}
             </SignalCard>
           </StaggerItem>
         ))}
       </StaggerContainer>
+      {drifts.length > 0 && (
+        <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+          {drifts.map((d) => (
+            <li key={d.category}>
+              <span className="font-medium text-foreground">{d.displayName}</span>{" "}
+              {d.direction === "UP" ? "up" : "down"} about{" "}
+              <span className="tabular-nums">{formatINR(Math.abs(d.monthlyChange))}</span> a month since{" "}
+              {new Date(d.since).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}.
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -199,7 +252,7 @@ function RecommendationsSection({ recommendations }: { recommendations: Recommen
       />
       <StaggerContainer className="space-y-3" stagger={0.05}>
         {recommendations.map((r, i) => (
-          <StaggerItem key={i}>
+          <StaggerItem key={r.id ?? i}>
             <RecommendationCard recommendation={r} />
           </StaggerItem>
         ))}
@@ -209,7 +262,23 @@ function RecommendationsSection({ recommendations }: { recommendations: Recommen
 }
 
 function RecommendationCard({ recommendation: r }: { recommendation: Recommendation }) {
+  const feedback = useRecommendationFeedback();
+  const announce = useAnnounce();
   const hasSaving = r.potentialMonthlySaving != null && r.potentialMonthlySaving > 0;
+  const accepted = r.feedback === "ACCEPTED";
+  const id = canAnswer(r) ? r.id : null;
+
+  const answer = (action: "ACCEPTED" | "DISMISSED") => {
+    if (!id) return;
+    feedback.mutate(
+      { id, action },
+      {
+        onSuccess: () => announce(action === "ACCEPTED" ? `Accepted: ${r.title}` : `Dismissed: ${r.title}`),
+        onError: () => announce("That did not save. The recommendation was restored.", "assertive"),
+      }
+    );
+  };
+
   return (
     <SignalCard
       severity={r.confidence}
@@ -220,6 +289,12 @@ function RecommendationCard({ recommendation: r }: { recommendation: Recommendat
             <p className="text-base font-semibold tabular-nums text-foreground">
               {formatINR(r.potentialMonthlySaving as number)}
               <span className="text-xs font-normal text-muted-foreground">/mo</span>
+              <EvidenceDrawer
+                title={r.title}
+                value={`${formatINR(r.potentialMonthlySaving as number)}/mo`}
+                evidence={recommendationEvidence(r)}
+                trigger={<EvidenceTrigger label={`${r.title} could save ${formatINR(r.potentialMonthlySaving as number)} a month`} className="ml-1" />}
+              />
             </p>
             {r.potentialAnnualSaving != null && (
               <p className="text-xs text-muted-foreground">
@@ -237,6 +312,30 @@ function RecommendationCard({ recommendation: r }: { recommendation: Recommendat
         </InsightCallout>
       )}
       {r.evidence.length > 0 && <EvidenceChips className="mt-3" items={r.evidence} />}
+      {r.rankingReason && <p className="mt-3 text-[11px] text-muted-foreground/80">{r.rankingReason}</p>}
+      {id && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {accepted ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-positive">
+              <Check className="h-3.5 w-3.5" aria-hidden="true" /> Accepted
+            </span>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => answer("ACCEPTED")} disabled={feedback.isPending}>
+              <Check className="h-4 w-4" aria-hidden="true" /> I&apos;ll do this
+              <span className="sr-only">: {r.title}</span>
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" onClick={() => answer("DISMISSED")} disabled={feedback.isPending}>
+            <X className="h-4 w-4" aria-hidden="true" /> Not for me
+            <span className="sr-only">: {r.title}</span>
+          </Button>
+          {feedback.isError && (
+            <span role="alert" className="text-xs text-warning">
+              Could not save that. Try again.
+            </span>
+          )}
+        </div>
+      )}
     </SignalCard>
   );
 }
@@ -290,24 +389,6 @@ function ConsequenceCard({ projection: p }: { projection: ConsequenceProjection 
           hint="if invested at 8%/yr"
         />
       </ForecastPanel>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="skeleton h-32 rounded-xl" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="skeleton h-28 rounded-xl" />
-        ))}
-      </div>
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="skeleton h-24 rounded-xl" />
-        ))}
-      </div>
     </div>
   );
 }

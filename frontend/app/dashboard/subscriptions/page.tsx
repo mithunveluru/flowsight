@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   CalendarClock,
@@ -13,7 +13,12 @@ import {
   TrendingDown,
   XCircle,
 } from "lucide-react";
-import { recurringApi } from "@/features/recurring/api";
+import { useRecurring, useRecurringAction, useRescanRecurring } from "@/features/recurring/hooks";
+import { recurringEvidence } from "@/features/insights/evidence";
+import { useAnnounce } from "@/components/ui/announcer";
+import { ConfidenceChip } from "@/components/ui/confidence-chip";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState, LoadingState } from "@/components/ui/states";
 import type {
   ConfidenceTier,
   RecurringPattern,
@@ -22,6 +27,9 @@ import type {
 import { Button } from "@/components/ui/button";
 import { StatusMarker } from "@/components/ui/signals";
 import { cn } from "@/lib/utils";
+
+const fmtShort = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
 function formatINR(v: number) {
   return `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -41,55 +49,33 @@ const TIER_STYLES: Record<ConfidenceTier, { label: string; cls: string }> = {
 };
 
 export default function RecurringPage() {
-  const [patterns, setPatterns] = useState<RecurringPattern[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [scanning, setScanning] = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
-  const [busyId,   setBusyId]   = useState<string | null>(null);
+  const query = useRecurring();
+  const rescan = useRescanRecurring();
+  const action = useRecurringAction();
+  const announce = useAnnounce();
+  const patterns = query.data ?? [];
+  const loading = query.isPending;
+  const scanning = rescan.isPending;
+  const busyId = action.isPending ? action.variables?.id ?? null : null;
 
-  const load = useCallback(async (refresh = false) => {
-    try {
-      setPatterns(await recurringApi.list(refresh));
-    } catch {
-      setError("Failed to load recurring patterns.");
-    } finally {
-      setLoading(false);
-      setScanning(false);
-    }
-  }, []);
+  // detection runs on the server each time the page opens, as before
+  const { mutate: runRescan } = rescan;
+  useEffect(() => { runRescan(); }, [runRescan]);
 
-  useEffect(() => { load(true); }, [load]);
+  const scan = () => rescan.mutate(undefined, { onSuccess: (p) => announce(`Scan finished. ${p.length} recurring ${p.length === 1 ? "charge" : "charges"} found.`) });
 
-  const scan = async () => {
-    setScanning(true);
-    setError(null);
-    await load(true);
-  };
-
-  // Pattern actions — optimistic UI
-  const handleDismiss = async (id: string) => {
-    setBusyId(id);
-    try {
-      await recurringApi.dismiss(id);
-      setPatterns((prev) => prev.filter((p) => p.id !== id));
-    } finally { setBusyId(null); }
-  };
-
-  const handleConfirm = async (id: string) => {
-    setBusyId(id);
-    try {
-      const updated = await recurringApi.confirm(id);
-      setPatterns((prev) => prev.map((p) => (p.id === id ? updated : p)));
-    } finally { setBusyId(null); }
-  };
-
-  const handleUnconfirm = async (id: string) => {
-    setBusyId(id);
-    try {
-      const updated = await recurringApi.unconfirm(id);
-      setPatterns((prev) => prev.map((p) => (p.id === id ? updated : p)));
-    } finally { setBusyId(null); }
-  };
+  const act = (id: string, kind: "confirm" | "unconfirm" | "dismiss") =>
+    action.mutate(
+      { id, action: kind },
+      {
+        onSuccess: () => announce(kind === "confirm" ? "Confirmed as recurring." : kind === "unconfirm" ? "Confirmation removed." : "Dismissed."),
+        onError: () => announce("That did not save. The list was restored.", "assertive"),
+      }
+    );
+  const handleDismiss = (id: string) => act(id, "dismiss");
+  const handleConfirm = (id: string) => act(id, "confirm");
+  const handleUnconfirm = (id: string) => act(id, "unconfirm");
+  const error = action.isError ? "That change did not save, so the list was restored." : null;
 
   // Partition into three tiers for the UI
   const confirmed = patterns.filter((p) => p.isUserConfirmed);
@@ -117,13 +103,15 @@ export default function RecurringPage() {
       </div>
 
       {error && (
-        <p className="text-sm text-warning flex items-center gap-1.5">
+        <p role="alert" className="text-sm text-warning flex items-center gap-1.5">
           <XCircle className="h-4 w-4 shrink-0" /> {error}
         </p>
       )}
 
-      {loading ? (
-        <LoadingSkeleton />
+      {query.isError && !query.data ? (
+        <ErrorState title="Subscriptions did not load" error={query.error} onRetry={() => query.refetch()} />
+      ) : loading ? (
+        <LoadingState variant="table" rows={3} label="Loading subscriptions" />
       ) : patterns.length === 0 ? (
         <EmptyState onScan={scan} scanning={scanning} />
       ) : (
@@ -300,15 +288,27 @@ function PatternRow({
         <p className="mt-0.5 text-xs text-muted-foreground/70">
           Seen {pattern.occurrenceCount} times so far
         </p>
+        <EvidenceDrawer
+          title={`${pattern.merchant} repeats ${pattern.periodLabel.toLowerCase()}`}
+          value={pattern.probability != null ? `${Math.round(Number(pattern.probability) * 100)}% likely recurring` : undefined}
+          evidence={recurringEvidence(pattern)}
+          trigger={<EvidenceTrigger label={`${pattern.merchant} is recurring`} className="-ml-1.5 mt-0.5" />}
+        />
       </td>
       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
         {pattern.periodLabel}
       </td>
       <td className="px-4 py-3">
-        <StatusMarker label={tier.label} className={tier.cls} />
-        <p className="mt-0.5 text-xs text-muted-foreground/70">
-          {(Number(pattern.confidence) * 100).toFixed(0)}%
-        </p>
+        {pattern.scoredBy === "MODEL" && pattern.probability != null ? (
+          <ConfidenceChip value={pattern.probability} showValue />
+        ) : (
+          <>
+            <StatusMarker label={tier.label} className={tier.cls} />
+            <p className="mt-0.5 text-xs text-muted-foreground/70">
+              {(Number(pattern.confidence) * 100).toFixed(0)}%
+            </p>
+          </>
+        )}
       </td>
       <td className="px-4 py-3 tabular-nums">
         <span className="font-medium text-foreground">{formatINR(pattern.estimatedAmount)}</span>
@@ -322,6 +322,11 @@ function PatternRow({
               day: "numeric", month: "short", year: "numeric",
             })
           : "—"}
+        {pattern.nextExpectedLow && pattern.nextExpectedHigh && (
+          <span className="block text-muted-foreground/70">
+            likely {fmtShort(pattern.nextExpectedLow)} to {fmtShort(pattern.nextExpectedHigh)}
+          </span>
+        )}
         {pattern.daysUntilNext !== 0 && (
           <span className={cn("ml-1 block", pattern.daysUntilNext < 0 ? "text-caution" : "text-muted-foreground/70")}>
             ({pattern.daysUntilNext < 0
@@ -340,7 +345,7 @@ function PatternRow({
               onClick={() => onUnconfirm(pattern.id)}
               disabled={busy}
               className="rounded p-1.5 text-positive hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
-              title="Remove confirmation"
+              title="Remove confirmation" aria-label={`Remove confirmation for ${pattern.merchant}`}
             >
               <CheckCircle2 className="h-4 w-4" />
             </button>
@@ -349,7 +354,7 @@ function PatternRow({
               onClick={() => onConfirm(pattern.id)}
               disabled={busy}
               className="rounded p-1.5 text-muted-foreground/70 hover:text-positive hover:bg-positive-soft transition-colors disabled:opacity-50"
-              title="Confirm as recurring"
+              title="Confirm as recurring" aria-label={`Confirm ${pattern.merchant} as recurring`}
             >
               <CheckCircle2 className="h-4 w-4" />
             </button>
@@ -358,23 +363,13 @@ function PatternRow({
             onClick={() => onDismiss(pattern.id)}
             disabled={busy}
             className="rounded p-1.5 text-muted-foreground/50 hover:text-warning hover:bg-warning-soft transition-colors disabled:opacity-50"
-            title="Not recurring — dismiss"
+            title="Not recurring — dismiss" aria-label={`Dismiss ${pattern.merchant}, not recurring`}
           >
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </td>
     </tr>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="skeleton h-16 rounded-lg" />
-      ))}
-    </div>
   );
 }
 

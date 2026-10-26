@@ -9,14 +9,15 @@ import { Card } from "@/components/ui/card";
 import { CategoryPill } from "@/components/ui/category-pill";
 import { ChartFrame, ChartLegend, ChartSkeleton } from "@/components/ui/chart-frame";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
-import { EvidenceDrawer, EvidenceTrigger, type Evidence } from "@/components/ui/evidence-drawer";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
 import { ImpactFigure, SignalCard } from "@/components/ui/signals";
 import { useAnnounce } from "@/components/ui/announcer";
 import { useActivityBounds, useOverview, useTrend } from "@/features/analytics/hooks";
 import { useBudgetSummary } from "@/features/budgets/hooks";
 import { useGoals } from "@/features/goals/hooks";
 import { useLeaks } from "@/features/leaks/hooks";
-import type { LeakInsight, LeakType } from "@/features/leaks/types";
+import { leakEvidence } from "@/features/insights/evidence";
+import type { LeakInsight } from "@/features/leaks/types";
 import { useRecentReceipts } from "@/features/receipts/hooks";
 import { useRecurring } from "@/features/recurring/hooks";
 import { useTransactions, useUncategorizedCount } from "@/features/transactions/hooks";
@@ -264,34 +265,6 @@ export function NeedsAttention() {
   );
 }
 
-const DRAIN_METHOD: Record<LeakType, string> = {
-  DUPLICATE_SUBSCRIPTIONS:
-    "Rule: two or more active recurring payments in the same category (subscriptions, entertainment or education). The figure is the cheapest one, which is what cancelling it would save.",
-  SUBSCRIPTION_CREEP:
-    "Rule: the last two payments to a recurring merchant average at least 10% more than the earlier ones. The figure is the extra amount per month.",
-  HIGH_FREQUENCY_SMALL_SPEND:
-    "Rule: eight or more purchases of ₹500 or less at one merchant in the last three months, adding up to at least ₹1,500 a month. The figure is the monthly average.",
-  BANK_FEES: "Rule: transactions in the last three months whose description mentions a fee, penalty or charge. The figure is the monthly average.",
-};
-
-function drainEvidence(leak: LeakInsight, computedAt: number): Evidence {
-  const to = new Date(computedAt);
-  const from = new Date(to.getFullYear(), to.getMonth() - 3, to.getDate());
-  return {
-    method: DRAIN_METHOD[leak.type] ?? leak.description,
-    inputs: leak.items.map((i) => ({
-      label: i.merchant,
-      value: `${formatRupees(i.amount)}/mo · ${i.detail}`,
-      href: "/dashboard/transactions",
-    })),
-    inputCount: leak.affectedItemsCount,
-    source: "rules",
-    window: { from, to },
-    computedAt: to,
-    caveats: [leak.recommendation],
-  };
-}
-
 export function YouCouldRecover({ userId }: { userId: string | undefined }) {
   const leaks = useLeaks();
   const announce = useAnnounce();
@@ -338,7 +311,7 @@ export function YouCouldRecover({ userId }: { userId: string | undefined }) {
                   <EvidenceDrawer
                     title={leak.title}
                     value={`${formatRupees(leak.monthlyImpact)} a month`}
-                    evidence={drainEvidence(leak, leaks.dataUpdatedAt)}
+                    evidence={leakEvidence(leak, new Date(leaks.dataUpdatedAt))}
                     trigger={<EvidenceTrigger label={`${leak.title} could save ${formatRupees(leak.monthlyImpact)} a month`} className="ml-auto sm:ml-0" />}
                     footer={
                       <Button variant="ghost" size="sm" onClick={() => hide(leak)}>
