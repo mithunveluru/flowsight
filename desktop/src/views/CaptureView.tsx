@@ -9,6 +9,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { AnimatedSwitch } from "@/components/motion/primitives";
+import { TabUnderline, useTabUnderline } from "@/components/motion/tab-underline";
+import { Button } from "@/components/ui/button";
+import { Field, FieldControl } from "@/components/ui/field";
 import { ConfidenceBadge } from "@/components/ui/signals";
 import {
   CATEGORY_OPTIONS,
@@ -22,7 +25,7 @@ import { transactionApi } from "~/api/transactions";
 import { receiptApi } from "~/api/receipts";
 import { bumpRefresh } from "~/lib/refresh";
 import { toast } from "~/components/Toaster";
-import { Button, TextField } from "~/components/ui";
+import { TextField } from "~/components/ui";
 import { formatINR, todayISO } from "~/lib/format";
 
 export type CaptureTab = "transaction" | "receipt";
@@ -30,20 +33,22 @@ export type CaptureTab = "transaction" | "receipt";
 export function CaptureView({ initialTab = "transaction" }: { initialTab?: CaptureTab }) {
   const density = useDensity();
   const [tab, setTab] = useState<CaptureTab>(initialTab);
+  const { ref, geometry } = useTabUnderline<HTMLDivElement>(tab);
   return (
     <div
       className={cn(
-        "flex h-full flex-col px-4 py-4",
+        "flex h-full flex-col px-4 pb-4",
         density === "large" && "mx-auto w-full max-w-xl"
       )}
     >
-      <div className="mb-4 flex gap-2">
-        <SubTab active={tab === "transaction"} onClick={() => setTab("transaction")} icon={<PlusCircle className="h-3.5 w-3.5" />}>
+      <div ref={ref} role="tablist" aria-label="Add" className="relative mb-4 flex border-b border-border">
+        <SubTab active={tab === "transaction"} onClick={() => setTab("transaction")} icon={<PlusCircle className="h-4 w-4" />}>
           Transaction
         </SubTab>
-        <SubTab active={tab === "receipt"} onClick={() => setTab("receipt")} icon={<ReceiptIcon className="h-3.5 w-3.5" />}>
+        <SubTab active={tab === "receipt"} onClick={() => setTab("receipt")} icon={<ReceiptIcon className="h-4 w-4" />}>
           Receipt
         </SubTab>
+        {geometry && <TabUnderline x={geometry.x} width={geometry.width} />}
       </div>
       <AnimatedSwitch viewKey={tab} className="flex-1">
         {tab === "transaction" ? <QuickTxnForm /> : <ReceiptCapture />}
@@ -66,12 +71,13 @@ function SubTab({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
+      data-active={active}
       onClick={onClick}
       className={cn(
-        "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "border-transparent bg-muted text-foreground"
-          : "border-border text-muted-foreground hover:text-foreground"
+        "no-drag flex h-10 flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-fast ease-standard",
+        active ? "font-medium text-primary" : "text-ink-meta hover:text-primary"
       )}
     >
       {icon}
@@ -85,26 +91,27 @@ function SubTab({
 function CategorySelect({
   value,
   onChange,
-  id,
 }: {
   value: string;
   onChange: (v: TransactionCategory | "") => void;
-  id?: string;
 }) {
   return (
-    <select
-      id={id}
-      className="input-base no-drag appearance-none"
-      value={value}
-      onChange={(e) => onChange(e.target.value as TransactionCategory | "")}
-    >
-      <option value="">Auto-detect</option>
-      {CATEGORY_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <Field label="Category">
+      <FieldControl>
+        <select
+          className="input-base no-drag"
+          value={value}
+          onChange={(e) => onChange(e.target.value as TransactionCategory | "")}
+        >
+          <option value="">Auto-detect</option>
+          {CATEGORY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </FieldControl>
+    </Field>
   );
 }
 
@@ -164,17 +171,15 @@ function QuickTxnForm() {
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />
-      <div className="space-y-1.5">
-        <span className="text-[11px] font-medium text-muted-foreground">Category</span>
-        <CategorySelect value={category} onChange={setCategory} />
-      </div>
+      <CategorySelect value={category} onChange={setCategory} />
       <TextField
         label="Notes (optional)"
         placeholder="Add a note"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
-      <Button type="submit" loading={saving} disabled={!valid} className="w-full">
+      <Button type="submit" disabled={!valid || saving} className="no-drag w-full">
+        {saving && <Loader2 className="animate-spin" />}
         Save transaction
       </Button>
     </form>
@@ -311,11 +316,11 @@ function ReceiptCapture() {
   if (stage === "uploading" || stage === "processing") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-        <Loader2 className="h-6 w-6 animate-spin text-signal" />
-        <p className="text-sm font-medium text-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <p className="text-sm font-medium text-ink">
           {stage === "uploading" ? "Uploading receipt…" : "Reading receipt…"}
         </p>
-        <p className="text-xs text-muted-foreground">Running the OCR pipeline</p>
+        <p className="text-xs text-ink-meta">Running the OCR pipeline</p>
       </div>
     );
   }
@@ -324,9 +329,9 @@ function ReceiptCapture() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
         <ReceiptIcon className="h-7 w-7 text-warning" />
-        <p className="text-sm font-medium text-foreground">Receipt quota reached</p>
-        <p className="text-xs text-muted-foreground">{errorMsg}</p>
-        <Button variant="secondary" onClick={reset}>
+        <p className="text-sm font-medium text-ink">Receipt quota reached</p>
+        <p className="text-xs text-ink-meta">{errorMsg}</p>
+        <Button variant="secondary" className="no-drag" onClick={reset}>
           Back
         </Button>
       </div>
@@ -341,17 +346,14 @@ function ReceiptCapture() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="h-4 w-4 text-positive" />
-            <p className="text-sm font-medium text-foreground">Review &amp; save</p>
+            <p className="text-sm font-medium text-ink">Review &amp; save</p>
           </div>
           {conf != null && (
             <ConfidenceBadge severity={sev} label={`${Math.round(conf * 100)}% confident`} />
           )}
         </div>
         {errorMsg && (
-          <p
-            className="rounded-lg px-3 py-2 text-xs"
-            style={{ backgroundColor: "hsl(var(--caution-soft))", color: "hsl(var(--caution))" }}
-          >
+          <p role="alert" className="rounded-md bg-caution-soft px-3 py-2 text-xs text-caution">
             {errorMsg}
           </p>
         )}
@@ -365,15 +367,13 @@ function ReceiptCapture() {
           onChange={(e) => setAmount(e.target.value)}
         />
         <TextField label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground">Category</span>
-          <CategorySelect value={category} onChange={setCategory} />
-        </div>
+        <CategorySelect value={category} onChange={setCategory} />
         <div className="flex gap-2">
-          <Button type="button" variant="secondary" onClick={reset} className="flex-1">
+          <Button type="button" variant="secondary" onClick={reset} className="no-drag flex-1">
             Discard
           </Button>
-          <Button type="submit" loading={confirming} className="flex-1">
+          <Button type="submit" disabled={confirming} className="no-drag flex-1">
+            {confirming && <Loader2 className="animate-spin" />}
             Save
           </Button>
         </div>
@@ -398,17 +398,17 @@ function ReceiptCapture() {
         }}
         onClick={() => fileInput.current?.click()}
         className={cn(
-          "flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 text-center transition-colors",
-          dragging ? "border-signal bg-signal-soft" : "border-border hover:border-muted-foreground/40"
+          "no-drag flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center transition-colors duration-fast ease-standard",
+          dragging ? "border-primary bg-band-blue" : "border-input bg-chrome hover:bg-band-blue"
         )}
       >
-        <UploadCloud className={cn("h-7 w-7", dragging ? "text-signal" : "text-muted-foreground")} />
-        <p className="text-sm font-medium text-foreground">Drop a receipt</p>
-        <p className="text-xs text-muted-foreground">or click to browse · paste with ⌘/Ctrl+V</p>
-        {errorMsg && <p className="mt-1 text-xs text-warning">{errorMsg}</p>}
+        <UploadCloud className={cn("h-7 w-7", dragging ? "text-primary" : "text-ink-meta")} />
+        <p className="text-sm font-medium text-ink">Drop a receipt</p>
+        <p className="text-xs text-ink-meta">or click to browse · paste with ⌘/Ctrl+V</p>
+        {errorMsg && <p role="alert" className="mt-1 text-xs text-warning">{errorMsg}</p>}
       </div>
-      <Button variant="secondary" onClick={pasteFromClipboard} className="w-full">
-        <Clipboard className="h-3.5 w-3.5" />
+      <Button variant="secondary" onClick={pasteFromClipboard} className="no-drag w-full">
+        <Clipboard />
         Paste image from clipboard
       </Button>
       <input

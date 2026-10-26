@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, AlertCircle, Info } from "lucide-react";
-import { EASE_OUT } from "@/components/motion/primitives";
+import { AnimatePresence, motion } from "@/components/motion/primitives";
+import { drift, enterTransition } from "@/components/motion/tokens";
+import { useReducedMotion } from "framer-motion";
 
 type ToastTone = "success" | "error" | "info";
 interface Toast {
@@ -34,35 +35,30 @@ export const toast = {
   info: (m: string) => useToastStore.getState().push(m, "info"),
 };
 
-const TONE_STYLE: Record<ToastTone, { color: string; soft: string; Icon: typeof Check }> = {
-  success: { color: "var(--positive)", soft: "var(--positive-soft)", Icon: Check },
-  error: { color: "var(--warning)", soft: "var(--warning-soft)", Icon: AlertCircle },
-  info: { color: "var(--signal)", soft: "var(--signal-soft)", Icon: Info },
+const TONE_STYLE: Record<ToastTone, { className: string; Icon: typeof Check }> = {
+  success: { className: "text-positive", Icon: Check },
+  error: { className: "text-warning", Icon: AlertCircle },
+  info: { className: "text-primary", Icon: Info },
 };
 
 export function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
+  const reduced = useReducedMotion();
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-50 flex flex-col items-center gap-2 px-4">
+    <div role="status" className="pointer-events-none absolute inset-x-0 bottom-3 z-50 flex flex-col items-center gap-2 px-4">
       <AnimatePresence>
         {toasts.map((t) => {
-          const { color, soft, Icon } = TONE_STYLE[t.tone];
+          const { className, Icon } = TONE_STYLE[t.tone];
           return (
             <motion.div
               key={t.id}
-              initial={{ opacity: 0, y: 10, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: EASE_OUT }}
-              className="pointer-events-auto flex items-center gap-2 rounded-lg bg-card px-3 py-2 text-xs font-medium shadow-card-hover"
-              style={{ color: "hsl(var(--foreground))" }}
+              initial={{ opacity: 0, y: drift(reduced, 10) }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: drift(reduced, 6) }}
+              transition={enterTransition(reduced, 0.2)}
+              className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-popover px-3 py-2 text-xs font-medium text-popover-foreground"
             >
-              <span
-                className="flex h-5 w-5 items-center justify-center rounded-full"
-                style={{ backgroundColor: `hsl(${soft})`, color: `hsl(${color})` }}
-              >
-                <Icon className="h-3 w-3" strokeWidth={2.5} />
-              </span>
+              <Icon className={`h-4 w-4 shrink-0 ${className}`} strokeWidth={2} aria-hidden="true" />
               {t.message}
             </motion.div>
           );

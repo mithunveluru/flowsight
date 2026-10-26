@@ -1,15 +1,7 @@
-import {
-  TrendingDown,
-  CalendarDays,
-  Receipt as ReceiptIcon,
-  ArrowUpRight,
-  Sparkles,
-  Gauge,
-  Wallet,
-  Plus,
-  ScanLine,
-} from "lucide-react";
-import { FadeIn, StaggerContainer, StaggerItem, AmbientGlow } from "@/components/motion/primitives";
+import { ArrowUpRight, Sparkles, Wallet, Plus, ScanLine } from "lucide-react";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/primitives";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/states";
 import {
   SignalCard,
   SignalDot,
@@ -31,7 +23,6 @@ import { useAsync } from "~/lib/useAsync";
 import { useDensity } from "~/lib/density";
 import { formatINR, formatShortDate, todayISO, weekStartISO } from "~/lib/format";
 import { ScoreGauge } from "~/components/ScoreGauge";
-import { Skeleton, Button } from "~/components/ui";
 import type { ViewKey } from "~/components/TitleBar";
 import type { CaptureTab } from "~/views/CaptureView";
 
@@ -123,7 +114,7 @@ export function OverviewView({ onNavigate, onCapture }: OverviewProps) {
   return <MediumOverview data={data} signals={signals} onNavigate={onNavigate} onCapture={onCapture} />;
 }
 
-// COMPACT — widget. Score, today's spend, quick actions, top 2 signals. Nothing
+// COMPACT: widget. Score band, today's spend, quick actions, top 2 signals. Nothing
 // else: understand state in 3s, act in <5s.
 function CompactOverview({
   data,
@@ -133,64 +124,62 @@ function CompactOverview({
 }: { data: OverviewData; signals: OverviewSignal[] } & OverviewProps) {
   const top = signals.slice(0, 2);
   return (
-    <div className="space-y-4 px-3.5 py-3.5">
+    <div>
       <FadeIn>
-        <div className="card-refined surface-gradient-emerald relative overflow-hidden p-3.5">
-          <AmbientGlow />
-          <div className="relative z-10 flex items-center gap-3.5">
+        <section className="bg-band-blue px-4 py-4">
+          <div className="flex items-center gap-4">
             {data.flexibility ? (
               <ScoreGauge score={data.flexibility.currentScore} tier={data.flexibility.currentTier} size={72} />
             ) : (
               <Skeleton className="h-[72px] w-[72px] rounded-full" />
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-overline">Breathing room</p>
-              <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+              <p className="text-xs font-medium text-ink">Breathing room</p>
+              <p className="mt-1 line-clamp-2 text-xs text-ink-body">
                 {data.flexibility?.explanation ?? "Add some income and spending to see this."}
               </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Today <span className="font-semibold text-foreground">{formatINR(data.today?.totalSpend ?? 0, { compact: true })}</span>
+              <p className="mt-1.5 text-xs text-ink-meta">
+                Today <span className="font-medium text-ink">{formatINR(data.today?.totalSpend ?? 0, { compact: true })}</span>
               </p>
             </div>
           </div>
-        </div>
+        </section>
       </FadeIn>
 
-      <QuickActions onCapture={onCapture} />
+      <div className="space-y-5 px-4 py-4">
+        <QuickActions onCapture={onCapture} />
 
-      <section>
-        <SignalSectionHeader
-          icon={<Sparkles className="h-4 w-4" />}
-          title="Worth a look"
-          action={
-            <Button variant="ghost" className="text-[11px]" onClick={() => onNavigate("insights")}>
-              All <ArrowUpRight className="h-3 w-3" />
-            </Button>
-          }
-        />
-        {top.length === 0 ? (
-          <div className="card-refined p-3.5">
+        <section>
+          <SignalSectionHeader
+            icon={<Sparkles className="h-4 w-4" />}
+            title="Worth a look"
+            className="mb-2"
+            action={
+              <Button variant="ghost" size="sm" className="text-primary" onClick={() => onNavigate("insights")}>
+                All <ArrowUpRight />
+              </Button>
+            }
+          />
+          {top.length === 0 ? (
             <InsightCallout tone="signal">All steady. Nothing needs your attention right now.</InsightCallout>
-          </div>
-        ) : (
-          <div className="card-refined divide-y divide-border px-3.5">
-            {top.map((s) => (
-              <div key={s.id} className="flex items-center gap-2.5 py-2.5">
-                <SignalDot severity={s.severity} />
-                <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{s.title}</p>
-                {s.metric && (
-                  <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground">{s.metric}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+          ) : (
+            <div className="divide-y divide-border">
+              {top.map((s) => (
+                <div key={s.id} className="flex items-center gap-2.5 py-2.5">
+                  <SignalDot severity={s.severity} />
+                  <p className="min-w-0 flex-1 truncate text-xs font-medium text-ink">{s.title}</p>
+                  {s.metric && <span className="shrink-0 text-xs font-medium tabular-nums text-ink">{s.metric}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
 
-// MEDIUM — companion. Score, snapshot, quick actions, 3 signals, 3 recent.
+// MEDIUM: companion. Score band with snapshot, quick actions, 3 signals, 3 recent.
 function MediumOverview({
   data,
   signals,
@@ -198,17 +187,18 @@ function MediumOverview({
   onCapture,
 }: { data: OverviewData; signals: OverviewSignal[] } & OverviewProps) {
   return (
-    <div className="space-y-5 px-4 py-4">
-      <ScoreHero flexibility={data.flexibility} />
-      <SnapshotTiles data={data} />
-      <QuickActions onCapture={onCapture} />
-      <SignalsSection signals={signals.slice(0, 3)} onNavigate={onNavigate} />
-      <RecentSection recent={data.recent.slice(0, 3)} onCapture={onCapture} />
+    <div>
+      <ScoreBand data={data} />
+      <div className="space-y-6 px-4 py-5">
+        <QuickActions onCapture={onCapture} />
+        <SignalsSection signals={signals.slice(0, 3)} onNavigate={onNavigate} />
+        <RecentSection recent={data.recent.slice(0, 3)} onCapture={onCapture} />
+      </div>
     </div>
   );
 }
 
-// LARGE — desktop window. Two columns; more signals + recent.
+// LARGE: desktop window. Score band across the top, then two columns.
 function LargeOverview({
   data,
   signals,
@@ -216,105 +206,80 @@ function LargeOverview({
   onCapture,
 }: { data: OverviewData; signals: OverviewSignal[] } & OverviewProps) {
   return (
-    <div className="grid grid-cols-2 gap-5 px-5 py-5">
-      <div className="space-y-5">
-        <ScoreHero flexibility={data.flexibility} />
-        <SnapshotTiles data={data} />
-        <QuickActions onCapture={onCapture} />
-      </div>
-      <div className="space-y-5">
+    <div>
+      <ScoreBand data={data} />
+      <div className="grid grid-cols-2 gap-6 px-5 py-5">
+        <div className="space-y-6">
+          <QuickActions onCapture={onCapture} />
+          <RecentSection recent={data.recent.slice(0, 6)} onCapture={onCapture} />
+        </div>
         <SignalsSection signals={signals.slice(0, 5)} onNavigate={onNavigate} />
-        <RecentSection recent={data.recent.slice(0, 6)} onCapture={onCapture} />
       </div>
     </div>
   );
 }
 
-// Shared building blocks
-function ScoreHero({ flexibility }: { flexibility: FlexibilityScore | null }) {
+function ScoreBand({ data }: { data: OverviewData }) {
+  const { flexibility } = data;
+  const topCategory = data.week?.categoryBreakdown?.[0] ?? null;
   return (
     <FadeIn>
-      <div className="card-refined surface-gradient-emerald relative overflow-hidden p-4">
-        <AmbientGlow />
-        <div className="relative z-10 flex items-center gap-4">
+      <section className="bg-band-blue px-4 py-5 md:px-5">
+        <div className="flex items-center gap-4">
           {flexibility ? (
             <ScoreGauge score={flexibility.currentScore} tier={flexibility.currentTier} />
           ) : (
             <Skeleton className="h-24 w-24 rounded-full" />
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <Gauge className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
-              <p className="text-overline">Breathing room</p>
-            </div>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            <p className="text-sm font-medium text-ink">Breathing room</p>
+            <p className="mt-1 text-xs text-ink-body">
               {flexibility?.explanation ?? "Add income and spending to see this."}
             </p>
           </div>
         </div>
-      </div>
+        <StaggerContainer className="mt-5 grid grid-cols-3 gap-4">
+          <StaggerItem>
+            <Stat label="Today" value={formatINR(data.today?.totalSpend ?? 0, { compact: true })} />
+          </StaggerItem>
+          <StaggerItem>
+            <Stat label="This week" value={formatINR(data.week?.totalSpend ?? 0, { compact: true })} />
+          </StaggerItem>
+          <StaggerItem>
+            <Stat label="Entries this week" value={String(data.week?.transactionCount ?? 0)} />
+          </StaggerItem>
+        </StaggerContainer>
+        {topCategory && (
+          <p className="mt-4 text-xs text-ink-meta">
+            Top category this week: <span className="font-medium text-ink">{topCategory.displayName}</span>
+            {" · "}
+            {formatINR(topCategory.amount, { compact: true })}
+          </p>
+        )}
+      </section>
     </FadeIn>
   );
 }
 
-function SnapshotTiles({ data }: { data: OverviewData }) {
-  const topCategory = data.week?.categoryBreakdown?.[0] ?? null;
+function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <section>
-      <StaggerContainer className="grid grid-cols-3 gap-2.5">
-        <StaggerItem>
-          <SnapshotTile icon={<TrendingDown className="h-3.5 w-3.5" />} label="Today" value={formatINR(data.today?.totalSpend ?? 0, { compact: true })} />
-        </StaggerItem>
-        <StaggerItem>
-          <SnapshotTile icon={<CalendarDays className="h-3.5 w-3.5" />} label="This week" value={formatINR(data.week?.totalSpend ?? 0, { compact: true })} />
-        </StaggerItem>
-        <StaggerItem>
-          <SnapshotTile icon={<ReceiptIcon className="h-3.5 w-3.5" />} label="Entries (wk)" value={String(data.week?.transactionCount ?? 0)} />
-        </StaggerItem>
-      </StaggerContainer>
-      {topCategory && (
-        <p className="mt-2 px-1 text-[11px] text-muted-foreground">
-          Top category this week:{" "}
-          <span className="font-medium text-foreground">{topCategory.displayName}</span> ·{" "}
-          {formatINR(topCategory.amount, { compact: true })}
-        </p>
-      )}
-    </section>
+    <div>
+      <p className="text-base font-medium tabular-nums text-ink">{value}</p>
+      <p className="text-xs text-ink-meta">{label}</p>
+    </div>
   );
 }
 
 function QuickActions({ onCapture }: { onCapture: (tab: CaptureTab) => void }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      <QuickActionButton icon={<Plus className="h-4 w-4" />} label="Add transaction" onClick={() => onCapture("transaction")} />
-      <QuickActionButton icon={<ScanLine className="h-4 w-4" />} label="Scan receipt" onClick={() => onCapture("receipt")} />
+    <div className="grid grid-cols-2 gap-3">
+      <Button variant="outline" className="no-drag" onClick={() => onCapture("transaction")}>
+        <Plus /> Add transaction
+      </Button>
+      <Button variant="outline" className="no-drag" onClick={() => onCapture("receipt")}>
+        <ScanLine /> Scan receipt
+      </Button>
     </div>
-  );
-}
-
-function QuickActionButton({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card-tactile no-drag flex items-center gap-2.5 p-3 text-left"
-    >
-      <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: "hsl(var(--signal-soft))", color: "hsl(var(--signal))" }}
-      >
-        {icon}
-      </span>
-      <span className="text-xs font-medium text-foreground">{label}</span>
-    </button>
   );
 }
 
@@ -331,32 +296,29 @@ function SignalsSection({
         icon={<Sparkles className="h-4 w-4" />}
         title="Worth a look"
         subtitle={signals.length ? `${signals.length} to check` : undefined}
+        className="mb-2"
         action={
-          <Button variant="ghost" className="text-[11px]" onClick={() => onNavigate("insights")}>
-            View all <ArrowUpRight className="h-3 w-3" />
+          <Button variant="ghost" size="sm" className="text-primary" onClick={() => onNavigate("insights")}>
+            View all <ArrowUpRight />
           </Button>
         }
       />
       {signals.length === 0 ? (
-        <div className="card-refined p-4">
-          <InsightCallout tone="signal">
-            Nothing needs your attention right now. Your spending looks steady.
-          </InsightCallout>
-        </div>
+        <InsightCallout tone="signal">
+          Nothing needs your attention right now. Your spending looks steady.
+        </InsightCallout>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {signals.map((s) => (
             <SignalCard
               key={s.id}
               severity={s.severity}
               title={s.title}
               metric={
-                s.metric ? (
-                  <span className="text-sm font-semibold tabular-nums text-foreground">{s.metric}</span>
-                ) : undefined
+                s.metric ? <span className="text-sm font-medium tabular-nums text-ink">{s.metric}</span> : undefined
               }
             >
-              <p className="text-xs leading-relaxed text-muted-foreground">{s.detail}</p>
+              <p className="text-xs text-ink-body">{s.detail}</p>
             </SignalCard>
           ))}
         </div>
@@ -377,15 +339,16 @@ function RecentSection({
       <SignalSectionHeader
         icon={<Wallet className="h-4 w-4" />}
         title="Recent activity"
+        className="mb-2"
         action={
-          <Button variant="ghost" className="text-[11px]" onClick={() => onCapture("transaction")}>
+          <Button variant="ghost" size="sm" className="text-primary" onClick={() => onCapture("transaction")}>
             Add
           </Button>
         }
       />
-      <div className="card-refined divide-y divide-border overflow-hidden">
+      <div className="divide-y divide-border">
         {recent.length === 0 ? (
-          <p className="px-4 py-5 text-center text-xs text-muted-foreground">No transactions yet.</p>
+          <p className="py-5 text-center text-xs text-ink-meta">No transactions yet.</p>
         ) : (
           recent.map((t) => <TransactionRow key={t.id} t={t} />)
         )}
@@ -394,40 +357,19 @@ function RecentSection({
   );
 }
 
-function SnapshotTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="card-refined px-3 py-2.5">
-      <span className="text-muted-foreground">{icon}</span>
-      <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{value}</p>
-      <p className="stat-label">{label}</p>
-    </div>
-  );
-}
-
 function TransactionRow({ t }: { t: Transaction }) {
   const debit = t.type === "DEBIT";
   const name = t.merchant || t.description || "Transaction";
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+    <div className="flex items-center justify-between gap-3 py-2.5">
       <div className="min-w-0">
-        <p className="truncate text-xs font-medium text-foreground">{name}</p>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="truncate text-xs font-medium text-ink">{name}</p>
+        <p className="text-2xs text-ink-meta">
           {formatShortDate(t.transactionDate)}
           {t.categoryDisplayName ? ` · ${t.categoryDisplayName}` : ""}
         </p>
       </div>
-      <span
-        className="shrink-0 text-xs font-semibold tabular-nums"
-        style={{ color: debit ? "hsl(var(--foreground))" : "hsl(var(--positive))" }}
-      >
+      <span className="shrink-0 text-xs font-medium tabular-nums text-ink">
         {debit ? "-" : "+"}
         {formatINR(t.amount)}
       </span>
@@ -437,14 +379,13 @@ function TransactionRow({ t }: { t: Transaction }) {
 
 function OverviewSkeleton() {
   return (
-    <div className="space-y-5 px-4 py-4">
-      <Skeleton className="h-28 w-full rounded-xl" />
-      <div className="grid grid-cols-3 gap-2.5">
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
+    <div role="status" aria-busy="true">
+      <span className="sr-only">Loading overview</span>
+      <Skeleton className="h-36 w-full rounded-none" />
+      <div className="space-y-4 px-4 py-4">
+        <Skeleton className="h-11 w-full rounded-md" />
+        <Skeleton className="h-24 w-full rounded-md" />
       </div>
-      <Skeleton className="h-24 w-full rounded-xl" />
     </div>
   );
 }

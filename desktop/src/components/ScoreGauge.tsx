@@ -1,11 +1,12 @@
+import { useEffect, useState } from "react";
 import { AnimatedNumber } from "@/components/motion/primitives";
 import type { FlexibilityTier } from "@/features/simulation/types";
 
-// Tier -> token color. Healthy tiers read positive; tighter tiers warm up.
+// The arc is the one blue; only the two tight tiers switch to a status colour, and the label names the tier either way.
 const TIER_COLOR: Record<FlexibilityTier, string> = {
-  EXCELLENT: "var(--positive)",
-  GOOD: "var(--positive)",
-  FAIR: "var(--signal)",
+  EXCELLENT: "var(--primary)",
+  GOOD: "var(--primary)",
+  FAIR: "var(--primary)",
   TIGHT: "var(--caution)",
   CONSTRAINED: "var(--warning)",
 };
@@ -32,7 +33,10 @@ export function ScoreGauge({
   const circ = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, score)) / 100;
   const color = `hsl(${TIER_COLOR[tier]})`;
-  const numCls = size < 84 ? "text-xl" : "text-2xl";
+  const numCls = size < 84 ? "text-ty-subhead" : "text-ty-lead";
+  // start empty and fill on mount so the arc animates to its value
+  const [filled, setFilled] = useState(false);
+  useEffect(() => setFilled(true), []);
 
   return (
     <div
@@ -45,7 +49,7 @@ export function ScoreGauge({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="hsl(var(--muted))"
+          stroke="hsl(var(--canvas))"
           strokeWidth={stroke}
         />
         <circle
@@ -57,17 +61,17 @@ export function ScoreGauge({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}
-          strokeDashoffset={circ * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
+          strokeDashoffset={filled ? circ * (1 - pct) : circ}
+          style={{ transition: "stroke-dashoffset var(--duration-reveal) var(--ease-standard)" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <AnimatedNumber
           value={score}
-          className={`${numCls} font-semibold tabular-nums text-foreground`}
+          className={`${numCls} font-medium tabular-nums text-ink`}
           format={(v) => String(v)}
         />
-        <span className="text-[10px] font-medium" style={{ color }}>
+        <span className="text-2xs font-medium" style={{ color }}>
           {TIER_LABEL[tier]}
         </span>
       </div>

@@ -10,6 +10,7 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react";
+import { TabUnderline, useTabUnderline } from "@/components/motion/tab-underline";
 import { cn } from "~/lib/utils";
 import { hideWindow, openWorkspace } from "~/lib/tauri";
 import { useWindowMode, minimizeWindow, toggleMaximize } from "~/lib/window-mode";
@@ -37,7 +38,8 @@ function WinButton({
       type="button"
       onClick={onClick}
       title={title}
-      className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={title}
+      className="press flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-band hover:text-foreground"
     >
       {children}
     </button>
@@ -55,23 +57,24 @@ export function TitleBar({
   const { mode, toggle } = useWindowMode();
   const expanded = mode === "expanded";
   const showLabels = density !== "compact";
+  const { ref, geometry } = useTabUnderline<HTMLElement>(view);
 
   return (
-    <header className="shrink-0 border-b border-border/70 bg-background/40 backdrop-blur-md">
+    <header className="shrink-0 border-b border-border bg-chrome">
       <div
         data-tauri-drag-region
-        className="drag-region flex items-center justify-between px-3.5 pt-3 pb-2"
+        className="drag-region flex items-center justify-between px-4 pt-3 pb-1"
       >
         <div data-tauri-drag-region className="flex items-center gap-2">
           <span
             data-tauri-drag-region
-            className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground"
           >
             <Activity className="h-3.5 w-3.5" strokeWidth={2.5} />
           </span>
           <span
             data-tauri-drag-region
-            className="text-[13px] font-semibold tracking-tight text-foreground"
+            className="text-sm font-medium text-ink"
           >
             FlowSight
           </span>
@@ -106,7 +109,7 @@ export function TitleBar({
         </div>
       </div>
 
-      <nav className="flex items-center gap-1 px-3 pb-2.5">
+      <nav ref={ref} aria-label="Views" className="relative flex items-end px-2">
         {TABS.map(({ key, label, Icon }) => {
           const active = view === key;
           return (
@@ -115,11 +118,12 @@ export function TitleBar({
               type="button"
               onClick={() => onChange(key)}
               title={label}
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              data-active={active}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                active
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                "no-drag flex h-10 flex-1 items-center justify-center gap-1.5 text-sm transition-colors duration-fast ease-standard",
+                active ? "font-medium text-primary" : "text-ink-nav hover:text-primary"
               )}
             >
               <Icon className="h-3.5 w-3.5" strokeWidth={2} />
@@ -127,6 +131,7 @@ export function TitleBar({
             </button>
           );
         })}
+        {geometry && <TabUnderline x={geometry.x} width={geometry.width} />}
       </nav>
     </header>
   );

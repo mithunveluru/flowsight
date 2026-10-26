@@ -58,7 +58,7 @@
   }
 
   body {
-    /* Transparent — the frameless Tauri window shows the rounded app shell. */
+    /* Transparent: the frameless Tauri window shows the rounded app shell. */
     @apply text-foreground;
     background: transparent;
     font-family: var(--font-sans);
@@ -73,7 +73,7 @@
   }
 
   ::selection {
-    background-color: hsl(var(--brand) / 0.18);
+    background-color: hsl(var(--primary) / 0.18);
     color: hsl(var(--foreground));
   }
 
@@ -86,7 +86,7 @@
   }
   ::-webkit-scrollbar-thumb {
     background-color: hsl(var(--border));
-    border-radius: 9999px;
+    border-radius: var(--radius-sm);
   }
   ::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground) / 0.4);
@@ -105,28 +105,9 @@
 }
 
 @layer components {
-  /* The single floating panel that fills the frameless window. A layered, very
-     low-saturation radial wash gives the surface depth instead of flat white. */
+  /* The one panel that fills the frameless window: flat canvas, soft rule, 12px corner. */
   .app-shell {
-    @apply flex h-full w-full flex-col overflow-hidden rounded-2xl;
-    background:
-      radial-gradient(125% 80% at 100% 0%, hsl(var(--brand) / 0.07), transparent 55%),
-      radial-gradient(110% 70% at 0% 100%, hsl(var(--positive) / 0.045), transparent 55%),
-      hsl(var(--background));
-    border: 1px solid hsl(var(--border));
-    box-shadow:
-      0 24px 60px -20px rgba(20, 24, 45, 0.32),
-      0 8px 24px -10px rgba(20, 24, 45, 0.18),
-      0 0 0 1px rgba(47, 55, 90, 0.05);
-  }
-  .dark .app-shell {
-    background:
-      radial-gradient(125% 80% at 100% 0%, hsl(var(--brand) / 0.10), transparent 55%),
-      radial-gradient(110% 70% at 0% 100%, hsl(var(--positive) / 0.06), transparent 55%),
-      hsl(var(--background));
-    box-shadow:
-      0 24px 60px -18px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(255, 255, 255, 0.06);
+    @apply flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-background;
   }
 
   .card-refined {
@@ -144,17 +125,6 @@
     @apply flex items-end justify-between gap-4 mb-4;
   }
 
-  .stat-value {
-    @apply text-3xl font-medium tabular-nums text-ink;
-    line-height: 1.1;
-  }
-  .stat-label {
-    @apply text-xs font-medium text-muted-foreground;
-  }
-  .text-overline {
-    @apply text-xs font-medium text-muted-foreground;
-  }
-
   .input-base {
     @apply h-11 w-full rounded-md border bg-background px-3 text-sm
            placeholder:text-muted-foreground
@@ -166,32 +136,21 @@
     border-color: hsl(var(--ink));
   }
 
-  .badge {
-    @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: hsl(var(--band));
   }
-  .badge-neutral {
-    @apply bg-muted text-foreground/80;
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent 0%, var(--skeleton-sheen) 50%, transparent 100%);
+    animation: skeleton-shimmer 1.6s var(--ease-standard) infinite;
   }
-  .badge-blue {
-    background-color: hsl(var(--brand-soft));
-    color: hsl(var(--brand));
-  }
-  .badge-positive {
-    background-color: hsl(var(--positive-soft));
-    color: hsl(var(--positive));
-  }
-
-  .kbd-hint {
-    @apply inline-flex items-center justify-center rounded border px-1.5 text-[10px] font-medium text-muted-foreground;
-    height: 18px;
-    border-color: hsl(var(--border));
-    background-color: hsl(var(--muted));
-  }
-
-  .surface-gradient-emerald {
-    background:
-      radial-gradient(70% 70% at 0% 0%, hsl(var(--positive) / 0.10), transparent 65%),
-      hsl(var(--card));
+  @keyframes skeleton-shimmer {
+    100% { transform: translateX(100%); }
   }
 
   /* The draggable region of the frameless window. */
@@ -205,10 +164,24 @@
   }
 }
 
+@layer utilities {
+  .press {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
+  }
+  .press:active:not(:disabled) { transform: translateY(1px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+  .skeleton::after { animation: none; }
+  .press:active:not(:disabled) { transform: none; }
 }
