@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Inter } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { Providers } from "@/components/providers";
 import { THEME_INIT_SCRIPT } from "@/components/ui/theme-core";
 import "./globals.css";
+
+// Variable weight axis (no weight option) so 350 renders as 350, not 300 or 400.
+const inter = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: {
@@ -27,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${inter.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <head>

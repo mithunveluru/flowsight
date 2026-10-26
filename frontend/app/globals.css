@@ -11,270 +11,233 @@
   }
 
   html {
-    /* Geist sans alt forms — cleaner digits, professional small caps */
-    font-feature-settings: "ss01", "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-variation-settings: normal;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-normal text-foreground;
+    letter-spacing: 0;
     text-wrap: pretty;
   }
 
-  /* Refined focus ring — narrow indigo, soft glow */
   :focus-visible {
-    @apply outline-none ring-2 ring-offset-2 ring-offset-background;
-    --tw-ring-color: hsl(var(--brand) / 0.55);
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   ::selection {
-    background-color: hsl(var(--brand) / 0.18);
-    color: hsl(var(--foreground));
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--ink));
   }
 
-  /* Refined scrollbar — almost invisible */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb {
     background-color: hsl(var(--border));
-    border-radius: 9999px;
+    border-radius: var(--radius-sm);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--muted-foreground) / 0.4);
+    background-color: hsl(var(--ink-meta) / 0.5);
   }
 
-  /* Typography — tight tracking on display, balanced wrap on headings */
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
+    @apply font-medium;
+    color: hsl(var(--ink));
+    letter-spacing: 0;
     text-wrap: balance;
-    letter-spacing: -0.015em;
   }
 
-  /* Tables — refined, more breathable */
+  /* Dense table tier: the subhead role scaled to 14px over caption cells. */
   table { @apply w-full text-sm; }
   thead tr {
     @apply border-b border-border;
     background-color: transparent;
   }
   thead th {
-    @apply px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase;
-    letter-spacing: 0.04em;
+    @apply px-4 py-3 text-left text-sm font-medium;
+    color: hsl(var(--ink));
   }
   tbody tr {
     @apply border-b border-border last:border-0;
-    transition: background-color 150ms ease;
+    transition: background-color var(--duration-fast) var(--ease-standard);
   }
   tbody td {
-    @apply px-4 py-3.5 text-sm text-foreground;
+    @apply px-4 py-3 text-ty-caption;
+    color: hsl(var(--ink-body));
   }
   tbody tr:hover {
-    background-color: hsl(var(--muted) / 0.55);
+    background-color: hsl(var(--chrome));
   }
 
   code, kbd, pre { @apply font-mono; }
 }
 
 @layer components {
+  /* Cards sit on the canvas with the soft rule and an 8px corner; no shadow, no lift. */
   .card-refined {
-    @apply rounded-xl bg-card;
-    box-shadow: var(--elev-card);
-    transition: box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
+    @apply rounded-md border border-border bg-card;
   }
-  .card-refined:hover {
-    box-shadow: var(--elev-card-hover);
+  .card-tactile {
+    @apply rounded-md border border-border bg-card;
+    transition: border-color var(--duration-fast) var(--ease-standard);
+  }
+  .card-tactile:hover {
+    border-color: hsl(var(--hairline));
   }
 
-  .elev-1 { box-shadow: var(--elev-1); }
-  .elev-2 { box-shadow: var(--elev-2); }
-  .elev-3 { box-shadow: var(--elev-3); }
+  .elev-1, .elev-2, .elev-3 { box-shadow: none; }
 
-  /* ============================================================
-     TYPOGRAPHY SCALE — clearer hierarchy across the product
-     ============================================================ */
+  /* Only illustration cards (UI depicted inside imagery) carry a shadow. */
+  .card-illustration {
+    @apply rounded-md bg-card;
+    box-shadow: var(--elev-illustration);
+  }
+
+  .link {
+    color: hsl(var(--primary));
+    text-underline-offset: 4px;
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+  .link:hover { text-decoration: underline; color: hsl(var(--primary-hover)); }
+
+  /* Bands: full-bleed flat zones. Optional curved top edge for the lavender kind. */
+  .band-curve-top {
+    border-top-left-radius: 50% 24px;
+    border-top-right-radius: 50% 24px;
+  }
+
+  /* ----- type scale used by dashboards (dense tier) ----- */
   .text-display {
-    @apply text-3xl font-semibold leading-tight text-foreground;
-    letter-spacing: -0.025em;
+    @apply text-ty-section-title text-ink;
   }
   .text-headline {
-    @apply text-xl font-semibold leading-snug text-foreground;
-    letter-spacing: -0.018em;
+    @apply text-ty-subhead text-ink;
   }
   .text-title {
-    @apply text-sm font-semibold text-foreground;
+    @apply text-sm font-medium text-ink;
   }
   .text-body {
-    @apply text-sm text-foreground;
-    line-height: 1.55;
+    @apply text-ty-caption text-ink-body;
   }
   .text-supporting {
-    @apply text-sm text-muted-foreground;
-    line-height: 1.55;
+    @apply text-ty-caption text-muted-foreground;
   }
   .text-caption {
     @apply text-xs text-muted-foreground;
   }
 
-  /* Stat values — large, tabular, slightly tighter tracking */
   .stat-value {
-    @apply text-3xl font-semibold tabular-nums text-foreground;
-    letter-spacing: -0.022em;
-    font-variant-numeric: tabular-nums;
+    @apply text-3xl font-medium tabular-nums text-ink;
+    line-height: 1.1;
   }
   .stat-value-sm {
-    @apply text-xl font-semibold tabular-nums text-foreground;
-    letter-spacing: -0.018em;
+    @apply text-xl font-medium tabular-nums text-ink;
+    line-height: 1.1;
   }
   .stat-label {
     @apply text-xs font-medium text-muted-foreground;
-    letter-spacing: 0.025em;
   }
 
-  /* Section overline — the small uppercase eyebrow above headlines */
+  /* small eyebrow above headlines; sentence case, no tracking */
   .text-overline {
-    @apply text-[10px] font-semibold uppercase text-muted-foreground;
-    letter-spacing: 0.08em;
+    @apply text-xs font-medium text-muted-foreground;
   }
 
-  /* ============================================================
-     SECTION HEADER
-     ============================================================ */
   .section-header {
     @apply flex items-end justify-between gap-4 mb-5;
   }
   .section-title {
-    @apply text-sm font-semibold text-foreground;
+    @apply text-sm font-medium text-ink;
   }
   .section-subtitle {
     @apply text-xs text-muted-foreground mt-1;
   }
 
-  /* ============================================================
-     SIDEBAR NAV — refined active state with subtle indigo accent
-     ============================================================ */
+  /* ----- navigation rows (drawer, menus) ----- */
   .nav-section-label {
-    @apply mb-1.5 px-3 text-[10px] font-semibold uppercase text-muted-foreground;
-    letter-spacing: 0.085em;
+    @apply mb-1.5 px-3 text-xs font-medium text-muted-foreground;
   }
-
   .nav-item {
-    @apply flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm font-medium;
-    transition: background-color 150ms ease, color 150ms ease;
+    @apply flex items-center gap-2.5 rounded-md px-3 py-2 text-ty-nav-link;
+    transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
   }
   .nav-item-default {
     color: hsl(var(--sidebar-fg));
   }
   .nav-item-default:hover {
-    background-color: hsl(var(--muted));
+    background-color: hsl(var(--band));
     color: hsl(var(--sidebar-fg-active));
   }
   .nav-item-active {
-    background-color: hsl(var(--muted));
-    color: hsl(var(--sidebar-fg-active));
-    /* Active indicator inherits the section's accent if set; otherwise brand. */
-    box-shadow: inset 2px 0 0 0 hsl(var(--section-accent, var(--brand)));
-  }
-  .nav-item-default:hover {
-    /* Tiny accent flicker on hover: indicator hints in muted form */
-    box-shadow: inset 2px 0 0 0 hsl(var(--section-accent, var(--brand)) / 0.18);
+    background-color: hsl(var(--band-blue));
+    color: hsl(var(--primary));
+    font-weight: 500;
   }
 
-  /* ============================================================
-     INPUTS — refined focus, subtle hover
-     ============================================================ */
+  /* ----- inputs ----- */
   .input-base {
-    @apply h-10 w-full rounded-lg border bg-background px-3 text-sm
+    @apply h-11 w-full rounded-md border bg-background px-3 text-sm
            placeholder:text-muted-foreground
-           disabled:cursor-not-allowed disabled:opacity-50;
+           disabled:cursor-not-allowed disabled:opacity-40;
     border-color: hsl(var(--input));
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition: border-color var(--duration-fast) var(--ease-standard);
   }
   .input-base:hover:not(:disabled):not(:focus) {
-    border-color: hsl(var(--foreground) / 0.45);
-  }
-  .input-base:focus {
-    @apply outline-none;
-    border-color: hsl(var(--brand));
-    box-shadow: 0 0 0 3px hsl(var(--brand) / 0.14);
+    border-color: hsl(var(--ink));
   }
 
-  /* ============================================================
-     KEYBOARD KEY HINT
-     ============================================================ */
   .kbd-hint {
-    @apply inline-flex items-center justify-center rounded border px-1.5 text-[10px] font-medium text-muted-foreground;
+    @apply inline-flex items-center justify-center rounded-sm border px-1.5 text-2xs font-medium text-muted-foreground;
     height: 18px;
     border-color: hsl(var(--border));
-    background-color: hsl(var(--muted));
+    background-color: hsl(var(--chrome));
   }
 
-  /* ============================================================
-     CARD TACTILE — opt-in variant for clickable cards.
-     Adds a tiny y-translate on hover so interactive surfaces feel
-     physical. Static information cards keep `.card-refined`.
-     ============================================================ */
-  .card-tactile {
-    @apply rounded-xl bg-card;
-    box-shadow: var(--elev-card);
-    transition:
-      box-shadow var(--duration-base) var(--ease-out),
-      transform var(--duration-base) var(--ease-out);
-    will-change: transform;
-  }
-  .card-tactile:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--elev-card-lift);
-  }
-
-  /* ============================================================
-     SKELETON — premium shimmer loader.
-     Apply `.skeleton` to a sized div (h-*, w-*, rounded-*). The
-     pseudo-element animates a translateX sweep — purely transform
-     based, GPU-friendly, no backgroundPosition repaints.
-     Adopts existing bg-* utility for the resting tone.
-     ============================================================ */
+  /* ----- skeleton: flat block with a transform-only sweep ----- */
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: hsl(var(--muted));
+    background-color: hsl(var(--band));
   }
   .skeleton::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--skeleton-sheen) 50%,
-      transparent 100%
-    );
-    animation: skeleton-shimmer 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-    will-change: transform;
+    background-image: linear-gradient(90deg, transparent 0%, var(--skeleton-sheen) 50%, transparent 100%);
+    animation: skeleton-shimmer 1.6s var(--ease-standard) infinite;
   }
   @keyframes skeleton-shimmer {
     100% { transform: translateX(100%); }
   }
 
-  /* ============================================================
-     SUBTLE GRADIENT for hero areas — adds visual richness
-     without committing to glassmorphism or saturated gradients
-     ============================================================ */
-  .surface-gradient {
-    background:
-      radial-gradient(80% 60% at 100% 0%, hsl(var(--brand) / 0.05), transparent 60%),
-      radial-gradient(60% 80% at 0% 100%, hsl(var(--positive) / 0.03), transparent 60%),
-      hsl(var(--card));
-  }
+  /* Gradients are kept for the one atmospheric surface; both now resolve to flat bands. */
+  .surface-gradient,
   .surface-gradient-emerald {
-    background:
-      radial-gradient(70% 70% at 0% 0%, hsl(var(--positive) / 0.10), transparent 65%),
-      hsl(var(--card));
+    background: hsl(var(--card));
   }
+  .hero-navy {
+    background: linear-gradient(100deg, hsl(var(--navy)) 0%, hsl(var(--navy)) 30%, hsl(var(--primary-deep)) 100%);
+    color: hsl(var(--on-primary));
+  }
+}
+
+@layer utilities {
+  /* press feedback for filled controls: a 1px push, nothing else moves */
+  .press {
+    transition:
+      background-color var(--duration-fast) var(--ease-standard),
+      color var(--duration-fast) var(--ease-standard),
+      border-color var(--duration-fast) var(--ease-standard),
+      transform var(--duration-fast) var(--ease-standard);
+  }
+  .press:active:not(:disabled) { transform: translateY(1px); }
 }
 
 /* Iteration count matters: a 0.01ms infinite shimmer or spinner strobes instead of stopping. */
@@ -286,4 +249,5 @@
     scroll-behavior: auto !important;
   }
   .skeleton::after { animation: none; }
+  .press:active:not(:disabled) { transform: none; }
 }

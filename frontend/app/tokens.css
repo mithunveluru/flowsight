@@ -1,60 +1,145 @@
 /* Design tokens: the single source for the web app and the desktop companion
    (desktop/src/index.css imports this file). Plain CSS on purpose so both
    Next and Vite can import it without Tailwind directives. Colors are HSL
-   channels so call sites can write hsl(var(--x) / alpha). */
+   channels so call sites can write hsl(var(--x) / alpha). The reasoning behind
+   the derived dark values, states, chart ramp and status colors is in
+   frontend/DESIGN.md. */
 
 :root {
-  --radius: 0.75rem;
+  /* shape: only these four radii exist */
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius: var(--radius-md);
 
-  --duration-fast: 150ms;
-  --duration-base: 220ms;
+  /* motion: mirrored by components/motion/tokens.ts, kept equal by a unit test */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
   --duration-slow: 320ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+  --duration-reveal: 560ms;
+  --duration-draw: 1000ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: var(--ease-standard);
+  --ease-in-out: var(--ease-standard);
+
+  /* spacing: 8px base with the small steps controls need */
+  --sp-xxs: 2px;
+  --sp-xs: 3px;
+  --sp-sm: 8px;
+  --sp-md: 9px;
+  --sp-lg: 10px;
+  --sp-xl: 12px;
+  --sp-xxl: 15px;
+  --sp-wide: 16px;
+  --sp-section: 20px;
+  --sp-giant: 24px;
+  --sp-max: 32px;
+  --sp-huge: 40px;
+  --sp-hero: 48px;
+  --sp-band: 56px;
+  --sp-page: 72px;
+
+  /* type roles: size and line height, weights live in the Tailwind theme */
+  --ty-display: 57px;
+  --ty-display-lh: 62.7px;
+  --ty-hero-title: 36px;
+  --ty-hero-title-lh: 39.6px;
+  --ty-section-title: 32px;
+  --ty-section-title-lh: 35.2px;
+  --ty-lead: 28px;
+  --ty-lead-lh: 30.8px;
+  --ty-subhead: 20px;
+  --ty-subhead-lh: 22px;
+  --ty-body-lg: 20px;
+  --ty-body-lg-lh: 30px;
+  --ty-body: 18px;
+  --ty-body-lh: 27px;
+  --ty-button: 16px;
+  --ty-button-lh: 17.6px;
+  --ty-link: 16px;
+  --ty-link-lh: 24px;
+  --ty-nav-link: 15px;
+  --ty-nav-link-lh: 21px;
+  --ty-list-item: 15px;
+  --ty-list-item-lh: 21px;
+  --ty-caption: 14px;
+  --ty-caption-lh: 21px;
+
+  /* app frame */
+  --bar-height: 60px;
 }
 
 :root {
   color-scheme: light;
-  --background: 224 30% 99%;
-  --foreground: 224 24% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 224 24% 14%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 224 24% 14%;
-  --overlay: 224 24% 8%;
 
-  --primary: 226 30% 18%;
+  /* surfaces */
+  --canvas: 0 0% 100%;
+  --chrome: 210 11.11% 96.47%;
+  --band: 210 10.53% 92.55%;
+  --band-blue: 201 100% 96.08%;
+  --band-lavender: 256.36 100% 97.84%;
+  --navy: 220.84 96.75% 24.12%;
+  --sky: 205.54 100% 70.98%;
+
+  /* the one acting color and its states */
+  --primary: 215.14 100% 41.18%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 226 30% 96.5%;
-  --secondary-foreground: 224 24% 16%;
-  --muted: 226 30% 96.5%;
-  --muted-foreground: 224 11% 46%;
-  --accent: 226 30% 96%;
-  --accent-foreground: 224 24% 16%;
-  --destructive: 358 58% 50%;
+  --primary-deep: 218.18 100% 34.51%;
+  --primary-hover: var(--primary-deep);
+  --primary-pressed: 218.6 100% 28.04%;
+  --outline-foreground: var(--primary-deep);
+  --on-primary: 0 0% 100%;
+
+  /* five-tier slate ladder plus the chrome grey */
+  --ink: 0 0% 0%;
+  --ink-lead: 0 0% 23.53%;
+  --ink-body: 210 35.85% 20.78%;
+  --ink-list: 210 28.38% 29.02%;
+  --ink-meta: 210 24.47% 36.86%;
+  --ink-nav: 0 0% 32.94%;
+  --hairline: 210 24.47% 36.86%;
+
+  /* shadcn-style names the components consume */
+  --background: var(--canvas);
+  --foreground: var(--ink-body);
+  --card: var(--canvas);
+  --card-foreground: var(--ink-body);
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink-body);
+  --overlay: 222 55% 8%;
+
+  --secondary: var(--band);
+  --secondary-foreground: var(--ink-body);
+  --muted: var(--chrome);
+  --muted-foreground: var(--ink-meta);
+  --accent: var(--band-blue);
+  --accent-foreground: var(--ink);
+  --destructive: 356 55% 40%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 224 22% 93%;
-  /* 3:1 against the page so text fields stay identifiable (WCAG 1.4.11) */
-  --input: 224 12% 59%;
-  --ring: 238 52% 60%;
+  /* soft rule for rows and cards; the full hairline is --input */
+  --border: 210 16.67% 85.88%;
+  --input: var(--hairline);
+  --ring: var(--primary);
 
-  --sidebar-bg: 226 32% 98.5%;
-  --sidebar-fg: 224 11% 42%;
-  --sidebar-fg-active: 224 24% 14%;
-  --sidebar-border: 224 22% 93%;
+  --sidebar-bg: var(--chrome);
+  --sidebar-fg: var(--ink-nav);
+  --sidebar-fg-active: var(--ink);
+  --sidebar-border: var(--border);
 
-  --brand: 238 48% 57%;
-  --brand-soft: 240 60% 97%;
-  --brand-foreground: 0 0% 100%;
+  --brand: var(--primary);
+  --brand-soft: var(--band-blue);
+  --brand-foreground: var(--on-primary);
 
-  /* Semantic text colors hold 4.5:1 on both card and their -soft surface */
-  --positive: 162 48% 33%;
-  --positive-soft: 162 50% 96%;
-  --caution: 26 80% 38%;
-  --caution-soft: 32 86% 96%;
-  --warning: 358 58% 50%;
-  --warning-soft: 358 80% 96.5%;
+  /* status set: alerts and chips only, always paired with an icon or text */
+  --positive: 160 42% 26%;
+  --positive-soft: 160 40% 94%;
+  --caution: 28 75% 29%;
+  --caution-soft: 34 80% 93%;
+  --warning: 356 55% 40%;
+  --warning-soft: 356 70% 95%;
 
   --signal: var(--brand);
   --signal-soft: var(--brand-soft);
@@ -65,132 +150,109 @@
   --severity-low: var(--brand);
   --severity-low-soft: var(--brand-soft);
 
-  --accent-overview: 218 48% 60%;
-  --accent-insights: 248 42% 66%;
-  --accent-reports: 28 28% 52%;
-  --accent-simulate: 180 32% 48%;
-  --accent-receipts: 215 24% 55%;
-  --accent-transactions: 215 24% 55%;
-  --accent-budgets: 162 32% 48%;
-  --accent-goals: 162 32% 48%;
-  --accent-recurring: 248 42% 66%;
-  --accent-leaks: 28 28% 52%;
+  /* section accents kept for consumers; one acting color means they all resolve to it */
+  --accent-overview: var(--primary);
+  --accent-insights: var(--primary);
+  --accent-reports: var(--primary);
+  --accent-simulate: var(--primary);
+  --accent-receipts: var(--primary);
+  --accent-transactions: var(--primary);
+  --accent-budgets: var(--primary);
+  --accent-goals: var(--primary);
+  --accent-recurring: var(--primary);
+  --accent-leaks: var(--primary);
 
-  --chart-spend: 238 48% 64%;
-  --chart-income: 168 36% 46%;
-  --chart-grid: 224 22% 93%;
-  --chart-axis: 224 12% 46%;
-  --chart-1: 16 62% 70%;
-  --chart-2: 152 32% 58%;
-  --chart-3: 268 36% 70%;
-  --chart-4: 212 48% 68%;
-  --chart-5: 220 12% 62%;
-  --chart-6: 330 42% 72%;
-  --chart-7: 6 52% 68%;
-  --chart-8: 238 48% 72%;
-  --chart-9: 42 56% 64%;
-  --chart-10: 178 32% 56%;
-  --chart-11: 282 36% 72%;
-  --chart-12: 168 36% 50%;
-  --chart-13: 196 36% 62%;
-  --chart-14: 224 14% 70%;
-  --chart-15: 224 16% 86%;
+  /* chart ramp: blues first, slates after; never the only way to tell series apart */
+  --chart-spend: var(--primary);
+  --chart-income: 210 28.38% 29.02%;
+  --chart-grid: var(--border);
+  --chart-axis: var(--ink-meta);
+  --chart-1: 215.14 100% 41.18%;
+  --chart-2: 220.84 96.75% 24.12%;
+  --chart-3: 205.54 100% 70.98%;
+  --chart-4: 210 24% 52%;
+  --chart-5: 218.18 100% 34.51%;
+  --chart-6: 210 24% 72%;
+  --chart-7: 215 75% 58%;
+  --chart-8: 210 28% 29%;
+  --chart-9: 204 90% 55%;
+  --chart-10: 210 18% 62%;
+  --chart-11: 220 80% 45%;
+  --chart-12: 207 60% 40%;
+  --chart-13: 210 20% 80%;
+  --chart-14: 210 14% 66%;
+  --chart-15: 210 20% 88%;
 
-  --elev-1: 0 1px 2px 0 rgba(47, 55, 90, 0.02), 0 0 0 1px rgba(47, 55, 90, 0.035);
-  --elev-2: 0 2px 8px -3px rgba(47, 55, 90, 0.05), 0 0 0 1px rgba(47, 55, 90, 0.04);
-  --elev-3: 0 20px 40px -16px rgba(47, 55, 90, 0.14), 0 6px 16px -6px rgba(47, 55, 90, 0.08),
-    0 0 0 1px rgba(47, 55, 90, 0.045);
-  --elev-card: 0 1px 2px 0 rgba(47, 55, 90, 0.025), 0 4px 12px -4px rgba(47, 55, 90, 0.05),
-    0 0 0 1px rgba(47, 55, 90, 0.04);
-  --elev-card-hover: 0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 8px 20px -6px rgba(47, 55, 90, 0.07),
-    0 0 0 1px rgba(47, 55, 90, 0.055);
-  --elev-card-lift: 0 1px 2px 0 rgba(47, 55, 90, 0.03), 0 12px 28px -10px rgba(47, 55, 90, 0.1),
-    0 0 0 1px rgba(99, 102, 145, 0.1);
-  --skeleton-sheen: rgba(255, 255, 255, 0.55);
+  /* flat by default; only illustration cards cast a shadow */
+  --elev-1: none;
+  --elev-2: none;
+  --elev-3: none;
+  --elev-card: none;
+  --elev-card-hover: none;
+  --elev-card-lift: none;
+  --elev-illustration: 0 8px 24px -8px rgba(2, 40, 121, 0.18), 0 2px 6px 0 rgba(2, 40, 121, 0.08);
+  --skeleton-sheen: rgba(255, 255, 255, 0.65);
 }
 
 .dark {
   color-scheme: dark;
-  --background: 224 22% 9%;
-  --foreground: 224 20% 92%;
-  --card: 224 20% 12%;
-  --card-foreground: 224 20% 92%;
-  --popover: 224 22% 10%;
-  --popover-foreground: 224 20% 92%;
-  --overlay: 224 30% 3%;
 
-  --primary: 224 20% 95%;
-  --primary-foreground: 224 22% 11%;
-  --secondary: 224 18% 15%;
-  --secondary-foreground: 224 20% 92%;
-  --muted: 224 18% 14%;
-  --muted-foreground: 215 14% 64%;
-  --accent: 224 18% 17%;
-  --accent-foreground: 224 20% 95%;
-  --destructive: 358 60% 66%;
-  --destructive-foreground: 224 22% 11%;
+  --canvas: 222 55% 8%;
+  --chrome: 222 50% 11%;
+  --band: 222 45% 14%;
+  --band-blue: 212 55% 16%;
+  --band-lavender: 252 32% 17%;
+  --navy: 221 90% 18%;
+  --sky: 205.54 100% 70.98%;
 
-  --border: 224 16% 20%;
-  --input: 224 12% 44%;
-  --ring: 238 62% 70%;
+  /* lightened so links hold 4.5:1 on every dark band; the label on a fill flips to the canvas */
+  --primary: 213 100% 70%;
+  --primary-foreground: 222 55% 8%;
+  --primary-deep: 218 100% 32%;
+  --primary-hover: 213 100% 78%;
+  --primary-pressed: 213 100% 62%;
+  --outline-foreground: 213 100% 74%;
+  --on-primary: 0 0% 100%;
 
-  --sidebar-bg: 224 22% 8%;
-  --sidebar-fg: 215 14% 62%;
-  --sidebar-fg-active: 224 20% 95%;
-  --sidebar-border: 224 18% 15%;
+  --ink: 0 0% 100%;
+  --ink-lead: 220 10% 86%;
+  --ink-body: 212 30% 84%;
+  --ink-list: 212 24% 76%;
+  --ink-meta: 212 22% 70%;
+  --ink-nav: 220 8% 72%;
+  --hairline: 212 20% 48%;
 
-  --brand: 240 68% 74%;
-  --brand-soft: 240 30% 20%;
-  --brand-foreground: 224 22% 11%;
+  --overlay: 222 60% 3%;
+  --destructive: 356 70% 72%;
+  --destructive-foreground: 222 55% 8%;
 
-  --positive: 162 46% 56%;
-  --positive-soft: 162 25% 17%;
-  --caution: 30 72% 66%;
-  --caution-soft: 30 24% 19%;
-  --warning: 358 60% 66%;
-  --warning-soft: 358 24% 19%;
+  --border: 218 28% 22%;
+  --input: 212 18% 52%;
 
-  --accent-overview: 218 58% 70%;
-  --accent-insights: 248 54% 76%;
-  --accent-reports: 28 36% 64%;
-  --accent-simulate: 180 42% 60%;
-  --accent-receipts: 215 36% 68%;
-  --accent-transactions: 215 36% 68%;
-  --accent-budgets: 162 42% 60%;
-  --accent-goals: 162 42% 60%;
-  --accent-recurring: 248 54% 76%;
-  --accent-leaks: 28 36% 64%;
+  --positive: 160 45% 60%;
+  --positive-soft: 160 30% 14%;
+  --caution: 34 75% 64%;
+  --caution-soft: 34 30% 15%;
+  --warning: 356 70% 72%;
+  --warning-soft: 356 30% 17%;
 
-  --chart-spend: 240 64% 74%;
-  --chart-income: 168 42% 58%;
-  --chart-grid: 224 16% 20%;
-  --chart-axis: 224 14% 62%;
-  --chart-1: 16 64% 72%;
-  --chart-2: 152 36% 64%;
-  --chart-3: 268 42% 76%;
-  --chart-4: 212 52% 72%;
-  --chart-5: 220 14% 66%;
-  --chart-6: 330 48% 76%;
-  --chart-7: 6 58% 72%;
-  --chart-8: 240 54% 78%;
-  --chart-9: 42 60% 68%;
-  --chart-10: 178 36% 60%;
-  --chart-11: 282 40% 76%;
-  --chart-12: 168 40% 56%;
-  --chart-13: 196 42% 66%;
-  --chart-14: 224 16% 74%;
-  --chart-15: 224 16% 36%;
+  --chart-income: 210 24% 76%;
+  --chart-1: 213 100% 68%;
+  --chart-2: 221 85% 62%;
+  --chart-3: 205.54 100% 75%;
+  --chart-4: 210 24% 62%;
+  --chart-5: 218 90% 56%;
+  --chart-6: 210 24% 78%;
+  --chart-7: 215 80% 74%;
+  --chart-8: 210 28% 48%;
+  --chart-9: 204 90% 62%;
+  --chart-10: 210 18% 70%;
+  --chart-11: 220 80% 66%;
+  --chart-12: 207 60% 58%;
+  --chart-13: 210 20% 56%;
+  --chart-14: 210 14% 64%;
+  --chart-15: 210 18% 38%;
 
-  --elev-1: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --elev-2: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 2px 6px -2px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  --elev-3: 0 24px 48px -16px rgba(0, 0, 0, 0.6), 0 8px 20px -8px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-  --elev-card: 0 1px 1px 0 rgba(0, 0, 0, 0.2), 0 2px 6px -2px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  --elev-card-hover: 0 1px 1px 0 rgba(0, 0, 0, 0.24), 0 4px 12px -3px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.07);
-  --elev-card-lift: 0 1px 1px 0 rgba(0, 0, 0, 0.28), 0 10px 24px -8px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-  --skeleton-sheen: rgba(255, 255, 255, 0.06);
+  --elev-illustration: 0 8px 24px -8px rgba(0, 0, 0, 0.55), 0 2px 6px 0 rgba(0, 0, 0, 0.35);
+  --skeleton-sheen: rgba(255, 255, 255, 0.07);
 }
