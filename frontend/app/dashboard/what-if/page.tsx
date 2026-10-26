@@ -19,16 +19,12 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
+import { ChartFrame, ChartLegend, ChartSkeleton } from "@/components/ui/chart-frame";
+import { EvidenceDrawer, EvidenceTrigger } from "@/components/ui/evidence-drawer";
+import { ErrorState } from "@/components/ui/states";
+import { Field as FormField } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -37,15 +33,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { simulationApi } from "@/features/simulation/api";
+import {
+  assumptionText,
+  clampReturn,
+  fanRows,
+  fanSummary,
+  flexibilityEvidence,
+  goalOddsText,
+  monteCarloEvidence,
+  percent,
+} from "@/features/simulation/fan";
 import type {
   ConsequenceInsight,
   FinancialBaseline,
   FlexibilityScore,
   FlexibilityTier,
+  MonteCarloResult,
   Projection,
   ScenarioRequest,
   ScenarioType,
   Severity,
+  SimulationAssumptions,
   SimulationResult,
   Tradeoff,
 } from "@/features/simulation/types";
@@ -111,11 +119,21 @@ const SCENARIO_TAB_META: Record<ScenarioType, { label: string; icon: React.Eleme
   LOAN_EMI:           { label: "Take a loan",        icon: TrendingDown },
 };
 
+const FanChart = dynamic(() => import("./fan-chart"), {
+  ssr: false,
+  loading: () => <ChartSkeleton height={300} />,
+});
+const ProjectionChartLazy = dynamic(() => import("./projection-chart"), {
+  ssr: false,
+  loading: () => <ChartSkeleton height={280} />,
+});
+
 export default function SimulatePage() {
   const [scenario, setScenario] = useState<ScenarioRequest>(DEFAULT_SCENARIO.ONE_TIME_PURCHASE);
   const [result,   setResult]   = useState<SimulationResult | null>(null);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const [attempt,  setAttempt]  = useState(0);
 
   // Debounced auto-simulation — keeps the page feeling alive without spamming the API
   useEffect(() => {
@@ -133,10 +151,10 @@ export default function SimulatePage() {
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [scenario]);
+  }, [scenario, attempt]);
 
   const handleTypeChange = useCallback((type: ScenarioType) => {
-    setScenario(DEFAULT_SCENARIO[type]);
+    setScenario((prev) => ({ ...DEFAULT_SCENARIO[type], annualReturnPercent: prev.annualReturnPercent }));
   }, []);
 
   return (
@@ -170,17 +188,23 @@ export default function SimulatePage() {
         {/* Results — stagger the stack into view */}
         <section className="space-y-8">
           {error && (
-            <FadeIn>
-              <div className="rounded-xl border border-warning/25 bg-warning-soft px-4 py-3 text-sm text-warning">
-                {error}
-              </div>
-            </FadeIn>
+            <ErrorState
+              title="The simulation did not run"
+              description={error}
+              onRetry={() => setAttempt((n) => n + 1)}
+            />
           )}
 
           {result ? (
             <StaggerContainer className="space-y-8" stagger={0.06}>
               <StaggerItem><ImpactSummary result={result} /></StaggerItem>
-              <StaggerItem><FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} /></StaggerItem>
+              {result.monteCarlo && (
+                <StaggerItem><FanCard mc={result.monteCarlo} assumptions={result.assumptions} /></StaggerItem>
+              )}
+              {result.monteCarlo?.goal && (
+                <StaggerItem><GoalOddsCard odds={result.monteCarlo.goal} /></StaggerItem>
+              )}
+              <StaggerItem><FlexibilityCard flexibility={result.flexibility} baseline={result.baseline} mc={result.monteCarlo} /></StaggerItem>
               <StaggerItem><ProjectionChart projection={result.projection} /></StaggerItem>
               <StaggerItem><TradeoffAnalysis tradeoffs={result.tradeoffs} /></StaggerItem>
               <StaggerItem><ConsequenceInsights insights={result.insights} /></StaggerItem>
@@ -341,6 +365,27 @@ function ScenarioBuilder({
         )}
       </div>
 
+      <div className="mt-6 border-t border-border pt-5">
+        <FormField
+          label="Assumed yearly return (%)"
+          hint="Used for opportunity-cost figures. Leave blank for the default."
+        >
+          <Input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={30}
+            step={0.5}
+            placeholder="Default"
+            value={scenario.annualReturnPercent ?? ""}
+            onChange={(e) => {
+              const v = clampReturn(e.target.value);
+              update({ annualReturnPercent: v ?? undefined });
+            }}
+          />
+        </FormField>
+      </div>
+
       <p className="mt-5 text-[11px] text-muted-foreground leading-relaxed">
         The projection updates as you adjust values. It uses your last 3 months of transactions and active recurring patterns as the baseline.
       </p>
@@ -450,7 +495,7 @@ function ImpactSummary({ result }: { result: SimulationResult }) {
     {
       label: "10-year opportunity cost",
       value: formatINRCompact(result.tenYearOpportunityCost),
-      hint: "If invested at 8% return",
+      hint: result.assumptions ? `If invested at ${assumptionText(result.assumptions)}` : "If invested",
       icon: Telescope,
       accent: "text-foreground",
     },
@@ -478,9 +523,11 @@ function ImpactSummary({ result }: { result: SimulationResult }) {
 function FlexibilityCard({
   flexibility,
   baseline,
+  mc,
 }: {
   flexibility: FlexibilityScore;
   baseline: FinancialBaseline;
+  mc?: MonteCarloResult | null;
 }) {
   const currentMeta   = TIER_META[flexibility.currentTier];
   const projectedMeta = TIER_META[flexibility.projectedTier];
@@ -552,6 +599,22 @@ function FlexibilityCard({
       <p className="mt-5 text-xs text-muted-foreground leading-relaxed">
         {flexibility.explanation}
       </p>
+      {mc && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+          <span>
+            Across simulated futures the score after this decision is typically{" "}
+            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p10}</span> to{" "}
+            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p90}</span> (median{" "}
+            <span className="font-medium tabular-nums text-foreground">{mc.flexibility.p50}</span>).
+          </span>
+          <EvidenceDrawer
+            title="Breathing room range"
+            value={`${mc.flexibility.p10} to ${mc.flexibility.p90}`}
+            evidence={flexibilityEvidence(mc.baselineFlexibility, mc.flexibility, mc)}
+            trigger={<EvidenceTrigger label="the breathing room range" />}
+          />
+        </p>
+      )}
 
       {/* Baseline footnote */}
       {baseline.hasEnoughData && (
@@ -566,61 +629,100 @@ function FlexibilityCard({
 }
 
 function ProjectionChart({ projection }: { projection: Projection }) {
-  const data = useMemo(() => {
-    return projection.before.map((p, i) => ({
-      month: `M${p.month}`,
-      before: p.cumulativeSavings,
-      after:  projection.after[i]?.cumulativeSavings ?? 0,
-    }));
-  }, [projection]);
+  const data = useMemo(
+    () =>
+      projection.before.map((p, i) => ({
+        month: `M${p.month}`,
+        before: p.cumulativeSavings,
+        after: projection.after[i]?.cumulativeSavings ?? 0,
+      })),
+    [projection]
+  );
+  const last = data.at(-1);
 
   return (
-    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
-      <div className="flex items-start gap-3 mb-5">
-        <Telescope className="h-4 w-4 text-muted-foreground mt-0.5" strokeWidth={1.75} />
-        <div>
-          <p className="text-sm font-semibold text-foreground">12-month projection</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Cumulative savings position — current trajectory vs simulated.</p>
-        </div>
-      </div>
+    <ChartFrame
+      title="12-month projection"
+      description="Cumulative savings position, current trajectory vs simulated."
+      summary={last ? `After ${data.length} months: ${formatINR(last.before)} on the current trajectory, ${formatINR(last.after)} with this decision.` : undefined}
+      state={data.length ? "ready" : "empty"}
+      height={280}
+      legend={
+        <ChartLegend
+          items={[
+            { label: "Current trajectory", color: "hsl(var(--chart-axis))" },
+            { label: "With this decision", color: "hsl(var(--chart-spend))" },
+          ]}
+        />
+      }
+    >
+      <ProjectionChartLazy data={data} height={280} />
+    </ChartFrame>
+  );
+}
 
-      <ResponsiveContainer width="100%" height={280}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-          <defs>
-            <linearGradient id="grad-before" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="hsl(var(--chart-axis))" stopOpacity={0.12} />
-              <stop offset="95%" stopColor="hsl(var(--chart-axis))" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="grad-after" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="hsl(var(--chart-spend))" stopOpacity={0.18} />
-              <stop offset="95%" stopColor="hsl(var(--chart-spend))" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }} axisLine={false} tickLine={false} />
-          <YAxis
-            tick={{ fontSize: 11, fill: "hsl(var(--chart-axis))" }}
-            axisLine={false} tickLine={false}
-            tickFormatter={(v: number) => formatINRCompact(v)}
-            width={56}
+function FanCard({ mc, assumptions }: { mc: MonteCarloResult; assumptions?: SimulationAssumptions }) {
+  const rows = useMemo(() => fanRows(mc.fan, mc.baselineFan), [mc.fan, mc.baselineFan]);
+  const last = rows.at(-1);
+  return (
+    <ChartFrame
+      title="Range of outcomes"
+      description="Cumulative savings from today across thousands of simulated futures that replay your own month-to-month swings."
+      summary={fanSummary(mc.fan)}
+      state={rows.length ? "ready" : "empty"}
+      emptyTitle="No simulated paths"
+      height={300}
+      actions={
+        <EvidenceDrawer
+          title="Range of outcomes"
+          value={last ? `${formatINRCompact(last.p10)} to ${formatINRCompact(last.p90)} at month ${last.month}` : undefined}
+          evidence={monteCarloEvidence(mc, assumptions)}
+          trigger={<EvidenceTrigger label="the range of outcomes" />}
+        />
+      }
+      legend={
+        <div className="space-y-2">
+          <ChartLegend
+            items={[
+              { label: "Median with this decision", color: "hsl(var(--chart-spend))" },
+              { label: "Middle 80% of futures", color: "hsl(var(--chart-spend) / 0.35)" },
+              { label: "Median without it", color: "hsl(var(--chart-axis))", variant: "dashed" },
+            ]}
           />
-          <Tooltip
-            formatter={(v: unknown, name: unknown) => {
-              const lbl = name === "before" ? "Current trajectory" : "With this decision";
-              return `${lbl}: ${formatINR(Number(v))}`;
-            }}
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--chart-grid))" }}
-            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-          />
-          <Legend
-            iconType="circle" iconSize={8}
-            formatter={(v) => v === "before" ? "Current trajectory" : "With this decision"}
-            wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-          />
-          <Area type="monotone" dataKey="before" stroke="hsl(var(--chart-axis))" strokeWidth={2} fill="url(#grad-before)" dot={false} />
-          <Area type="monotone" dataKey="after"  stroke="hsl(var(--chart-spend))" strokeWidth={2} fill="url(#grad-after)"  dot={false} />
-        </AreaChart>
-      </ResponsiveContainer>
+          {assumptions && (
+            <p className="text-caption">
+              Return assumption: {assumptionText(assumptions)}. {assumptions.label}
+            </p>
+          )}
+        </div>
+      }
+    >
+      <FanChart rows={rows} height={300} />
+    </ChartFrame>
+  );
+}
+
+function GoalOddsCard({ odds }: { odds: NonNullable<MonteCarloResult["goal"]> }) {
+  const t = goalOddsText(odds);
+  const pct = Math.round(odds.probabilityByTargetDate * 100);
+  return (
+    <div className="rounded-xl border bg-card p-6" style={{ borderColor: "hsl(var(--border))" }}>
+      <p className="text-sm font-semibold text-foreground">Chance of reaching {odds.goalName}</p>
+      <p className="mt-2 stat-value text-3xl tabular-nums">{percent(odds.probabilityByTargetDate)}</p>
+      <div
+        role="meter"
+        aria-label={`Chance of reaching ${odds.goalName} by ${odds.targetDate}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"
+      >
+        <div className="h-full bg-brand" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        By {odds.targetDate}; {t.baseline}. About {formatINR(odds.remaining)} still to save.
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{t.reach}.</p>
     </div>
   );
 }
