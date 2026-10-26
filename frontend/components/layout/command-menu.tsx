@@ -105,7 +105,7 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent
         hideClose
-        className="top-[14vh] max-w-lg translate-y-0 overflow-hidden p-0"
+        className="top-[14vh] max-w-lg translate-y-0 overflow-hidden p-0 sm:p-0"
       >
         <DialogTitle className="sr-only">Search and commands</DialogTitle>
         <DialogDescription className="sr-only">
@@ -152,8 +152,8 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
                   onMouseEnter={() => setActive(i)}
                   onClick={() => run(cmd)}
                   className={cn(
-                    "flex cursor-default items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                    i === active ? "bg-muted text-foreground" : "text-foreground/80"
+                    "flex cursor-default items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors duration-fast",
+                    i === active ? "bg-band-blue text-ink" : "text-ink-body"
                   )}
                 >
                   <cmd.icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />

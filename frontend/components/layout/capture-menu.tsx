@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, Plus } from "lucide-react";
+import { Menu, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
 import { captureActions } from "./nav";
 
@@ -15,22 +15,22 @@ const [primary] = captureActions;
  */
 export function CaptureMenu({ compact, className }: { compact?: boolean; className?: string }) {
   const segment =
-    "inline-flex h-9 items-center gap-1.5 bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90";
+    "press inline-flex h-9 items-center gap-1.5 bg-primary text-sm font-medium text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed";
 
   return (
-    <div className={cn("inline-flex shrink-0 items-stretch rounded-lg shadow-sm", className)}>
+    <div className={cn("inline-flex shrink-0 items-stretch", className)}>
       {!compact && (
-        <Link href={primary.href} className={cn(segment, "rounded-l-lg px-3")}>
+        <Link href={primary.href} className={cn(segment, "rounded-l-md px-3")}>
           <primary.icon className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           {primary.label}
         </Link>
       )}
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger
+      <Menu>
+        <MenuTrigger
           aria-label={compact ? "Capture" : "More ways to capture"}
           className={cn(
             segment,
-            compact ? "rounded-lg px-2.5" : "rounded-r-lg border-l border-primary-foreground/20 px-2"
+            compact ? "rounded-md px-2.5" : "rounded-r-md border-l border-primary-foreground/30 px-2"
           )}
         >
           {compact ? (
@@ -38,31 +38,22 @@ export function CaptureMenu({ compact, className }: { compact?: boolean; classNa
           ) : (
             <ChevronDown className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
           )}
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            align="end"
-            sideOffset={6}
-            className="z-50 min-w-[220px] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-elev-3"
-          >
-            <DropdownMenu.Label className="px-2.5 pb-1 pt-1.5 text-overline">Capture</DropdownMenu.Label>
-            {captureActions.map((action) => (
-              <DropdownMenu.Item key={action.href} asChild>
-                <Link
-                  href={action.href}
-                  className="flex cursor-default items-start gap-2.5 rounded px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-muted"
-                >
-                  <action.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className="block font-medium text-foreground">{action.label}</span>
-                    {action.hint && <span className="block text-xs text-muted-foreground">{action.hint}</span>}
-                  </span>
-                </Link>
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+        </MenuTrigger>
+        <MenuContent>
+          <MenuLabel>Capture</MenuLabel>
+          {captureActions.map((action) => (
+            <MenuItem key={action.href} asChild>
+              <Link href={action.href} className="items-start">
+                <action.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block font-medium text-ink">{action.label}</span>
+                  {action.hint && <span className="block text-xs text-muted-foreground">{action.hint}</span>}
+                </span>
+              </Link>
+            </MenuItem>
+          ))}
+        </MenuContent>
+      </Menu>
     </div>
   );
 }

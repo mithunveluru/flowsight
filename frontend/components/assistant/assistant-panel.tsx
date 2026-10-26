@@ -196,7 +196,7 @@ function AnswerView({ exchange: x, onOpenCitation }: { exchange: Exchange; onOpe
   return (
     <div className={cn("rounded-xl border px-3 py-3", a.answered ? "border-border bg-background" : "border-caution/25 bg-caution-soft")}>
       <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-        <span className="rounded-full border border-border px-1.5 py-0.5">{modeLabel(a.mode)}</span>
+        <span className="rounded-sm border border-border px-1.5 py-0.5">{modeLabel(a.mode)}</span>
         {!a.answered && <span className="text-caution">Not answered</span>}
       </p>
       <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
@@ -234,7 +234,7 @@ function CitationButton({ n, citation, onOpen }: { n: number; citation: Assistan
       type="button"
       onClick={() => onOpen(citation)}
       aria-label={`Source ${n}: ${citation.title}`}
-      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border px-1 align-baseline text-[11px] font-medium text-brand hover:bg-muted"
+      className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border px-1 align-baseline text-2xs font-medium text-primary hover:bg-band-blue"
     >
       {n}
     </button>
