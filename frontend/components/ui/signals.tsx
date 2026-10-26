@@ -55,7 +55,7 @@ export function ConfidenceBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-2xs font-medium",
         className
       )}
       style={{ backgroundColor: `hsl(${soft})`, color: `hsl(${fg})` }}
@@ -79,7 +79,7 @@ export function StatusMarker({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center gap-1.5 whitespace-nowrap text-2xs font-medium",
         className
       )}
       style={color ? { color } : undefined}
@@ -114,7 +114,7 @@ export function SignalCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl pl-5 pr-5 py-5",
+        "relative overflow-hidden rounded-md pl-5 pr-5 py-5",
         interactive ? "card-tactile" : "card-refined",
         className
       )}
@@ -128,7 +128,7 @@ export function SignalCard({
       <div className="flex items-start gap-3.5">
         {icon && (
           <span
-            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
             style={{ backgroundColor: `hsl(${soft})`, color: `hsl(${fg})` }}
           >
             {icon}
@@ -165,8 +165,8 @@ export function InsightCallout({
   return (
     <div
       className={cn(
-        "flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs leading-relaxed",
-        tinted ? "text-foreground" : "bg-muted/50 text-foreground",
+        "flex items-start gap-2 rounded-md px-3 py-2.5 text-xs leading-relaxed",
+        tinted ? "text-foreground" : "bg-muted text-foreground",
         className
       )}
       style={tinted ? { backgroundColor: "hsl(var(--signal-soft))" } : undefined}
@@ -186,7 +186,7 @@ export function InsightCallout({
 export function EvidenceChips({ items, className }: { items: string[]; className?: string }) {
   if (!items.length) return null;
   return (
-    <div className={cn("flex flex-wrap items-center gap-y-1 text-[11px] text-muted-foreground", className)}>
+    <div className={cn("flex flex-wrap items-center gap-y-1 text-2xs text-muted-foreground", className)}>
       {items.map((e, i) => (
         <span key={i} className="inline-flex items-center">
           {i > 0 && <span className="mx-1.5 text-muted-foreground/40">·</span>}
@@ -232,14 +232,14 @@ export function ForecastCell({
 }) {
   return (
     <div className="px-5 py-3.5" style={{ borderColor: "hsl(var(--border))" }}>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-2xs font-medium text-muted-foreground">{label}</p>
       <p
         className="mt-1 text-base font-semibold tabular-nums"
         style={accent ? { color: "hsl(var(--signal))" } : { color: "hsl(var(--foreground))" }}
       >
         {value}
       </p>
-      {hint && <p className="mt-0.5 text-[10px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-0.5 text-2xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -341,13 +341,13 @@ export function SourceTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground",
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-sm border border-border px-1.5 py-0.5 text-2xs font-medium text-muted-foreground",
         className
       )}
     >
       <span className="sr-only">Source: </span>
       {SOURCE_LABEL[source]}
-      {source === "model" && version && <span className="font-mono text-[10px]">{version}</span>}
+      {source === "model" && version && <span className="font-mono text-2xs">{version}</span>}
     </span>
   );
 }

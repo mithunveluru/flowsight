@@ -66,7 +66,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     data-state={selected ? "selected" : undefined}
-    className={cn("data-[state=selected]:bg-brand-soft/60", className)}
+    className={cn("data-[state=selected]:bg-band-blue", className)}
     {...props}
   />
 ));
@@ -104,8 +104,8 @@ const TableHead = React.forwardRef<
           type="button"
           onClick={onSort}
           className={cn(
-            "-mx-1.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 uppercase transition-colors duration-fast hover:text-foreground",
-            sortDirection && "text-foreground",
+            "-mx-1.5 inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 transition-colors duration-fast hover:text-primary",
+            sortDirection && "text-primary",
             align === "right" && "flex-row-reverse"
           )}
         >
@@ -161,7 +161,7 @@ const SelectionCheckbox = React.forwardRef<
     <input
       ref={innerRef}
       type="checkbox"
-      className={cn("h-4 w-4 cursor-pointer rounded border-input accent-[hsl(var(--brand))]", className)}
+      className={cn("h-4 w-4 cursor-pointer rounded-sm border-input accent-[hsl(var(--primary))] disabled:cursor-not-allowed disabled:opacity-40", className)}
       {...props}
     />
   );

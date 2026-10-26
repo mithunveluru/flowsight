@@ -2,13 +2,15 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-const cardVariants = cva("rounded-xl bg-card text-card-foreground", {
+const cardVariants = cva("rounded-md bg-card text-card-foreground", {
   variants: {
     variant: {
       default: "card-refined",
       interactive: "card-tactile",
-      muted: "bg-muted/50",
+      muted: "border-0 bg-muted",
       outline: "border border-border",
+      // shadow is reserved for a card that depicts an interface inside an illustration
+      illustration: "card-illustration",
     },
     padding: {
       none: "",
@@ -68,7 +70,7 @@ function CardHeader({
         {icon && (
           <span
             aria-hidden="true"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4"
           >
             {icon}
           </span>

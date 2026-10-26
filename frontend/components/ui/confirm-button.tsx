@@ -36,10 +36,10 @@ export function ConfirmButton({
       aria-label={armed ? confirmLabel : label}
       title={armed ? "Click again to confirm" : label}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md p-1 text-xs font-medium transition-all disabled:opacity-50",
+        "inline-flex items-center gap-1.5 rounded-md p-1 text-xs font-medium transition-colors duration-fast disabled:cursor-not-allowed disabled:opacity-40",
         armed
           ? "bg-warning-soft px-2 text-warning"
-          : "text-muted-foreground/50 hover:text-warning",
+          : "text-muted-foreground hover:text-warning",
         className
       )}
     >

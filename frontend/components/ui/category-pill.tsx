@@ -12,12 +12,12 @@ export function CategoryPill({
 }) {
   const meta = category ? CATEGORY_META[category] : null;
   if (!meta) {
-    return <span className="text-xs text-muted-foreground/60">—</span>;
+    return <span className="text-xs text-muted-foreground">—</span>;
   }
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border/80 bg-card py-0.5 pl-2 pr-2.5 text-xs font-medium text-foreground/75",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border border-border bg-card py-0.5 pl-2 pr-2.5 text-xs font-medium text-ink-body",
         className
       )}
     >

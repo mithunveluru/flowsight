@@ -114,7 +114,7 @@ export function ThemeToggle({ compact, className }: { compact?: boolean; classNa
     <div
       role="group"
       aria-label="Color theme"
-      className={cn("inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5", className)}
+      className={cn("inline-flex items-center gap-0.5 rounded-md bg-band p-0.5", className)}
     >
       {OPTIONS.map(({ value, label, icon: Icon }) => {
         const active = ready && preference === value;
@@ -125,10 +125,10 @@ export function ThemeToggle({ compact, className }: { compact?: boolean; classNa
             aria-pressed={active}
             onClick={() => setPreference(value)}
             className={cn(
-              "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors duration-fast",
+              "inline-flex h-7 items-center gap-1.5 rounded-sm px-2 text-xs font-medium transition-colors duration-fast",
               active
-                ? "bg-card text-foreground shadow-elev-1"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-card text-primary"
+                : "text-muted-foreground hover:text-ink"
             )}
           >
             <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden="true" />

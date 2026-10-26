@@ -117,11 +117,18 @@ export const sharedTheme: { extend: Extend; borderRadius: Record<string, string>
       "ty-list-item": role("list-item", "350"),
       "ty-caption": role("caption", "400"),
     },
+    // four weights only; the other Tailwind names collapse onto them so older call sites stay on-system
     fontWeight: {
+      thin: "350",
+      extralight: "350",
+      light: "350",
       book: "350",
       normal: "400",
       medium: "500",
+      semibold: "500",
       bold: "700",
+      extrabold: "700",
+      black: "700",
     },
     fontFamily: {
       sans: ["var(--font-sans)", "system-ui", "sans-serif"],
@@ -141,6 +148,8 @@ export const sharedTheme: { extend: Extend; borderRadius: Record<string, string>
       header: "var(--bar-height)",
       bar: "var(--bar-height)",
     },
+    screens: { coarse: { raw: "(pointer: coarse)" } },
+    minHeight: { hero: "450px" },
     keyframes: {
       "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
       "slide-up": {

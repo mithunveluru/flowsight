@@ -54,7 +54,7 @@ export const EvidenceTrigger = React.forwardRef<
     type="button"
     aria-label={`Why ${label}?`}
     className={cn(
-      "inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground",
+      "inline-flex h-7 items-center gap-1 rounded-sm px-1.5 text-xs font-medium text-muted-foreground transition-colors duration-fast hover:bg-band-blue hover:text-primary",
       className
     )}
     {...props}

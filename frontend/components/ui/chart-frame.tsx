@@ -89,8 +89,24 @@ export interface LegendItem {
   label: string;
   // any CSS color, normally hsl(var(--chart-*))
   color: string;
-  // dashed for projections/forecasts so the series differ by more than color
-  variant?: "solid" | "dashed";
+  // dash pattern; projections and forecasts should not share a pattern with actuals
+  variant?: "solid" | "dashed" | "dotted";
+  // a second cue besides color; draw the same shape on the series
+  marker?: "circle" | "square" | "triangle" | "diamond";
+}
+
+const DASH: Record<NonNullable<LegendItem["variant"]>, string | undefined> = {
+  solid: undefined,
+  dashed: "4 3",
+  dotted: "1 3",
+};
+
+function Marker({ shape, color }: { shape: NonNullable<LegendItem["marker"]>; color: string }) {
+  const c = { fill: color } as const;
+  if (shape === "square") return <rect x="6" y="1" width="6" height="6" {...c} />;
+  if (shape === "triangle") return <polygon points="9,1 13,7 5,7" {...c} />;
+  if (shape === "diamond") return <polygon points="9,0.5 13,4 9,7.5 5,4" {...c} />;
+  return <circle cx="9" cy="4" r="3" {...c} />;
 }
 
 export function ChartLegend({ items, className }: { items: LegendItem[]; className?: string }) {
@@ -107,8 +123,9 @@ export function ChartLegend({ items, className }: { items: LegendItem[]; classNa
               stroke={item.color}
               strokeWidth="2.5"
               strokeLinecap="round"
-              strokeDasharray={item.variant === "dashed" ? "3 3" : undefined}
+              strokeDasharray={DASH[item.variant ?? "solid"]}
             />
+            {item.marker && <Marker shape={item.marker} color={item.color} />}
           </svg>
           {item.label}
         </li>

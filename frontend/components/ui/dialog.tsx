@@ -19,8 +19,8 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-overlay/45 backdrop-blur-[2px] dark:bg-overlay/70",
-      "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+      "fixed inset-0 z-50 bg-overlay/50 dark:bg-overlay/70",
+      "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-base data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-fast",
       "motion-reduce:animate-none",
       className
     )}
@@ -32,7 +32,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 function CloseButton() {
   return (
     <DialogPrimitive.Close
-      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors duration-fast hover:bg-band hover:text-ink"
     >
       <X className="h-4 w-4" strokeWidth={1.75} aria-hidden="true" />
       <span className="sr-only">Close</span>
@@ -54,9 +54,9 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2",
-        "max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-xl bg-popover p-6 text-popover-foreground shadow-elev-3",
-        "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+        "max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground sm:p-sp-max",
+        "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[.98] data-[state=open]:duration-base",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[.98] data-[state=closed]:duration-fast",
         "motion-reduce:animate-none",
         className
       )}
@@ -71,8 +71,8 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const sheetVariants = cva(
   cn(
-    "fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-elev-3",
-    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:duration-300 data-[state=closed]:duration-200",
+    "fixed z-50 flex flex-col bg-popover text-popover-foreground",
+    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:duration-slow data-[state=closed]:duration-base",
     "motion-reduce:animate-none"
   ),
   {
@@ -83,7 +83,7 @@ const sheetVariants = cva(
         left:
           "inset-y-0 left-0 h-full w-full border-r border-border sm:max-w-md data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left",
         bottom:
-          "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-2xl border-t border-border data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
+          "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-lg border-t border-border data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
       },
     },
     defaultVariants: { side: "right" },

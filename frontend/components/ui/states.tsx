@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div aria-hidden="true" className={cn("skeleton rounded-md", className)} {...props} />;
+  return <div aria-hidden="true" className={cn("skeleton rounded-sm", className)} {...props} />;
 }
 
 type LoadingVariant = "card" | "list" | "table" | "stats" | "chart" | "text";
@@ -29,7 +29,7 @@ function LoadingShape({ variant, rows }: { variant: LoadingVariant; rows: number
         <div className="space-y-2">
           {Array.from({ length: rows }, (_, i) => (
             <div key={i} className="flex items-center gap-3 py-2">
-              <Skeleton className="h-8 w-8 rounded-lg" />
+              <Skeleton className="h-8 w-8 rounded-md" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-3 w-1/3" />
                 <Skeleton className="h-3 w-1/5" />
@@ -150,13 +150,13 @@ export function EmptyState({
     <div
       className={cn(
         "flex flex-col items-center justify-center text-center",
-        compact ? "px-4 py-8" : "card-refined px-6 py-12",
+        compact ? "px-4 py-8" : "rounded-lg bg-chrome p-sp-huge",
         className
       )}
     >
       <span
         aria-hidden="true"
-        className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground [&_svg]:h-5 [&_svg]:w-5"
+        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-band text-muted-foreground [&_svg]:h-5 [&_svg]:w-5"
       >
         {icon ?? <Inbox strokeWidth={1.75} />}
       </span>
@@ -220,13 +220,13 @@ export function ErrorState({
       role="alert"
       className={cn(
         "flex flex-col items-center justify-center text-center",
-        compact ? "px-4 py-8" : "card-refined px-6 py-12",
+        compact ? "px-4 py-8" : "rounded-lg bg-chrome p-sp-huge",
         className
       )}
     >
       <span
         aria-hidden="true"
-        className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-warning-soft text-warning"
+        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-warning-soft text-warning"
       >
         <AlertTriangle className="h-5 w-5" strokeWidth={1.75} />
       </span>
